@@ -2,7 +2,6 @@ package net.beetechgroup.beetask.interfaceadapters.dtos;
 
 import java.util.List;
 
-import net.beetechgroup.beetask.entities.TaskHistoryItem;
 import net.beetechgroup.beetask.entities.TaskStatus;
 
 public record TaskResponseDTO(
@@ -11,5 +10,5 @@ public record TaskResponseDTO(
                 String description,
                 TaskStatus status,
                 String project,
-                List<TaskHistoryItem> history) {
+                List<TaskHistoryItemDTO> history) {
 }

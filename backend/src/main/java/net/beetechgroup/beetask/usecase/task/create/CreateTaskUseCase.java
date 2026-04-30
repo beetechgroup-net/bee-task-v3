@@ -16,6 +16,6 @@ public class CreateTaskUseCase {
         task.setDescription(input.description());
         task.setStatus(input.status());
         task.setProject(input.project());
-        return taskRepository.save(task);
+        return taskRepository.saveTask(task);
     }
 }

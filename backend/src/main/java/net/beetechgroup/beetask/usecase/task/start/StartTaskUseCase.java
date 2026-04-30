@@ -12,8 +12,8 @@ public class StartTaskUseCase {
     }
 
     public Task execute(StartTaskInput input) {
-        Task task = taskRepository.findById(input.id());
+        Task task = taskRepository.findTaskById(input.id());
         task.start();
-        return taskRepository.save(task);
+        return taskRepository.saveTask(task);
     }
 }

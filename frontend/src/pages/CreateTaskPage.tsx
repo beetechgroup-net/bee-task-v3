@@ -1,13 +1,20 @@
+import { motion } from "framer-motion";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  FileText,
+  Layout,
+  PlusCircle,
+  Send,
+} from "lucide-react";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { Link } from "react-router-dom";
 
-import { apiFetch } from "../lib/api";
-import { TASK_STATUS_OPTIONS } from "../types/task";
-import type {
-  CreateTaskPayload,
-  TaskResponse,
-  TaskStatus,
-} from "../types/task";
+import { taskService } from "../services/taskService";
+import { cn } from "../lib/utils";
+import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from "../types/task";
+import type { CreateTaskPayload, TaskResponse } from "../types/task";
 
 type FormState = CreateTaskPayload;
 
@@ -16,13 +23,6 @@ const initialFormState: FormState = {
   description: "",
   status: "NOT_STARTED",
   project: "",
-};
-
-const statusLabels: Record<TaskStatus, string> = {
-  NOT_STARTED: "Nao iniciada",
-  IN_PROGRESS: "Em andamento",
-  COMPLETED: "Concluida",
-  CANCELED: "Cancelada",
 };
 
 export function CreateTaskPage() {
@@ -56,10 +56,7 @@ export function CreateTaskPage() {
         project: form.project.trim(),
       };
 
-      const response = await apiFetch<TaskResponse>("/tasks", {
-        method: "POST",
-        body: payload,
-      });
+      const response = await taskService.createTask(payload);
 
       setCreatedTask(response);
       setForm(initialFormState);
@@ -67,106 +64,211 @@ export function CreateTaskPage() {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Nao foi possivel criar a task.",
+          : "Não foi possível criar a task.",
       );
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  if (createdTask) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md overflow-hidden rounded-[2.5rem] border border-border-soft bg-surface p-8 text-center shadow-2xl shadow-brand/10"
+        >
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-soft text-brand">
+            <CheckCircle2 size={40} />
+          </div>
+          <h2 className="mt-6 text-3xl font-black tracking-tight text-text-main">
+            Tarefa Criada!
+          </h2>
+          <p className="mt-3 text-text-muted">
+            Sua nova tarefa foi registrada com sucesso e já está disponível na
+            lista.
+          </p>
+
+          <div className="mt-8 rounded-2xl bg-app-bg p-4 text-left">
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+              #{createdTask.id}
+            </p>
+            <h4 className="mt-1 font-bold text-text-main">
+              {createdTask.title}
+            </h4>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold text-brand shadow-sm">
+                {TASK_STATUS_LABELS[createdTask.status]}
+              </span>
+              <span className="text-[10px] font-bold text-text-muted">
+                {createdTask.project || "Geral"}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3">
+            <Link
+              to="/tasks"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand py-3 font-bold text-white shadow-lg shadow-brand/20 transition-all hover:bg-brand-strong"
+            >
+              Ver Minhas Tarefas
+            </Link>
+            <button
+              onClick={() => setCreatedTask(null)}
+              className="text-sm font-bold text-text-muted hover:text-text-main"
+            >
+              Criar outra tarefa
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <main className="px-6 py-10 text-text-main">
-      <section className="rounded-[2rem] border border-border-soft bg-surface p-8 shadow-[var(--shadow-panel)]">
-        <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-3 rounded-full border border-border-soft bg-surface-muted px-4 py-2 text-sm font-semibold text-brand-strong">
-            <span className="h-2.5 w-2.5 rounded-full bg-brand" />
-            Criar task
+    <div className="mx-auto max-w-3xl pb-20">
+      <div className="mb-8 flex items-center justify-between">
+        <Link
+          to="/tasks"
+          className="inline-flex items-center gap-2 text-sm font-bold text-text-muted transition-colors hover:text-brand"
+        >
+          <ArrowLeft size={16} />
+          Voltar para a lista
+        </Link>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="overflow-hidden rounded-[2.5rem] border border-border-soft bg-surface shadow-2xl shadow-brand/5"
+      >
+        <div className="bg-brand p-8 text-white">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+              <PlusCircle size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight">
+                Nova Tarefa
+              </h1>
+              <p className="text-sm font-medium text-white/80">
+                Preencha os detalhes abaixo para começar.
+              </p>
+            </div>
           </div>
         </div>
 
-        <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
-          <div className="grid gap-6 md:grid-cols-2">
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-text-main">
-                Titulo
-              </span>
-              <input
-                required
-                name="title"
-                value={form.title}
-                onChange={updateField}
-                placeholder="Ex.: Preparar retrospectiva da sprint"
-                className="h-13 w-full rounded-2xl border border-border-soft bg-white px-4 text-base outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10"
-              />
-            </label>
+        <form onSubmit={handleSubmit} className="p-8 lg:p-10">
+          <div className="space-y-8">
+            {/* Title Section */}
+            <div className="space-y-4">
+              <label className="group block">
+                <div className="mb-2 flex items-center gap-2 text-sm font-bold text-text-main group-focus-within:text-brand">
+                  <FileText size={16} />
+                  Título da Tarefa
+                </div>
+                <input
+                  required
+                  name="title"
+                  value={form.title}
+                  onChange={updateField}
+                  placeholder="Ex.: Implementar autenticação JWT"
+                  className="h-14 w-full rounded-2xl border border-border-soft bg-app-bg px-5 text-lg font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
+                />
+              </label>
+            </div>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-text-main">
-                Projeto
-              </span>
-              <input
-                name="project"
-                value={form.project}
+            {/* Project & Status Row */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <label className="group block">
+                <div className="mb-2 flex items-center gap-2 text-sm font-bold text-text-main group-focus-within:text-brand">
+                  <Layout size={16} />
+                  Projeto
+                </div>
+                <input
+                  name="project"
+                  value={form.project}
+                  onChange={updateField}
+                  placeholder="Ex.: Backend API"
+                  className="h-12 w-full rounded-xl border border-border-soft bg-app-bg px-4 text-sm font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
+                />
+              </label>
+
+              <label className="group block">
+                <div className="mb-2 flex items-center gap-2 text-sm font-bold text-text-main group-focus-within:text-brand">
+                  <Layout size={16} />
+                  Status Inicial
+                </div>
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={updateField}
+                  className="h-12 w-full appearance-none rounded-xl border border-border-soft bg-app-bg px-4 text-sm font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
+                >
+                  {TASK_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {TASK_STATUS_LABELS[status]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {/* Description Section */}
+            <label className="group block">
+              <div className="mb-2 flex items-center gap-2 text-sm font-bold text-text-main group-focus-within:text-brand">
+                <FileText size={16} />
+                Descrição
+              </div>
+              <textarea
+                name="description"
+                value={form.description}
                 onChange={updateField}
-                placeholder="Ex.: Bee Task Web"
-                className="h-13 w-full rounded-2xl border border-border-soft bg-white px-4 text-base outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10"
+                rows={5}
+                placeholder="Descreva o que precisa ser feito..."
+                className="w-full rounded-2xl border border-border-soft bg-app-bg px-5 py-4 text-sm font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
               />
             </label>
           </div>
 
-          <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-text-main">
-              Descricao
-            </span>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={updateField}
-              rows={6}
-              placeholder="Adicione contexto, criterio de pronto ou observacoes importantes."
-              className="w-full rounded-3xl border border-border-soft bg-white px-4 py-4 text-base outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10"
-            />
-          </label>
-
-          <label className="block max-w-xs">
-            <span className="mb-2 block text-sm font-semibold text-text-main">
-              Status inicial
-            </span>
-            <select
-              name="status"
-              value={form.status}
-              onChange={updateField}
-              className="h-13 w-full rounded-2xl border border-border-soft bg-white px-4 text-base outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10"
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-8 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700"
             >
-              {TASK_STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {statusLabels[status]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {errorMessage ? (
-            <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               {errorMessage}
-            </div>
-          ) : null}
+            </motion.div>
+          )}
 
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="mt-10 flex items-center justify-end gap-4">
+            <Link
+              to="/tasks"
+              className="px-6 py-3 text-sm font-bold text-text-muted hover:text-text-main"
+            >
+              Cancelar
+            </Link>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex min-w-44 items-center justify-center rounded-2xl bg-brand px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-70"
+              className={cn(
+                "inline-flex min-w-44 items-center justify-center gap-2 rounded-xl bg-brand px-8 py-3.5 text-sm font-black text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-strong active:scale-95 disabled:opacity-50",
+                isSubmitting && "cursor-wait",
+              )}
             >
-              {isSubmitting ? "Criando task..." : "Criar task"}
+              {isSubmitting ? (
+                "Criando..."
+              ) : (
+                <>
+                  <Send size={18} />
+                  Criar Tarefa
+                </>
+              )}
             </button>
-
-            <p className="text-sm text-text-muted">
-              O backend define os ids e devolve a task criada.
-            </p>
           </div>
         </form>
-      </section>
-    </main>
+      </motion.div>
+    </div>
   );
 }

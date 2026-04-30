@@ -2,22 +2,30 @@ package net.beetechgroup.beetask.interfaceadapters.controllers;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
+import java.util.List;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import net.beetechgroup.beetask.entities.Task;
+import net.beetechgroup.beetask.entities.TaskStatus;
 import net.beetechgroup.beetask.interfaceadapters.dtos.TaskDTOMapper;
 import net.beetechgroup.beetask.interfaceadapters.dtos.TaskRequestDTO;
 import net.beetechgroup.beetask.interfaceadapters.dtos.TaskResponseDTO;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
+import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskUseCase;
+import net.beetechgroup.beetask.usecase.task.update.UpdateTaskStatusUseCase;
 
 @Path("/tasks")
 @Produces(MediaType.APPLICATION_JSON)
@@ -33,6 +41,12 @@ public class TaskController {
 
     @Inject
     StopTaskUseCase stopTaskUseCase;
+
+    @Inject
+    ListAllTasksUseCase listAllTasksUseCase;
+
+    @Inject
+    UpdateTaskStatusUseCase updateTaskStatusUseCase;
 
     @POST
     @Operation(summary = "Create a new task", description = "Creates a new task in the system")
@@ -58,6 +72,22 @@ public class TaskController {
     public TaskResponseDTO stopTask(@PathParam("id") Long id) {
         Task task = stopTaskUseCase.execute(TaskDTOMapper.toStopTaskInput(id));
         return TaskDTOMapper.toTaskResponseDTO(task);
-    }  
+    }
+
+    @PATCH
+    @Path("/{id}/status")
+    @Operation(summary = "Update task status", description = "Updates the status of a task")
+    @APIResponse(responseCode = "200", description = "Task status updated successfully")
+    public TaskResponseDTO updateTaskStatus(@PathParam("id") Long id, TaskStatus status) {
+        Task task = updateTaskStatusUseCase.execute(id, status);
+        return TaskDTOMapper.toTaskResponseDTO(task);
+    }
+
+    @GET
+    @Operation(summary = "List all tasks", description = "Lists all tasks in the system")
+    @APIResponse(responseCode = "200", description = "Tasks listed successfully")
+    public List<TaskResponseDTO> listTasks() {
+        return listAllTasksUseCase.execute().stream().map(TaskDTOMapper::toTaskResponseDTO).toList();
+    }
 
 }

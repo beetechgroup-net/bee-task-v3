@@ -7,11 +7,23 @@ export const TASK_STATUS_OPTIONS = [
 
 export type TaskStatus = (typeof TASK_STATUS_OPTIONS)[number]
 
+export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  NOT_STARTED: 'Nao iniciada',
+  IN_PROGRESS: 'Em andamento',
+  COMPLETED: 'Concluida',
+  CANCELED: 'Cancelada',
+}
+
 export type CreateTaskPayload = {
   title: string
   description: string
   status: TaskStatus
   project: string
+}
+
+export type TaskHistoryItem = {
+  startAt: string
+  endAt: string | null
 }
 
 export type TaskResponse = {
@@ -20,4 +32,5 @@ export type TaskResponse = {
   description: string
   status: TaskStatus
   project: string
+  history?: TaskHistoryItem[]
 }

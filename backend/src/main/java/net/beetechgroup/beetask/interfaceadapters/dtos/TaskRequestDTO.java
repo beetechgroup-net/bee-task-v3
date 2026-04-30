@@ -3,9 +3,8 @@ package net.beetechgroup.beetask.interfaceadapters.dtos;
 import net.beetechgroup.beetask.entities.TaskStatus;
 
 public record TaskRequestDTO(
-        Long id,
-        String title,
-        String description,
-        TaskStatus status,
-        String project) {
+                String title,
+                String description,
+                TaskStatus status,
+                String project) {
 }

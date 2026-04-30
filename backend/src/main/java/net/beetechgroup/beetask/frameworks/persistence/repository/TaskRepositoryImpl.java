@@ -1,8 +1,9 @@
 package net.beetechgroup.beetask.frameworks.persistence.repository;
 
+import java.util.List;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import net.beetechgroup.beetask.entities.Task;
 import net.beetechgroup.beetask.frameworks.persistence.entities.TaskEntity;
@@ -11,29 +12,29 @@ import net.beetechgroup.beetask.usecase.exceptions.TaskNotFoundException;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 
 @ApplicationScoped
-public class TaskRepositoryImpl implements TaskRepository {
-
-    @Inject
-    EntityManager em;
+public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<TaskEntity> {
 
     @Override
     @Transactional
-    public Task save(Task task) {
+    public Task saveTask(Task task) {
         TaskEntity entity = TaskMapper.toEntity(task);
         if (entity.getId() == null) {
-            em.persist(entity);
+            persist(entity);
         } else {
-            entity = em.merge(entity);
+            entity = getEntityManager().merge(entity);
         }
         return TaskMapper.toDomain(entity);
     }
 
     @Override
-    public Task findById(Long id) {
-        TaskEntity entity = em.find(TaskEntity.class, id);
-        if (entity == null) {
-            throw new TaskNotFoundException("Task not found");
-        }
+    public Task findTaskById(Long id) {
+        TaskEntity entity = find("id = ?1", id).firstResultOptional()
+                .orElseThrow(() -> new TaskNotFoundException(id));
         return TaskMapper.toDomain(entity);
+    }
+
+    @Override
+    public List<Task> findAllTasks() {
+        return findAll().list().stream().map(TaskMapper::toDomain).toList();
     }
 }

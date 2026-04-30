@@ -1,6 +1,5 @@
 package net.beetechgroup.beetask.entities;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,10 +94,5 @@ public class Task {
     current.setEndAt(LocalDateTime.now());
 }
 
-public Duration getTotalTime() {
-        return history.stream()
-            .map(TaskHistoryItem::getDuration)
-            .reduce(Duration.ZERO, Duration::plus);
-    }
 
 }

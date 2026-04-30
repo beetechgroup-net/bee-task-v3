@@ -1,6 +1,7 @@
 package net.beetechgroup.beetask.interfaceadapters.dtos;
 
 import net.beetechgroup.beetask.entities.Task;
+import net.beetechgroup.beetask.entities.TaskHistoryItem;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskInput;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskInput;
@@ -23,8 +24,12 @@ public class TaskDTOMapper {
                 task.getDescription(),
                 task.getStatus(),
                 task.getProject(),
-                task.getHistory()
+                task.getHistory().stream().map(TaskDTOMapper::toTaskHistoryItemDTO).toList()
         );
+    }
+
+    private static TaskHistoryItemDTO toTaskHistoryItemDTO(TaskHistoryItem taskHistoryItem) {
+        return new TaskHistoryItemDTO(taskHistoryItem.getStartAt(), taskHistoryItem.getEndAt());
     }
 
     public static StartTaskInput toStartTaskInput(Long id) {
