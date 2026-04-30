@@ -2,11 +2,15 @@ package net.beetechgroup.beetask.frameworks.persistence.entities;
 
 import java.util.List;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import net.beetechgroup.beetask.entities.TaskStatus;
 
 @Entity
 @Table(name = "tasks")
@@ -16,12 +20,19 @@ public class TaskEntity {
     private Long id;
     private String title;
     private String description;
-    private String status;
+    private TaskStatus status;
     private String project;
-    @jakarta.persistence.ElementCollection
-    @jakarta.persistence.CollectionTable(name = "task_activities", joinColumns = @jakarta.persistence.JoinColumn(name = "task_id"))
-    @jakarta.persistence.Column(name = "activity")
-    private List<String> activities;
+    @ElementCollection
+    @CollectionTable(name = "task_history", joinColumns = @JoinColumn(name = "task_id"))
+    private List<TaskHistoryItemEntity> history;
+
+    public void setHistory(List<TaskHistoryItemEntity> history) {
+        this.history = history;
+    }
+
+    public List<TaskHistoryItemEntity> getHistory() {
+        return history;
+    }
 
     public Long getId() {
         return id;
@@ -47,11 +58,11 @@ public class TaskEntity {
         this.description = description;
     }
 
-    public String getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TaskStatus status) {
         this.status = status;
     }
 
@@ -61,14 +72,6 @@ public class TaskEntity {
 
     public void setProject(String project) {
         this.project = project;
-    }
-
-    public List<String> getActivities() {
-        return activities;
-    }
-
-    public void setActivities(List<String> activities) {
-        this.activities = activities;
     }
 
 }

@@ -1,4 +1,4 @@
-package net.beetechgroup.beetask.usecase.createtask;
+package net.beetechgroup.beetask.usecase.task.create;
 
 import net.beetechgroup.beetask.entities.Task;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
@@ -16,7 +16,6 @@ public class CreateTaskUseCase {
         task.setDescription(input.description());
         task.setStatus(input.status());
         task.setProject(input.project());
-        task.setActivities(input.activities());
         return taskRepository.save(task);
     }
 }

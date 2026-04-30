@@ -1,28 +1,37 @@
 package net.beetechgroup.beetask.interfaceadapters.dtos;
 
 import net.beetechgroup.beetask.entities.Task;
-import net.beetechgroup.beetask.usecase.createtask.CreateTaskInput;
+import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
+import net.beetechgroup.beetask.usecase.task.start.StartTaskInput;
+import net.beetechgroup.beetask.usecase.task.stop.StopTaskInput;
 
 public class TaskDTOMapper {
 
-    public static CreateTaskInput toInput(TaskRequestDTO request) {
+    public static CreateTaskInput toCreateTaskInput(TaskRequestDTO request) {
         return new CreateTaskInput(
                 request.title(),
                 request.description(),
                 request.status(),
-                request.project(),
-                request.activities()
+                request.project()
         );
     }
 
-    public static TaskResponseDTO toResponse(Task task) {
+    public static TaskResponseDTO toTaskResponseDTO(Task task) {
         return new TaskResponseDTO(
                 task.getId(),
                 task.getTitle(),
                 task.getDescription(),
                 task.getStatus(),
                 task.getProject(),
-                task.getActivities()
+                task.getHistory()
         );
+    }
+
+    public static StartTaskInput toStartTaskInput(Long id) {
+        return new StartTaskInput(id);
+    }
+
+    public static StopTaskInput toStopTaskInput(Long id) {
+        return new StopTaskInput(id);
     }
 }

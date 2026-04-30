@@ -1,14 +1,17 @@
 package net.beetechgroup.beetask.entities;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Task {
     private Long id;
     private String title;
     private String description;
-    private String status;
+    private TaskStatus status;
     private String project;
-    private List<String> activities;
+    private List<TaskHistoryItem> history = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -34,11 +37,11 @@ public class Task {
         this.description = description;
     }
 
-    public String getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TaskStatus status) {
         this.status = status;
     }
 
@@ -50,12 +53,52 @@ public class Task {
         this.project = project;
     }
 
-    public List<String> getActivities() {
-        return activities;
+    public List<TaskHistoryItem> getHistory() {
+        return history;
     }
 
-    public void setActivities(List<String> activities) {
-        this.activities = activities;
+    public void setHistory(List<TaskHistoryItem> history) {
+        this.history = history;
+    }
+
+    public boolean isRunning() {
+        return history.stream().anyMatch(TaskHistoryItem::isRunning);
+    }
+
+    private TaskHistoryItem getCurrentRunningItem() {
+        return history.stream()
+            .filter(TaskHistoryItem::isRunning)
+        .findFirst()
+        .orElse(null);
+}
+
+    public void start() {
+    TaskHistoryItem current = getCurrentRunningItem();
+    
+    if (current != null) {
+        throw new IllegalStateException("Tarefa já está em execução");
+    }
+
+    this.status = TaskStatus.IN_PROGRESS;
+    TaskHistoryItem item = new TaskHistoryItem();
+    item.setStartAt(LocalDateTime.now());
+    this.history.add(item);
+    }
+
+    public void stop() {
+    TaskHistoryItem current = getCurrentRunningItem();
+
+    if (current == null) {
+        throw new IllegalStateException("Task não está em execução");
+    }
+
+    current.setEndAt(LocalDateTime.now());
+}
+
+public Duration getTotalTime() {
+        return history.stream()
+            .map(TaskHistoryItem::getDuration)
+            .reduce(Duration.ZERO, Duration::plus);
     }
 
 }
