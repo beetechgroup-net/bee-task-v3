@@ -1,9 +1,31 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-app-bg: #f5f1e8;
+  --color-app-bg-strong: #ebe4d7;
+  --color-surface: #fffdf8;
+  --color-surface-muted: #f6efe2;
+  --color-border-soft: #e7dcc9;
+  --color-border-strong: #cdbba0;
+  --color-text-main: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-brand: #0f766e;
+  --color-brand-strong: #115e59;
+  --color-brand-soft: #ccfbf1;
+  --color-accent: #d97706;
+  --color-accent-soft: #ffedd5;
+
+  --shadow-panel:
+    0 22px 60px rgba(79, 62, 35, 0.08), 0 6px 18px rgba(79, 62, 35, 0.06);
+}
 
 :root {
-  font-family: "Sora", "Avenir Next", "Segoe UI", sans-serif;
-  color: #0f172a;
-  background: #e2e8f0;
+  color: var(--color-text-main);
+  background-color: var(--color-app-bg);
+  font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -17,10 +39,13 @@
 html,
 body,
 #root {
-  margin: 0;
   min-height: 100%;
 }
 
 body {
-  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(217, 119, 6, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.14), transparent 24%),
+    linear-gradient(180deg, var(--color-app-bg) 0%, #f8f5ef 100%);
 }
