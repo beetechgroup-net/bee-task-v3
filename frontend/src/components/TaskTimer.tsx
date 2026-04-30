@@ -1,5 +1,5 @@
 import { differenceInSeconds, parseISO } from 'date-fns'
-import { Play, Square } from 'lucide-react'
+import { Clock, Play, Square } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { taskService } from '../services/taskService'
@@ -96,37 +96,54 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-app-bg/50 p-2 pl-3">
+    <div className={cn(
+      "group relative flex items-center gap-3 overflow-hidden rounded-2xl border p-2 transition-all duration-500",
+      runningItem 
+        ? "border-brand/30 bg-brand/5 shadow-xl shadow-brand/10" 
+        : "border-border-soft bg-surface shadow-sm hover:border-brand/20 hover:bg-app-bg/30"
+    )}>
+      {/* Active Indicator Pulse */}
+      {runningItem && (
+        <div className="absolute left-0 top-0 h-full w-1 bg-brand animate-pulse" />
+      )}
+
+      <div className={cn(
+        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-500",
+        runningItem ? "bg-brand text-white scale-110 shadow-lg shadow-brand/30" : "bg-app-bg text-text-muted group-hover:bg-white"
+      )}>
+        <Clock size={18} className={runningItem ? "animate-spin [animation-duration:3s]" : ""} />
+      </div>
+
       <div className="flex flex-col">
-        <span className="text-[10px] font-black uppercase tracking-wider text-text-muted/60">
-          Tempo Gasto
+        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted/60">
+          {runningItem ? 'Contagem Ativa' : 'Tempo Total'}
         </span>
         <span className={cn(
-          "font-mono text-sm font-bold tabular-nums",
+          "text-base font-black tabular-nums tracking-tight transition-colors duration-500",
           runningItem ? "text-brand" : "text-text-main"
         )}>
           {formatDuration(displaySeconds)}
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5 ml-auto">
+      <div className="ml-auto pr-1">
         {runningItem ? (
           <button
             onClick={handleStop}
             disabled={isActionLoading}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500 text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 active:scale-95 disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500 text-white shadow-lg shadow-rose-500/30 transition-all hover:scale-110 hover:bg-rose-600 active:scale-90 disabled:opacity-50"
             title="Parar Cronômetro"
           >
-            <Square size={14} fill="currentColor" />
+            <Square size={16} fill="currentColor" />
           </button>
         ) : (
           <button
             onClick={handleStart}
             disabled={isActionLoading}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white shadow-lg shadow-brand/20 transition-all hover:bg-brand-strong active:scale-95 disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white shadow-lg shadow-brand/30 transition-all hover:scale-110 hover:bg-brand-strong active:scale-90 disabled:opacity-50"
             title="Iniciar Cronômetro"
           >
-            <Play size={14} fill="currentColor" className="ml-0.5" />
+            <Play size={16} fill="currentColor" className="ml-0.5" />
           </button>
         )}
       </div>

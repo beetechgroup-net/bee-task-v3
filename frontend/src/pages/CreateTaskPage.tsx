@@ -109,7 +109,7 @@ export function CreateTaskPage() {
 
           <div className="mt-8 flex flex-col gap-3">
             <Link
-              to="/tasks"
+              to="/"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand py-3 font-bold text-white shadow-lg shadow-brand/20 transition-all hover:bg-brand-strong"
             >
               Ver Minhas Tarefas
@@ -130,7 +130,7 @@ export function CreateTaskPage() {
     <div className="mx-auto max-w-3xl pb-20">
       <div className="mb-8 flex items-center justify-between">
         <Link
-          to="/tasks"
+          to="/"
           className="inline-flex items-center gap-2 text-sm font-bold text-text-muted transition-colors hover:text-brand"
         >
           <ArrowLeft size={16} />
@@ -244,7 +244,7 @@ export function CreateTaskPage() {
 
           <div className="mt-10 flex items-center justify-end gap-4">
             <Link
-              to="/tasks"
+              to="/"
               className="px-6 py-3 text-sm font-bold text-text-muted hover:text-text-main"
             >
               Cancelar

@@ -118,7 +118,7 @@ export function TaskBoardPage() {
             <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
           </button>
           <Link
-            to="/"
+            to="/new"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-strong active:scale-95"
           >
             <Plus size={20} />

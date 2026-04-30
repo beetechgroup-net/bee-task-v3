@@ -34,16 +34,16 @@ export function AppShell() {
 
             <nav className="hidden items-center gap-1 md:flex">
               <NavLink to="/" end className={navLinkClassName}>
-                <PlusCircle size={18} />
-                Nova Tarefa
+                <ListTodo size={18} />
+                Minhas Tarefas
               </NavLink>
               <NavLink to="/board" className={navLinkClassName}>
                 <Columns size={18} />
                 Quadro
               </NavLink>
-              <NavLink to="/tasks" className={navLinkClassName}>
-                <ListTodo size={18} />
-                Minhas Tarefas
+              <NavLink to="/new" className={navLinkClassName}>
+                <PlusCircle size={18} />
+                Nova Tarefa
               </NavLink>
             </nav>
           </div>
@@ -73,16 +73,16 @@ export function AppShell() {
       <footer className="border-t border-border-soft bg-surface py-6 md:hidden">
         <nav className="flex justify-around px-4">
           <NavLink to="/" end className={navLinkClassName}>
-            <PlusCircle size={18} />
-            Criar
+            <ListTodo size={18} />
+            Tarefas
           </NavLink>
           <NavLink to="/board" className={navLinkClassName}>
             <Columns size={18} />
             Quadro
           </NavLink>
-          <NavLink to="/tasks" className={navLinkClassName}>
-            <ListTodo size={18} />
-            Tarefas
+          <NavLink to="/new" className={navLinkClassName}>
+            <PlusCircle size={18} />
+            Criar
           </NavLink>
         </nav>
       </footer>

@@ -12,11 +12,11 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <CreateTaskPage />,
+        element: <TaskListPage />,
       },
       {
-        path: 'tasks',
-        element: <TaskListPage />,
+        path: 'new',
+        element: <CreateTaskPage />,
       },
       {
         path: 'board',

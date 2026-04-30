@@ -93,14 +93,7 @@ export function TaskListPage() {
     })
   }, [tasks, searchQuery, statusFilter])
 
-  const stats = useMemo(() => {
-    return {
-      total: tasks.length,
-      completed: tasks.filter((t) => t.status === 'COMPLETED').length,
-      inProgress: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
-      pending: tasks.filter((t) => t.status === 'NOT_STARTED').length,
-    }
-  }, [tasks])
+
 
   return (
     <div className="space-y-8 pb-12">
@@ -115,7 +108,7 @@ export function TaskListPage() {
           </p>
         </div>
         <Link
-          to="/"
+          to="/new"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-strong active:scale-95"
         >
           <Plus size={20} />
@@ -123,46 +116,7 @@ export function TaskListPage() {
         </Link>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: 'Total', value: stats.total, icon: Layers, color: 'text-text-main' },
-          {
-            label: 'Em Andamento',
-            value: stats.inProgress,
-            icon: Clock,
-            color: 'text-amber-600',
-          },
-          {
-            label: 'Concluídas',
-            value: stats.completed,
-            icon: CheckCircle2,
-            color: 'text-emerald-600',
-          },
-          {
-            label: 'Pendentes',
-            value: stats.pending,
-            icon: AlertCircle,
-            color: 'text-brand',
-          },
-        ].map((stat, i) => (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            key={stat.label}
-            className="rounded-2xl border border-border-soft bg-surface p-5 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <stat.icon size={20} className={stat.color} />
-              <span className="text-xs font-bold uppercase tracking-wider text-text-muted">
-                {stat.label}
-              </span>
-            </div>
-            <p className="mt-4 text-3xl font-black text-text-main">{stat.value}</p>
-          </motion.div>
-        ))}
-      </div>
+
 
       {/* Toolbar */}
       <div className="flex flex-col gap-4 rounded-2xl border border-border-soft bg-surface p-4 shadow-sm lg:flex-row lg:items-center">
