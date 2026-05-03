@@ -1,15 +1,14 @@
-package net.beetechgroup.beetask.usecase.task.create;
+package net.beetechgroup.beetask.interfaceadapters.controllers.task;
 
 import java.util.List;
 
 import net.beetechgroup.beetask.entities.task.TaskStatus;
 
-public record CreateTaskOutput(
+public record CreateTaskResponse(
                 Long id,
                 String title,
                 String description,
                 TaskStatus status,
                 String project,
-                List<TaskHistoryItemOutput> history) {
-
+                List<TaskHistoryItemResponse> history) {
 }

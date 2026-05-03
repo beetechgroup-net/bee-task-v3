@@ -9,8 +9,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import net.beetechgroup.beetask.entities.TaskStatus;
+import net.beetechgroup.beetask.entities.Project;
+import net.beetechgroup.beetask.entities.task.TaskStatus;
 
 @Entity
 @Table(name = "tasks")
@@ -21,7 +23,10 @@ public class TaskEntity {
     private String title;
     private String description;
     private TaskStatus status;
-    private String project;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private ProjectEntity project;
     @ElementCollection
     @CollectionTable(name = "task_history", joinColumns = @JoinColumn(name = "task_id"))
     private List<TaskHistoryItemEntity> history;
@@ -66,11 +71,11 @@ public class TaskEntity {
         this.status = status;
     }
 
-    public String getProject() {
+    public ProjectEntity getProject() {
         return project;
     }
 
-    public void setProject(String project) {
+    public void setProject(ProjectEntity project) {
         this.project = project;
     }
 

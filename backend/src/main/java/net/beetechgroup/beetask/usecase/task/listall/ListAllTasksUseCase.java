@@ -1,7 +1,8 @@
 package net.beetechgroup.beetask.usecase.task.listall;
 
-import net.beetechgroup.beetask.entities.Task;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.task.create.CreateTaskMapper;
+import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class ListAllTasksUseCase {
         this.taskRepository = taskRepository;
     }
 
-    public List<Task> execute() {
-        return taskRepository.findAllTasks();
+    public List<CreateTaskOutput> execute() {
+        return taskRepository.findAllTasks().stream().map(CreateTaskMapper::toCreateTaskOutput).toList();
     }
 }

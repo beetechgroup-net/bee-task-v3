@@ -1,4 +1,4 @@
-package net.beetechgroup.beetask.entities;
+package net.beetechgroup.beetask.entities.task;
 
 public enum TaskStatus {
     NOT_STARTED("NOT_STARTED"),

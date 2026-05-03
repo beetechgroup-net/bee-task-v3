@@ -1,15 +1,17 @@
-package net.beetechgroup.beetask.entities;
+package net.beetechgroup.beetask.entities.task;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import net.beetechgroup.beetask.entities.Project;
 
 public class Task {
     private Long id;
     private String title;
     private String description;
     private TaskStatus status;
-    private String project;
+    private Project project;
     private List<TaskHistoryItem> history = new ArrayList<>();
 
     public Long getId() {
@@ -41,14 +43,26 @@ public class Task {
     }
 
     public void setStatus(TaskStatus status) {
+        if (this.status == status) return;
+
+        if (status == TaskStatus.IN_PROGRESS) {
+            if (!isRunning()) {
+                start();
+            }
+        } else if (this.status == TaskStatus.IN_PROGRESS || isRunning()) {
+            if (isRunning()) {
+                stop();
+            }
+        }
+
         this.status = status;
     }
 
-    public String getProject() {
+    public Project getProject() {
         return project;
     }
 
-    public void setProject(String project) {
+    public void setProject(Project project) {
         this.project = project;
     }
 

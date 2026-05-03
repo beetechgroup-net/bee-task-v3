@@ -1,7 +1,9 @@
 package net.beetechgroup.beetask.usecase.task.stop;
 
-import net.beetechgroup.beetask.entities.Task;
+import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.task.create.CreateTaskMapper;
+import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 
 public class StopTaskUseCase {
 
@@ -11,9 +13,9 @@ public class StopTaskUseCase {
         this.taskRepository = taskRepository;
     }
 
-    public Task execute(StopTaskInput input) {
+    public CreateTaskOutput execute(StopTaskInput input) {
         Task task = taskRepository.findTaskById(input.id());
         task.stop();
-        return taskRepository.saveTask(task);
+        return CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
     }
 }

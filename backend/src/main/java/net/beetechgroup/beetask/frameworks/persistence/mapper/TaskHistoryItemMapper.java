@@ -1,6 +1,6 @@
 package net.beetechgroup.beetask.frameworks.persistence.mapper;
 
-import net.beetechgroup.beetask.entities.TaskHistoryItem;
+import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
 import net.beetechgroup.beetask.frameworks.persistence.entities.TaskHistoryItemEntity;
 
 public class TaskHistoryItemMapper {

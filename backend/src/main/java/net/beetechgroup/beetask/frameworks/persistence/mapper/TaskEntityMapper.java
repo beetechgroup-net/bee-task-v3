@@ -1,10 +1,11 @@
 package net.beetechgroup.beetask.frameworks.persistence.mapper;
 
 import java.util.ArrayList;
-import net.beetechgroup.beetask.entities.Task;
+
+import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.frameworks.persistence.entities.TaskEntity;
 
-public class TaskMapper {
+public class TaskEntityMapper {
 
     public static TaskEntity toEntity(Task task) {
         TaskEntity entity = new TaskEntity();
@@ -12,7 +13,7 @@ public class TaskMapper {
         entity.setTitle(task.getTitle());
         entity.setDescription(task.getDescription());
         entity.setStatus(task.getStatus());
-        entity.setProject(task.getProject());
+        entity.setProject(ProjectEntityMapper.toEntity(task.getProject()));
         entity.setHistory(new ArrayList<>(task.getHistory().stream().map(TaskHistoryItemMapper::toEntity).toList()));
         return entity;
     }
@@ -25,7 +26,7 @@ public class TaskMapper {
         task.setTitle(entity.getTitle());
         task.setDescription(entity.getDescription());
         task.setStatus(entity.getStatus());
-        task.setProject(entity.getProject());
+        task.setProject(ProjectEntityMapper.toDomain(entity.getProject()));
         task.setHistory(new ArrayList<>(entity.getHistory().stream().map(TaskHistoryItemMapper::toDomain).toList()));
 
         return task;

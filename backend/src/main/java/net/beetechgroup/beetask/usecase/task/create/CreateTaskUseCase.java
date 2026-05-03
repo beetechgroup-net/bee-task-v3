@@ -1,6 +1,7 @@
 package net.beetechgroup.beetask.usecase.task.create;
 
-import net.beetechgroup.beetask.entities.Task;
+import net.beetechgroup.beetask.entities.Project;
+import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 
 public class CreateTaskUseCase {
@@ -10,12 +11,13 @@ public class CreateTaskUseCase {
         this.taskRepository = taskRepository;
     }
 
-    public Task execute(CreateTaskInput input) {
+    public CreateTaskOutput execute(CreateTaskInput input) {
         Task task = new Task();
         task.setTitle(input.title());
         task.setDescription(input.description());
         task.setStatus(input.status());
-        task.setProject(input.project());
-        return taskRepository.saveTask(task);
+        task.setProject(new Project());
+        task.getProject().setId(input.projectId());
+        return CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
     }
 }
