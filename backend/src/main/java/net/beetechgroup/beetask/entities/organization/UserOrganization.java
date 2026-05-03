@@ -6,6 +6,7 @@ public class UserOrganization {
     private User user;
     private Organization organization;
     private UserOrganizationRole role;
+    private UserOrganizationStatus status;
 
     public User getUser() {
         return user;
@@ -29,5 +30,13 @@ public class UserOrganization {
 
     public void setRole(UserOrganizationRole role) {
         this.role = role;
+    }
+
+    public UserOrganizationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(UserOrganizationStatus status) {
+        this.status = status;
     }
 }

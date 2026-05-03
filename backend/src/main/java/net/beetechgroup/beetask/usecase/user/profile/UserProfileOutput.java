@@ -9,6 +9,7 @@ public record UserProfileOutput(
     List<OrganizationProfileOutput> organizations
 ) {
     public record OrganizationProfileOutput(
+        Long id,
         String name,
         List<String> roles
     ) {}

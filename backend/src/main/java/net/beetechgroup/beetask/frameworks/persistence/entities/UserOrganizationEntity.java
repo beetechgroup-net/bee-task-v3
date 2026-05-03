@@ -8,6 +8,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationRole;
+import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 @Entity
 @Table(name = "user_organizations")
@@ -21,7 +24,10 @@ public class UserOrganizationEntity {
     @ManyToOne
     @JoinColumn(name = "organization_id")
     private OrganizationEntity organization;
+    @Enumerated(EnumType.STRING)
     private UserOrganizationRole role;
+    @Enumerated(EnumType.STRING)
+    private UserOrganizationStatus status;
 
     public UserEntity getUser() {
         return user;
@@ -45,5 +51,13 @@ public class UserOrganizationEntity {
 
     public void setRole(UserOrganizationRole role) {
         this.role = role;
+    }
+
+    public UserOrganizationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(UserOrganizationStatus status) {
+        this.status = status;
     }
 }

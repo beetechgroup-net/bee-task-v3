@@ -8,6 +8,7 @@ import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.frameworks.persistence.entities.UserEntity;
 import net.beetechgroup.beetask.frameworks.persistence.mapper.UserEntityMapper;
 import net.beetechgroup.beetask.entities.organization.UserOrganization;
+import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 
@@ -46,6 +47,6 @@ public class UserRepositoryImpl implements UserRepository, PanacheRepository<Use
 
     @Override
     public List<UserOrganization> findUserOrganizations(Long userId) {
-        return userOrganizationRepository.findByUserId(userId);
+        return userOrganizationRepository.findByUserIdAndStatus(userId, UserOrganizationStatus.ACTIVE);
     }
 }

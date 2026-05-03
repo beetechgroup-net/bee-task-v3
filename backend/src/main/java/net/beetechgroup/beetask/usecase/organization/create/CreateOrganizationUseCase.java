@@ -4,6 +4,7 @@ import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.entities.organization.Organization;
 import net.beetechgroup.beetask.entities.organization.UserOrganization;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationRole;
+import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
 import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
@@ -38,6 +39,7 @@ public class CreateOrganizationUseCase {
         userOrganization.setUser(user);
         userOrganization.setOrganization(organization);
         userOrganization.setRole(UserOrganizationRole.OWNER);
+        userOrganization.setStatus(UserOrganizationStatus.ACTIVE);
         userOrganizationRepository.save(userOrganization);
 
         return CreateOrganizationMapper.toCreateOrganizationOutput(organization);
