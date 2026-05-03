@@ -1,26 +1,46 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, Search, Layout } from 'lucide-react'
+import { PlusCircle, Search, Layout, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 interface OnboardingModalProps {
   isOpen: boolean
+  onClose?: () => void
 }
 
-export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen }) => {
+export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose()
+    } else {
+      navigate('/')
+    }
+  }
 
   if (!isOpen) return null
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app-bg/80 backdrop-blur-sm">
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app-bg/80 backdrop-blur-sm"
+        onClick={handleClose}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
           className="w-full max-w-lg bg-surface border border-border-soft rounded-[2.5rem] shadow-panel p-10 overflow-hidden relative"
         >
+          <button 
+            onClick={handleClose}
+            className="absolute top-8 right-8 text-text-muted hover:text-brand transition-colors z-20"
+          >
+            <X size={24} />
+          </button>
+
           {/* Decorations */}
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-brand/10 blur-[80px] rounded-full" />
           <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-accent/10 blur-[80px] rounded-full" />
