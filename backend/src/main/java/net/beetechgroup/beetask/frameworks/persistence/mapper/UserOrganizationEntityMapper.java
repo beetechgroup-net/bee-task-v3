@@ -11,6 +11,7 @@ public class UserOrganizationEntityMapper {
         domain.setUser(UserEntityMapper.toDomain(entity.getUser()));
         domain.setOrganization(OrganizationEntityMapper.toDomain(entity.getOrganization()));
         domain.setRole(entity.getRole());
+        domain.setStatus(entity.getStatus());
         return domain;
     }
 
@@ -20,6 +21,7 @@ public class UserOrganizationEntityMapper {
         entity.setUser(UserEntityMapper.toEntity(domain.getUser()));
         entity.setOrganization(OrganizationEntityMapper.toEntity(domain.getOrganization()));
         entity.setRole(domain.getRole());
+        entity.setStatus(domain.getStatus());
         return entity;
     }
 }

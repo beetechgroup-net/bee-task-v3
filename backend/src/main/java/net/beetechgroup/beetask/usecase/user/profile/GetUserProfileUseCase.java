@@ -27,12 +27,16 @@ public class GetUserProfileUseCase {
         List<UserOrganization> userOrganizations = userRepository.findUserOrganizations(user.getId());
 
         List<UserProfileOutput.OrganizationProfileOutput> orgs = userOrganizations.stream()
-                .collect(Collectors.groupingBy(uo -> uo.getOrganization().getName()))
+                .collect(Collectors.groupingBy(uo -> uo.getOrganization().getId()))
                 .entrySet().stream()
-                .map(entry -> new UserProfileOutput.OrganizationProfileOutput(
+                .map(entry -> {
+                    UserOrganization firstUo = entry.getValue().get(0);
+                    return new UserProfileOutput.OrganizationProfileOutput(
                         entry.getKey(),
+                        firstUo.getOrganization().getName(),
                         entry.getValue().stream().map(uo -> uo.getRole().name()).collect(Collectors.toList())
-                ))
+                    );
+                })
                 .collect(Collectors.toList());
 
         return new UserProfileOutput(

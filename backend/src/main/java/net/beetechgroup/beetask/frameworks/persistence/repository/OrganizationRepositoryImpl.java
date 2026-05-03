@@ -8,6 +8,9 @@ import net.beetechgroup.beetask.frameworks.persistence.entities.OrganizationEnti
 import net.beetechgroup.beetask.frameworks.persistence.mapper.OrganizationEntityMapper;
 import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
 
+import java.util.List;
+import java.util.Optional;
+
 @ApplicationScoped
 public class OrganizationRepositoryImpl implements OrganizationRepository, PanacheRepository<OrganizationEntity> {
 
@@ -23,4 +26,16 @@ public class OrganizationRepositoryImpl implements OrganizationRepository, Panac
         return OrganizationEntityMapper.toDomain(entity);
     }
 
+    @Override
+    public List<Organization> search(String query) {
+        return find("name like ?1", "%" + query + "%").stream()
+                .map(OrganizationEntityMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<Organization> findOrganizationById(Long id) {
+        return findByIdOptional(id)
+                .map(OrganizationEntityMapper::toDomain);
+    }
 }
