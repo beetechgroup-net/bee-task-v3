@@ -22,6 +22,12 @@ import net.beetechgroup.beetask.usecase.user.create.CreateUserUseCase;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import io.quarkus.security.Authenticated;
+import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.ws.rs.GET;
+import net.beetechgroup.beetask.usecase.user.profile.GetUserProfileUseCase;
+import net.beetechgroup.beetask.usecase.user.profile.UserProfileOutput;
+
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -36,6 +42,21 @@ public class AuthController {
 
     @Inject
     RefreshTokenUseCase refreshTokenUseCase;
+
+    @Inject
+    GetUserProfileUseCase getUserProfileUseCase;
+
+    @Inject
+    SecurityIdentity securityIdentity;
+
+    @Path("/me")
+    @GET
+    @Authenticated
+    @Operation(summary = "Get current user profile", description = "Returns details of the logged in user")
+    public UserProfileOutput me() {
+        String email = securityIdentity.getPrincipal().getName();
+        return getUserProfileUseCase.execute(email);
+    }
 
     @Path("/register")
     @POST

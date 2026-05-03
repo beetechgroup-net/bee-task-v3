@@ -13,4 +13,13 @@ public class UserOrganizationEntityMapper {
         domain.setRole(entity.getRole());
         return domain;
     }
+
+    public static UserOrganizationEntity toEntity(UserOrganization domain) {
+        if (domain == null) return null;
+        UserOrganizationEntity entity = new UserOrganizationEntity();
+        entity.setUser(UserEntityMapper.toEntity(domain.getUser()));
+        entity.setOrganization(OrganizationEntityMapper.toEntity(domain.getOrganization()));
+        entity.setRole(domain.getRole());
+        return entity;
+    }
 }

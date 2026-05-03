@@ -17,7 +17,6 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;

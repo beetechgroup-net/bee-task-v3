@@ -20,10 +20,12 @@ public class RefreshTokenUseCase {
 
     private final UserRepository userRepository;
     private final JWTParser jwtParser;
+    private final String issuer;
 
-    public RefreshTokenUseCase(UserRepository userRepository, JWTParser jwtParser) {
+    public RefreshTokenUseCase(UserRepository userRepository, JWTParser jwtParser, String issuer) {
         this.userRepository = userRepository;
         this.jwtParser = jwtParser;
+        this.issuer = issuer;
     }
 
     public LoginOutput execute(RefreshTokenInput input) {
@@ -46,7 +48,7 @@ public class RefreshTokenUseCase {
             Set<String> groups = new HashSet<>();
             userOrganizations.forEach(uo -> groups.add(uo.getRole().name()));
 
-            String newToken = Jwt.issuer("https://beetech.net")
+            String newToken = Jwt.issuer(this.issuer)
                     .upn(user.getEmail())
                     .groups(groups)
                     .claim("name", user.getName())
@@ -54,7 +56,7 @@ public class RefreshTokenUseCase {
                     .sign();
 
             // Generate a new refresh token (also a JWT but with longer expiration)
-            String newRefreshToken = Jwt.issuer("https://beetech.net")
+            String newRefreshToken = Jwt.issuer(this.issuer)
                     .upn(user.getEmail())
                     .expiresIn(86400) // 24 hours
                     .sign();
