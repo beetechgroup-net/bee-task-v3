@@ -1,6 +1,8 @@
-import { Layout, ListTodo, PlusCircle, Columns, LogOut, Settings } from 'lucide-react'
+import React, { useState } from 'react'
+import { Layout, ListTodo, PlusCircle, Columns, LogOut, Settings, Building2 } from 'lucide-react'
 import { NavLink, Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { OnboardingModal } from './OnboardingModal'
 
 import { cn } from '../lib/utils'
 
@@ -14,6 +16,7 @@ const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
 
 export function AppShell() {
   const { user, isAuthenticated, isLoading, logout } = useAuth()
+  const [showOrgModal, setShowOrgModal] = useState(false)
 
   if (isLoading) {
     return (
@@ -60,6 +63,16 @@ export function AppShell() {
                 <PlusCircle size={18} />
                 Nova Tarefa
               </NavLink>
+              <button 
+                onClick={() => setShowOrgModal(true)}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200',
+                  'text-text-muted hover:bg-surface-muted hover:text-text-main'
+                )}
+              >
+                <Building2 size={18} />
+                Organizações
+              </button>
               {user?.organizations.some(org => org.roles.includes('OWNER') || org.roles.includes('ADMIN')) && (
                 <NavLink to="/admin" className={navLinkClassName}>
                   <Settings size={18} />
@@ -114,6 +127,16 @@ export function AppShell() {
             <PlusCircle size={18} />
             Criar
           </NavLink>
+          <button 
+            onClick={() => setShowOrgModal(true)}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200',
+              'text-text-muted hover:bg-surface-muted hover:text-text-main'
+            )}
+          >
+            <Building2 size={18} />
+            Org
+          </button>
           {user?.organizations.some(org => org.roles.includes('OWNER') || org.roles.includes('ADMIN')) && (
             <NavLink to="/admin" className={navLinkClassName}>
               <Settings size={18} />
@@ -122,6 +145,7 @@ export function AppShell() {
           )}
         </nav>
       </footer>
+      <OnboardingModal isOpen={showOrgModal} onClose={() => setShowOrgModal(false)} />
     </div>
   )
 }
