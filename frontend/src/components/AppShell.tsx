@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Layout, ListTodo, PlusCircle, Columns, LogOut, Settings, Building2, Clock } from 'lucide-react'
+import { Layout, ListTodo, PlusCircle, Columns, LogOut, Settings, Building2, Clock, ChevronDown, Shield } from 'lucide-react'
 import { NavLink, Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { OnboardingModal } from './OnboardingModal'
 
 import { cn } from '../lib/utils'
+import { motion } from 'framer-motion'
 
 const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -15,8 +16,9 @@ const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   )
 
 export function AppShell() {
-  const { user, isAuthenticated, isLoading, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, logout, activeOrg, setActiveOrg } = useAuth()
   const [showOrgModal, setShowOrgModal] = useState(false)
+  const [showOrgSwitcher, setShowOrgSwitcher] = useState(false)
 
   if (isLoading) {
     return (
@@ -49,6 +51,92 @@ export function AppShell() {
                 </span>
               </div>
             </NavLink>
+
+            <div className="h-8 w-px bg-border-soft hidden lg:block" />
+
+            {/* Org Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setShowOrgSwitcher(!showOrgSwitcher)}
+                className="flex items-center gap-2 rounded-xl border border-border-soft bg-surface-muted/50 px-4 py-2 text-sm font-bold transition-all hover:bg-surface-muted group"
+              >
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand/10 text-brand group-hover:bg-brand group-hover:text-white transition-all">
+                  <Building2 size={14} />
+                </div>
+                <div className="text-left hidden sm:block">
+                  <span className="block text-xs text-text-main leading-tight truncate max-w-[120px]">
+                    {activeOrg?.name || 'Selecionar Org'}
+                  </span>
+                  <span className="block text-[10px] text-text-muted font-black uppercase tracking-tighter leading-none">
+                    {activeOrg?.roles[0] || 'Visitante'}
+                  </span>
+                </div>
+                <ChevronDown size={14} className={cn("text-text-muted transition-transform", showOrgSwitcher && "rotate-180")} />
+              </button>
+
+              {showOrgSwitcher && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowOrgSwitcher(false)} 
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute left-0 mt-2 z-50 w-64 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
+                  >
+                    <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-muted">
+                      Suas Organizações
+                    </div>
+                    <div className="grid gap-1 mt-1">
+                      {user?.organizations.map((org) => (
+                        <button
+                          key={org.id}
+                          onClick={() => {
+                            setActiveOrg(org.id);
+                            setShowOrgSwitcher(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition-all text-left",
+                            org.id === activeOrg?.id
+                              ? "bg-brand/10 text-brand"
+                              : "hover:bg-surface-muted text-text-muted hover:text-text-main"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "flex h-8 w-8 items-center justify-center rounded-lg font-bold text-xs shadow-sm",
+                              org.id === activeOrg?.id ? "bg-brand text-white" : "bg-white border border-border-soft text-text-muted"
+                            )}>
+                              {org.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="block text-sm font-bold leading-none">{org.name}</span>
+                              <span className="text-[10px] font-medium opacity-70">
+                                {org.roles.join(', ')}
+                              </span>
+                            </div>
+                          </div>
+                          {org.id === activeOrg?.id && <div className="h-1.5 w-1.5 rounded-full bg-brand" />}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-2 border-t border-border-soft p-1">
+                      <button
+                        onClick={() => {
+                          setShowOrgModal(true);
+                          setShowOrgSwitcher(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-brand hover:bg-brand/5 transition-all"
+                      >
+                        <PlusCircle size={14} />
+                        Gerenciar Organizações
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </div>
 
             <nav className="hidden items-center gap-1 md:flex">
               <NavLink to="/" end className={navLinkClassName}>
