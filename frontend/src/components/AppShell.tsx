@@ -1,4 +1,4 @@
-import { Layout, ListTodo, PlusCircle, Columns, LogOut } from 'lucide-react'
+import { Layout, ListTodo, PlusCircle, Columns, LogOut, Settings } from 'lucide-react'
 import { NavLink, Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -60,6 +60,12 @@ export function AppShell() {
                 <PlusCircle size={18} />
                 Nova Tarefa
               </NavLink>
+              {user?.organizations.some(org => org.roles.includes('OWNER') || org.roles.includes('ADMIN')) && (
+                <NavLink to="/admin" className={navLinkClassName}>
+                  <Settings size={18} />
+                  Gestão
+                </NavLink>
+              )}
             </nav>
           </div>
 
@@ -108,6 +114,12 @@ export function AppShell() {
             <PlusCircle size={18} />
             Criar
           </NavLink>
+          {user?.organizations.some(org => org.roles.includes('OWNER') || org.roles.includes('ADMIN')) && (
+            <NavLink to="/admin" className={navLinkClassName}>
+              <Settings size={18} />
+              Gestão
+            </NavLink>
+          )}
         </nav>
       </footer>
     </div>

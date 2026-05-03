@@ -11,8 +11,9 @@ interface AuthContextType {
   user: LoginResponse | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,6 +95,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const response = await authService.login(email, password);
     localStorage.setItem("user", JSON.stringify(response));
     setUser(response);
+    return response;
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await authService.me();
+      // We keep the old tokens since /me might not return new ones 
+      // or we just update the profile part.
+      // But actually, let's merge the updated profile data into the stored user.
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        const updatedUser = { ...userData, ...response };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      }
+    } catch (error) {
+      console.error("Failed to refresh user profile", error);
+    }
   };
 
   return (
@@ -104,6 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoading,
         login,
         logout,
+        refreshUser,
       }}
     >
       {children}

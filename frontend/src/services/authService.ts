@@ -9,6 +9,7 @@ export type LoginResponse = {
   expiresIn: number // seconds
   issuedAt: string // ISO date
   organizations: {
+    id: number
     name: string
     roles: string[]
   }[]
@@ -35,4 +36,8 @@ export const authService = {
       body: { refreshToken },
     })
   },
+
+  async me(): Promise<LoginResponse> {
+    return apiFetch<LoginResponse>('/auth/me')
+  }
 }
