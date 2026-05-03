@@ -3,11 +3,13 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Mail, Lock, LogIn, Layout } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { OnboardingModal } from '../components/OnboardingModal'
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const navigate = useNavigate()
   const { login } = useAuth()
 
@@ -16,8 +18,12 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true)
 
     try {
-      await login(email, password)
-      navigate('/')
+      const response = await login(email, password)
+      if (response.organizations.length === 0) {
+        setShowOnboarding(true)
+      } else {
+        navigate('/')
+      }
     } catch (error) {
       console.error('Login failed', error)
       alert('Erro ao fazer login. Tente novamente.')
@@ -110,6 +116,7 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </motion.div>
+      <OnboardingModal isOpen={showOnboarding} />
     </div>
   )
 }

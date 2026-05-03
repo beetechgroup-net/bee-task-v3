@@ -11,10 +11,18 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
 export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
   const { body, headers, ...rest } = options
 
+  const storedUser = localStorage.getItem('user')
+  let authHeader = {}
+  if (storedUser) {
+    const userData = JSON.parse(storedUser)
+    authHeader = { 'Authorization': `Bearer ${userData.jwt}` }
+  }
+
   const response = await fetch(buildUrl(path), {
     ...rest,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeader,
       ...headers,
     },
     body: body !== undefined && body !== null && !(body instanceof FormData)
