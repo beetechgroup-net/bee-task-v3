@@ -109,7 +109,7 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
 
       <div className={cn(
         "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-500",
-        runningItem ? "bg-brand text-white scale-110 shadow-lg shadow-brand/30" : "bg-app-bg text-text-muted group-hover:bg-white"
+        runningItem ? "bg-brand text-white scale-110 shadow-lg shadow-brand/30" : "bg-app-bg text-text-muted group-hover:bg-surface"
       )}>
         <Clock size={18} className={runningItem ? "animate-spin [animation-duration:3s]" : ""} />
       </div>
@@ -131,7 +131,7 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
           <button
             onClick={handleStop}
             disabled={isActionLoading}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500 text-white shadow-lg shadow-rose-500/30 transition-all hover:scale-110 hover:bg-rose-600 active:scale-90 disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger text-white shadow-lg shadow-danger/30 transition-all hover:scale-110 hover:bg-danger active:scale-90 disabled:opacity-50"
             title="Parar Cronômetro"
           >
             <Square size={16} fill="currentColor" />

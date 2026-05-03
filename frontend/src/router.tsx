@@ -1,13 +1,23 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from "react-router-dom";
 
-import { AppShell } from './components/AppShell'
-import { CreateTaskPage } from './pages/CreateTaskPage'
-import { TaskListPage } from './pages/TaskListPage'
-import { TaskBoardPage } from './pages/TaskBoardPage'
+import { AppShell } from "./components/AppShell";
+import { CreateTaskPage } from "./pages/CreateTaskPage";
+import { TaskListPage } from "./pages/TaskListPage";
+import { TaskBoardPage } from "./pages/TaskBoardPage";
+import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/register",
+    element: <RegisterPage />,
+  },
+  {
+    path: "/",
     element: <AppShell />,
     children: [
       {
@@ -15,13 +25,13 @@ export const router = createBrowserRouter([
         element: <TaskListPage />,
       },
       {
-        path: 'new',
+        path: "new",
         element: <CreateTaskPage />,
       },
       {
-        path: 'board',
+        path: "board",
         element: <TaskBoardPage />,
       },
     ],
   },
-])
+]);

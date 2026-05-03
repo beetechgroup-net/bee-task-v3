@@ -5,7 +5,7 @@ function buildUrl(path: string) {
 }
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
-  body?: BodyInit | Record<string, unknown> | null
+  body?: any
 }
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
@@ -17,7 +17,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
       'Content-Type': 'application/json',
       ...headers,
     },
-    body: body && typeof body === 'object' && !(body instanceof FormData)
+    body: body !== undefined && body !== null && !(body instanceof FormData)
       ? JSON.stringify(body)
       : body,
   })

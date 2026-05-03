@@ -18,6 +18,13 @@
   --color-accent: #d97706;
   --color-accent-soft: #ffedd5;
 
+  --color-success: #10b981;
+  --color-success-soft: #ecfdf5;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fffbeb;
+  --color-danger: #ef4444;
+  --color-danger-soft: #fef2f2;
+
   --shadow-panel:
     0 22px 60px rgba(79, 62, 35, 0.08), 0 6px 18px rgba(79, 62, 35, 0.06);
 }

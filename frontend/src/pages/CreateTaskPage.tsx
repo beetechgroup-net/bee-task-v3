@@ -98,7 +98,7 @@ export function CreateTaskPage() {
               {createdTask.title}
             </h4>
             <div className="mt-3 flex items-center gap-2">
-              <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold text-brand shadow-sm">
+              <span className="rounded-md bg-surface px-2 py-1 text-[10px] font-bold text-brand shadow-sm">
                 {TASK_STATUS_LABELS[createdTask.status]}
               </span>
               <span className="text-[10px] font-bold text-text-muted">
@@ -145,7 +145,7 @@ export function CreateTaskPage() {
       >
         <div className="bg-brand p-8 text-white">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface/20 backdrop-blur-sm">
               <PlusCircle size={24} />
             </div>
             <div>
@@ -236,7 +236,7 @@ export function CreateTaskPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-8 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700"
+              className="mt-8 rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm font-bold text-danger"
             >
               {errorMessage}
             </motion.div>
