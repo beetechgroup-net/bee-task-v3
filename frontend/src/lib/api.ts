@@ -30,10 +30,10 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
       : body,
   })
 
+  const text = await response.text()
   if (!response.ok) {
-    const message = await response.text()
-    throw new Error(message || 'Nao foi possivel concluir a requisicao.')
+    throw new Error(text || 'Nao foi possivel concluir a requisicao.')
   }
 
-  return (await response.json()) as T
+  return text ? (JSON.parse(text) as T) : (undefined as T)
 }
