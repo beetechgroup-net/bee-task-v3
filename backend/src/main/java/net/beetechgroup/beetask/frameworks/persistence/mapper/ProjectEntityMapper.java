@@ -6,6 +6,7 @@ import net.beetechgroup.beetask.frameworks.persistence.entities.ProjectEntity;
 public class ProjectEntityMapper {
 
     public static ProjectEntity toEntity(Project project) {
+        if (project == null) return null;
         ProjectEntity entity = new ProjectEntity();
         entity.setId(project.getId());
         entity.setName(project.getName());

@@ -16,8 +16,11 @@ public class CreateTaskUseCase {
         task.setTitle(input.title());
         task.setDescription(input.description());
         task.setStatus(input.status());
-        task.setProject(new Project());
-        task.getProject().setId(input.projectId());
+        if (input.projectId() != null) {
+            Project project = new Project();
+            project.setId(input.projectId());
+            task.setProject(project);
+        }
         return CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
     }
 }
