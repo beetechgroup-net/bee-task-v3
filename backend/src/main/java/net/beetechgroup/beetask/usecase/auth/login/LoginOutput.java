@@ -1,8 +1,8 @@
-package net.beetechgroup.beetask.interfaceadapters.controllers.auth;
+package net.beetechgroup.beetask.usecase.auth.login;
 
 import java.util.List;
 
-public record LoginResponse(
+public record LoginOutput(
     String name,
     String email,
     String photo,
@@ -10,9 +10,9 @@ public record LoginResponse(
     String refreshToken,
     Long expiresIn,
     String issuedAt,
-    List<Organization> organizations
+    List<OrganizationOutput> organizations
 ) {
-    public record Organization(
+    public record OrganizationOutput(
         String name,
         List<String> roles
     ) {}
