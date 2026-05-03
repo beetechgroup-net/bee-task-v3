@@ -116,7 +116,13 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </motion.div>
-      <OnboardingModal isOpen={showOnboarding} />
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={() => {
+          setShowOnboarding(false)
+          navigate('/')
+        }} 
+      />
     </div>
   )
 }
