@@ -4,8 +4,8 @@ import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationIn
 import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationOutput;
 
 public class OrganizationControllerMapper {
-    public static CreateOrganizationInput toCreateOrganizationInput(CreateOrganizationRequest request) {
-        return new CreateOrganizationInput(request.name());
+    public static CreateOrganizationInput toCreateOrganizationInput(CreateOrganizationRequest request, String userEmail) {
+        return new CreateOrganizationInput(request.name(), userEmail);
     }
 
     public static CreateOrganizationResponse toCreateOrganizationResponse(CreateOrganizationOutput output) {

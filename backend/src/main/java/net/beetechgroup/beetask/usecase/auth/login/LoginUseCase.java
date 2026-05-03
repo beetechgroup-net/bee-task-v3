@@ -15,9 +15,11 @@ import java.util.stream.Collectors;
 public class LoginUseCase {
 
     private final UserRepository userRepository;
+    private final String issuer;
 
-    public LoginUseCase(UserRepository userRepository) {
+    public LoginUseCase(UserRepository userRepository, String issuer) {
         this.userRepository = userRepository;
+        this.issuer = issuer;
     }
 
     public LoginOutput execute(LoginInput input) {
@@ -39,7 +41,7 @@ public class LoginUseCase {
         Set<String> groups = new HashSet<>();
         userOrganizations.forEach(uo -> groups.add(uo.getRole().name()));
 
-        String token = Jwt.issuer("https://beetech.net")
+        String token = Jwt.issuer(this.issuer)
                 .upn(user.getEmail())
                 .groups(groups)
                 .claim("name", user.getName())
@@ -55,7 +57,7 @@ public class LoginUseCase {
                 ))
                 .collect(Collectors.toList());
 
-        String refreshToken = Jwt.issuer("https://beetech.net")
+        String refreshToken = Jwt.issuer(this.issuer)
                 .upn(user.getEmail())
                 .expiresIn(86400) // 24 hours
                 .sign();

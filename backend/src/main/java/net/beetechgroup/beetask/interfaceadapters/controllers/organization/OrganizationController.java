@@ -1,5 +1,7 @@
 package net.beetechgroup.beetask.interfaceadapters.controllers.organization;
 
+import io.quarkus.security.Authenticated;
+import io.quarkus.security.identity.SecurityIdentity;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.POST;
@@ -13,12 +15,16 @@ public class OrganizationController {
 
     @Inject
     CreateOrganizationUseCase createOrganizationUseCase;
-    
+
+    @Inject
+    SecurityIdentity securityIdentity;
 
     @POST
+    @Authenticated
     @Operation(summary = "Create organization", description = "Creates a new organization")
     public CreateOrganizationResponse createOrganization(CreateOrganizationRequest request) {
-        CreateOrganizationInput input = OrganizationControllerMapper.toCreateOrganizationInput(request);
+        String userEmail = securityIdentity.getPrincipal().getName();
+        CreateOrganizationInput input = OrganizationControllerMapper.toCreateOrganizationInput(request, userEmail);
         CreateOrganizationOutput output = createOrganizationUseCase.execute(input);
         return OrganizationControllerMapper.toCreateOrganizationResponse(output);
     }
