@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Building2, Send, CheckCircle2 } from "lucide-react";
+import { Search, Building2, Send, CheckCircle2, ArrowLeft, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { organizationService } from "../services/organizationService";
 
 interface OrgResult {
@@ -9,6 +10,7 @@ interface OrgResult {
 }
 
 export const JoinOrganizationPage: React.FC = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<OrgResult[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +55,28 @@ export const JoinOrganizationPage: React.FC = () => {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-2xl relative z-10"
       >
-        <div className="bg-surface border border-border-soft p-10 rounded-[2.5rem] shadow-panel">
+        <div className="bg-surface border border-border-soft p-10 rounded-[2.5rem] shadow-panel relative">
+          <div className="absolute top-8 left-8">
+            <button
+              onClick={() => navigate(-1)}
+              className="group flex items-center gap-2 text-text-muted hover:text-brand transition-colors font-semibold"
+            >
+              <div className="w-10 h-10 rounded-xl bg-surface-muted/50 flex items-center justify-center group-hover:bg-brand/10 transition-colors">
+                <ArrowLeft size={18} />
+              </div>
+              <span>Voltar</span>
+            </button>
+          </div>
+
+          <div className="absolute top-8 right-8">
+            <button
+              onClick={() => navigate("/")}
+              className="w-10 h-10 rounded-xl bg-surface-muted/50 text-text-muted hover:bg-brand/10 hover:text-brand flex items-center justify-center transition-all"
+              title="Fechar"
+            >
+              <X size={20} />
+            </button>
+          </div>
           <div className="flex flex-col items-center mb-10 text-center">
             <div className="w-14 h-14 bg-brand text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-brand/20">
               <Search size={28} />
