@@ -9,6 +9,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { CreateOrganizationPage } from "./pages/CreateOrganizationPage";
 import { JoinOrganizationPage } from "./pages/JoinOrganizationPage";
 import { OrganizationAdminPage } from "./pages/OrganizationAdminPage";
+import { MyRequestsPage } from "./pages/MyRequestsPage";
 
 export const router = createBrowserRouter([
   {
@@ -46,6 +47,10 @@ export const router = createBrowserRouter([
       {
         path: "admin",
         element: <OrganizationAdminPage />,
+      },
+      {
+        path: "requests",
+        element: <MyRequestsPage />,
       },
     ],
   },

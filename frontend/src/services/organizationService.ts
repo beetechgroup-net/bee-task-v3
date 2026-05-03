@@ -12,6 +12,12 @@ export interface JoinRequest {
   photo?: string
 }
 
+export interface UserJoinRequest {
+  organizationId: number
+  organizationName: string
+  status: 'PENDING' | 'ACTIVE' | 'REJECTED'
+}
+
 export const organizationService = {
   create: async (name: string): Promise<Organization> => {
     return apiFetch('/organizations', {
@@ -38,5 +44,9 @@ export const organizationService = {
 
   rejectRequest: async (organizationId: number, userId: number): Promise<void> => {
     return apiFetch(`/organizations/${organizationId}/requests/${userId}/reject`, { method: 'PATCH' })
+  },
+
+  getUserRequests: async (): Promise<UserJoinRequest[]> => {
+    return apiFetch<UserJoinRequest[]>('/organizations/my-requests')
   }
 }

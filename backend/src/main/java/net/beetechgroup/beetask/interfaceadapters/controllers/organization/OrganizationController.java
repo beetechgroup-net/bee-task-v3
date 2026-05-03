@@ -10,7 +10,6 @@ import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Response;
 import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationInput;
 import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationOutput;
 import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationUseCase;
@@ -18,6 +17,8 @@ import net.beetechgroup.beetask.usecase.organization.search.SearchOrganizationsU
 import net.beetechgroup.beetask.usecase.organization.search.SearchOrganizationOutput;
 import net.beetechgroup.beetask.usecase.organization.join.RequestJoinOrganizationUseCase;
 import net.beetechgroup.beetask.usecase.organization.requests.ListPendingRequestsUseCase;
+import net.beetechgroup.beetask.usecase.organization.requests.ListUserJoinRequestsUseCase;
+import net.beetechgroup.beetask.usecase.organization.requests.UserJoinRequestOutput;
 import net.beetechgroup.beetask.usecase.organization.requests.JoinRequestOutput;
 import net.beetechgroup.beetask.usecase.organization.requests.HandleJoinRequestUseCase;
 
@@ -37,6 +38,9 @@ public class OrganizationController {
 
     @Inject
     ListPendingRequestsUseCase listPendingRequestsUseCase;
+
+    @Inject
+    ListUserJoinRequestsUseCase listUserJoinRequestsUseCase;
 
     @Inject
     HandleJoinRequestUseCase handleJoinRequestUseCase;
@@ -96,5 +100,14 @@ public class OrganizationController {
     public void rejectRequest(@PathParam("id") Long organizationId, @PathParam("userId") Long userId) {
         String userEmail = securityIdentity.getPrincipal().getName();
         handleJoinRequestUseCase.execute(userEmail, organizationId, new HandleJoinRequestUseCase.Input(userId, false));
+    }
+
+    @GET
+    @Path("/my-requests")
+    @Authenticated
+    @Operation(summary = "List my requests", description = "List all join requests made by the current user")
+    public List<UserJoinRequestOutput> listMyRequests() {
+        String userEmail = securityIdentity.getPrincipal().getName();
+        return listUserJoinRequestsUseCase.execute(userEmail);
     }
 }
