@@ -10,6 +10,7 @@ import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
 import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationInput;
 import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationOutput;
 import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationUseCase;
