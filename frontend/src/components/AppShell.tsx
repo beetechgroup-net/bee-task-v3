@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Layout, ListTodo, PlusCircle, Columns, LogOut, Settings, Building2 } from 'lucide-react'
+import { Layout, ListTodo, PlusCircle, Columns, LogOut, Settings, Building2, Clock } from 'lucide-react'
 import { NavLink, Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { OnboardingModal } from './OnboardingModal'
@@ -58,6 +58,10 @@ export function AppShell() {
               <NavLink to="/board" className={navLinkClassName}>
                 <Columns size={18} />
                 Quadro
+              </NavLink>
+              <NavLink to="/requests" className={navLinkClassName}>
+                <Clock size={18} />
+                Solicitações
               </NavLink>
               <NavLink to="/new" className={navLinkClassName}>
                 <PlusCircle size={18} />
@@ -122,6 +126,10 @@ export function AppShell() {
           <NavLink to="/board" className={navLinkClassName}>
             <Columns size={18} />
             Quadro
+          </NavLink>
+          <NavLink to="/requests" className={navLinkClassName}>
+            <Clock size={18} />
+            Pedidos
           </NavLink>
           <NavLink to="/new" className={navLinkClassName}>
             <PlusCircle size={18} />
