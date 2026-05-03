@@ -1,5 +1,6 @@
-import { Layout, ListTodo, PlusCircle, Columns } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Layout, ListTodo, PlusCircle, Columns, LogOut } from 'lucide-react'
+import { NavLink, Outlet, Navigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 import { cn } from '../lib/utils'
 
@@ -12,6 +13,20 @@ const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
   )
 
 export function AppShell() {
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-app-bg text-brand">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-current border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-app-bg font-sans text-text-main">
       {/* Top Navigation */}
@@ -51,12 +66,21 @@ export function AppShell() {
           <div className="flex items-center gap-4">
             <div className="hidden h-8 w-px bg-border-soft md:block" />
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-accent-soft border border-accent/20 flex items-center justify-center text-accent font-bold text-xs">
-                GM
-              </div>
+              <img 
+                src={user?.photo} 
+                alt={user?.name}
+                className="h-8 w-8 rounded-full border border-accent/20 object-cover"
+              />
               <span className="hidden text-sm font-medium text-text-muted lg:block">
-                Gabriel Menezes
+                {user?.name}
               </span>
+              <button 
+                onClick={logout}
+                className="ml-2 p-2 text-text-muted hover:text-danger transition-colors"
+                title="Sair"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           </div>
         </div>

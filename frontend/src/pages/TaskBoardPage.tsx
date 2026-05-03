@@ -23,25 +23,25 @@ const COLUMNS: { id: TaskStatus; label: string; icon: any; color: string }[] = [
     id: 'NOT_STARTED',
     label: 'Pendente',
     icon: AlertCircle,
-    color: 'text-slate-400',
+    color: 'text-text-muted',
   },
   {
     id: 'IN_PROGRESS',
     label: 'Em Andamento',
     icon: Clock,
-    color: 'text-amber-500',
+    color: 'text-warning',
   },
   {
     id: 'COMPLETED',
     label: 'Concluída',
     icon: CheckCircle2,
-    color: 'text-emerald-500',
+    color: 'text-success',
   },
   {
     id: 'CANCELED',
     label: 'Cancelada',
     icon: XCircle,
-    color: 'text-rose-500',
+    color: 'text-danger',
   },
 ]
 

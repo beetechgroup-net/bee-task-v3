@@ -24,25 +24,25 @@ function getStatusConfig(status: TaskResponse['status']) {
   switch (status) {
     case 'COMPLETED':
       return {
-        tone: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+        tone: 'bg-success-soft text-success border-success/20',
         icon: CheckCircle2,
         label: 'Concluído',
       }
     case 'IN_PROGRESS':
       return {
-        tone: 'bg-amber-50 text-amber-700 border-amber-100',
+        tone: 'bg-warning-soft text-warning border-warning/20',
         icon: Clock,
         label: 'Em Andamento',
       }
     case 'CANCELED':
       return {
-        tone: 'bg-rose-50 text-rose-700 border-rose-100',
+        tone: 'bg-danger-soft text-danger border-danger/20',
         icon: XCircle,
         label: 'Cancelado',
       }
     default:
       return {
-        tone: 'bg-slate-50 text-slate-600 border-slate-100',
+        tone: 'bg-surface-muted text-text-muted border-border-soft',
         icon: AlertCircle,
         label: 'Pendente',
       }
@@ -213,7 +213,7 @@ export function TaskListPage() {
                     </div>
                     <div className="h-4 w-px bg-border-soft" />
                     <div className="flex items-center gap-1.5 text-xs font-bold text-text-muted">
-                      <Calendar size={14} className="text-amber-500" />
+                      <Calendar size={14} className="text-accent" />
                       {task.history?.length ?? 0} registros
                     </div>
                   </div>
