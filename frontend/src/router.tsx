@@ -11,6 +11,7 @@ import { JoinOrganizationPage } from "./pages/JoinOrganizationPage";
 import { OrganizationAdminPage } from "./pages/OrganizationAdminPage";
 import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
+import { OrganizationsPage } from "./pages/OrganizationsPage";
 
 export const router = createBrowserRouter([
   {
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
       {
         path: "projects",
         element: <ProjectsPage />,
+      },
+      {
+        path: "organizations",
+        element: <OrganizationsPage />,
       },
     ],
   },
