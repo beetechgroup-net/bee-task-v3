@@ -2,6 +2,7 @@ package net.beetechgroup.beetask.frameworks.config;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
+import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
@@ -13,8 +14,8 @@ import net.beetechgroup.beetask.usecase.task.update.UpdateTaskStatusUseCase;
 public class TaskUseCaseConfig {
 
     @Produces
-    public CreateTaskUseCase createTaskUseCase(TaskRepository taskRepository) {
-        return new CreateTaskUseCase(taskRepository);
+    public CreateTaskUseCase createTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository) {
+        return new CreateTaskUseCase(taskRepository, projectRepository);
     }
 
     @Produces

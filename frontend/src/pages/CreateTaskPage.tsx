@@ -15,14 +15,17 @@ import { taskService } from "../services/taskService";
 import { cn } from "../lib/utils";
 import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from "../types/task";
 import type { CreateTaskPayload, TaskResponse } from "../types/task";
+import { useAuth } from "../contexts/AuthContext";
+import { useEffect } from "react";
+import { projectService, type Project } from "../services/projectService";
 
-type FormState = CreateTaskPayload;
+type FormState = Omit<CreateTaskPayload, 'projectId'> & { projectId: string };
 
 const initialFormState: FormState = {
   title: "",
   description: "",
   status: "NOT_STARTED",
-  project: "",
+  projectId: "",
 };
 
 export function CreateTaskPage() {
@@ -30,6 +33,21 @@ export function CreateTaskPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createdTask, setCreatedTask] = useState<TaskResponse | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const { activeOrg } = useAuth();
+
+  useEffect(() => {
+    async function loadProjects() {
+      if (!activeOrg) return;
+      try {
+        const data = await projectService.listByOrganization(activeOrg.id);
+        setProjects(data);
+      } catch (error) {
+        console.error("Erro ao carregar projetos:", error);
+      }
+    }
+    loadProjects();
+  }, [activeOrg]);
 
   function updateField(
     event: ChangeEvent<
@@ -53,7 +71,7 @@ export function CreateTaskPage() {
         title: form.title.trim(),
         description: form.description.trim(),
         status: form.status,
-        project: form.project.trim(),
+        projectId: form.projectId ? Number(form.projectId) : null,
       };
 
       const response = await taskService.createTask(payload);
@@ -186,13 +204,19 @@ export function CreateTaskPage() {
                   <Layout size={16} />
                   Projeto
                 </div>
-                <input
-                  name="project"
-                  value={form.project}
+                <select
+                  name="projectId"
+                  value={form.projectId || ""}
                   onChange={updateField}
-                  placeholder="Ex.: Backend API"
-                  className="h-12 w-full rounded-xl border border-border-soft bg-app-bg px-4 text-sm font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
-                />
+                  className="h-12 w-full appearance-none rounded-xl border border-border-soft bg-app-bg px-4 text-sm font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
+                >
+                  <option value="">Sem Projeto (Geral)</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label className="group block">

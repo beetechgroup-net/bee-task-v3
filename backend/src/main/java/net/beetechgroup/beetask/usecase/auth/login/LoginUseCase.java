@@ -23,6 +23,7 @@ public class LoginUseCase {
     }
 
     public LoginOutput execute(LoginInput input) {
+        System.out.println(input.email() + " " + input.password());
         Optional<User> userOptional = userRepository.findByEmail(input.email());
 
         if (userOptional.isEmpty()) {

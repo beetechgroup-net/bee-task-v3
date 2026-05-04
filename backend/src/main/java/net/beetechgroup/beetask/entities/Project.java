@@ -41,4 +41,13 @@ public class Project {
     public void setUsers(List<User> users) {
         this.users = users;
     }
+
+    @Override
+    public String toString() {
+        return "Project{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", organization=" + (organization != null ? organization.getName() : "null") +
+                '}';
+    }
 }
