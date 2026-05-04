@@ -10,6 +10,7 @@ public class ProjectEntityMapper {
         ProjectEntity entity = new ProjectEntity();
         entity.setId(project.getId());
         entity.setName(project.getName());
+        entity.setOrganization(OrganizationEntityMapper.toEntity(project.getOrganization()));
         return entity;
     }
 
@@ -19,6 +20,7 @@ public class ProjectEntityMapper {
         Project project = new Project();
         project.setId(entity.getId());
         project.setName(entity.getName());
+        project.setOrganization(OrganizationEntityMapper.toDomain(entity.getOrganization()));
         return project;
     }
 }
