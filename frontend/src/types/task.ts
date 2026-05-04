@@ -31,7 +31,8 @@ export type TaskResponse = {
   title: string
   description: string
   status: TaskStatus
-  project: string
+  projectName: string
   projectId?: number
+  finishedAt?: string
   history?: TaskHistoryItem[]
 }

@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
@@ -19,8 +20,8 @@ public class TaskUseCaseConfig {
     }
 
     @Produces
-    public StartTaskUseCase startTaskUseCase(TaskRepository taskRepository) {
-        return new StartTaskUseCase(taskRepository);
+    public StartTaskUseCase startTaskUseCase(TaskRepository taskRepository, UserRepository userRepository) {
+        return new StartTaskUseCase(taskRepository, userRepository);
     }
 
     @Produces

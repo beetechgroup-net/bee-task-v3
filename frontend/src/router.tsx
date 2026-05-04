@@ -12,6 +12,7 @@ import { OrganizationAdminPage } from "./pages/OrganizationAdminPage";
 import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { OrganizationsPage } from "./pages/OrganizationsPage";
+import { DashboardPage } from "./pages/DashboardPage";
 
 export const router = createBrowserRouter([
   {
@@ -61,6 +62,10 @@ export const router = createBrowserRouter([
       {
         path: "organizations",
         element: <OrganizationsPage />,
+      },
+      {
+        path: "dashboard",
+        element: <DashboardPage />,
       },
     ],
   },

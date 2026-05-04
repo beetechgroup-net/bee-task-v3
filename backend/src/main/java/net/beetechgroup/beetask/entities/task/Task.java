@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.beetechgroup.beetask.entities.Project;
+import net.beetechgroup.beetask.entities.User;
 
 public class Task {
     private Long id;
@@ -12,6 +13,7 @@ public class Task {
     private String description;
     private TaskStatus status;
     private Project project;
+    private LocalDateTime finishedAt;
     private List<TaskHistoryItem> history = new ArrayList<>();
 
     public Long getId() {
@@ -45,17 +47,24 @@ public class Task {
     public void setStatus(TaskStatus status) {
         if (this.status == status) return;
 
-        if (status == TaskStatus.IN_PROGRESS) {
-            if (!isRunning()) {
-                start();
-            }
-        } else if (this.status == TaskStatus.IN_PROGRESS || isRunning()) {
-            if (isRunning()) {
-                stop();
-            }
+        // Note: Automatic start/stop removed from setStatus to avoid 
+        // compilation errors and ensure user attribution via StartTaskUseCase.
+        
+        if (status == TaskStatus.COMPLETED) {
+            this.finishedAt = LocalDateTime.now();
+        } else {
+            this.finishedAt = null;
         }
 
         this.status = status;
+    }
+
+    public LocalDateTime getFinishedAt() {
+        return finishedAt;
+    }
+
+    public void setFinishedAt(LocalDateTime finishedAt) {
+        this.finishedAt = finishedAt;
     }
 
     public Project getProject() {
@@ -85,7 +94,7 @@ public class Task {
         .orElse(null);
 }
 
-    public void start() {
+    public void start(User user) {
     TaskHistoryItem current = getCurrentRunningItem();
     
     if (current != null) {
@@ -95,6 +104,7 @@ public class Task {
     this.status = TaskStatus.IN_PROGRESS;
     TaskHistoryItem item = new TaskHistoryItem();
     item.setStartAt(LocalDateTime.now());
+    item.setUser(user);
     this.history.add(item);
     }
 

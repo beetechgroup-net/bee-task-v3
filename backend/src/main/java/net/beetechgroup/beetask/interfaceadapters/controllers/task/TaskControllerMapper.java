@@ -22,13 +22,14 @@ public class TaskControllerMapper {
                 output.title(),
                 output.description(),
                 output.status(),
-                output.project(),
+                output.projectName(),
+                output.finishedAt(),
                 output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt())).toList()
         );
     }
 
-    public static StartTaskInput toStartTaskInput(Long id) {
-        return new StartTaskInput(id);
+    public static StartTaskInput toStartTaskInput(Long id, String email) {
+        return new StartTaskInput(id, email);
     }
 
     public static StopTaskInput toStopTaskInput(Long id) {

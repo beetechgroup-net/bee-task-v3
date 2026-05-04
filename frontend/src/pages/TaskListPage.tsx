@@ -85,7 +85,7 @@ export function TaskListPage() {
       const matchesSearch =
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.project?.toLowerCase().includes(searchQuery.toLowerCase())
+        task.projectName?.toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchesStatus = statusFilter === 'ALL' || task.status === statusFilter
 
@@ -209,7 +209,7 @@ export function TaskListPage() {
                   <div className="flex flex-wrap items-center gap-3 border-t border-border-soft/50 pt-4">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-text-muted">
                       <Tag size={14} className="text-brand" />
-                      {task.project || 'Geral'}
+                      {task.projectName || 'Geral'}
                     </div>
                     <div className="h-4 w-px bg-border-soft" />
                     <div className="flex items-center gap-1.5 text-xs font-bold text-text-muted">

@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Shield,
   FolderKanban,
+  BarChart3,
 } from "lucide-react";
 import { NavLink, Outlet, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -180,6 +181,11 @@ export function AppShell() {
             </div>
 
             <nav className="hidden items-center gap-1 md:flex">
+              <NavLink to="/dashboard" className={navLinkClassName}>
+                <BarChart3 size={18} />
+                Dashboard
+              </NavLink>
+
               {/* Tarefas Dropdown */}
               <div className="relative">
                 <NavLink
@@ -360,6 +366,16 @@ export function AppShell() {
       {/* Footer / Mobile Nav */}
       <footer className="border-t border-border-soft bg-surface py-6 md:hidden">
         <nav className="flex justify-around px-4">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              cn(navLinkClassName({ isActive }), "flex-col gap-0.5 py-1")
+            }
+          >
+            <BarChart3 size={20} />
+            <span className="text-[10px]">Dash</span>
+          </NavLink>
+
           {/* Mobile Tarefas Group */}
           <div className="relative">
             <button
