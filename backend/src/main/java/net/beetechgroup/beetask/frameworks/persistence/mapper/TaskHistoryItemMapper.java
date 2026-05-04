@@ -8,6 +8,9 @@ public class TaskHistoryItemMapper {
         TaskHistoryItemEntity entity = new TaskHistoryItemEntity();
         entity.setStartAt(item.getStartAt());
         entity.setEndAt(item.getEndAt());
+        if (item.getUser() != null) {
+            entity.setUser(UserEntityMapper.toEntity(item.getUser()));
+        }
         return entity;
     }
 
@@ -17,6 +20,9 @@ public class TaskHistoryItemMapper {
         TaskHistoryItem item = new TaskHistoryItem();
         item.setStartAt(entity.getStartAt());
         item.setEndAt(entity.getEndAt());
+        if (entity.getUser() != null) {
+            item.setUser(UserEntityMapper.toDomain(entity.getUser()));
+        }
         return item;
     }
 }

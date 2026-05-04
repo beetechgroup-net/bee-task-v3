@@ -2,6 +2,7 @@ package net.beetechgroup.beetask.frameworks.persistence.entities;
 
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -10,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import net.beetechgroup.beetask.entities.task.TaskStatus;
 
@@ -22,12 +24,12 @@ public class TaskEntity {
     private String title;
     private String description;
     private TaskStatus status;
+    private java.time.LocalDateTime finishedAt;
 
     @ManyToOne
     @JoinColumn(name = "project_id")
     private ProjectEntity project;
-    @ElementCollection
-    @CollectionTable(name = "task_history", joinColumns = @JoinColumn(name = "task_id"))
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TaskHistoryItemEntity> history;
 
     public void setHistory(List<TaskHistoryItemEntity> history) {
@@ -68,6 +70,14 @@ public class TaskEntity {
 
     public void setStatus(TaskStatus status) {
         this.status = status;
+    }
+
+    public java.time.LocalDateTime getFinishedAt() {
+        return finishedAt;
+    }
+
+    public void setFinishedAt(java.time.LocalDateTime finishedAt) {
+        this.finishedAt = finishedAt;
     }
 
     public ProjectEntity getProject() {

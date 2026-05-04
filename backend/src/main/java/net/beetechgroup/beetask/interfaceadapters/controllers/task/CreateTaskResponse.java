@@ -10,7 +10,8 @@ public record CreateTaskResponse(
                 String title,
                 String description,
                 TaskStatus status,
-                String project,
+                String projectName,
+                LocalDateTime finishedAt,
                 List<TaskHistoryItemResponse> history) {
 }
 

@@ -10,6 +10,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import io.quarkus.security.identity.SecurityIdentity;
+import net.beetechgroup.beetask.usecase.task.start.StartTaskInput;
 
 import java.util.List;
 
@@ -47,6 +49,9 @@ public class TaskController {
     @Inject
     UpdateTaskStatusUseCase updateTaskStatusUseCase;
 
+    @Inject
+    SecurityIdentity securityIdentity;
+
     @POST
     @Operation(summary = "Create a new task", description = "Creates a new task in the system")
     @APIResponse(responseCode = "201", description = "Task created successfully")
@@ -61,7 +66,8 @@ public class TaskController {
     @Operation(summary = "Start a task", description = "Starts a task in the system")
     @APIResponse(responseCode = "200", description = "Task started successfully")
     public CreateTaskResponse startTask(@PathParam("id") Long id) {
-        CreateTaskOutput output = startTaskUseCase.execute(TaskControllerMapper.toStartTaskInput(id));
+        String email = securityIdentity.getPrincipal().getName();
+        CreateTaskOutput output = startTaskUseCase.execute(new StartTaskInput(id, email));
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 
