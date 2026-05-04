@@ -32,7 +32,7 @@ const dropdownItemClassName = ({ isActive }: { isActive: boolean }) =>
     "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200",
     isActive
       ? "bg-brand/10 text-brand"
-      : "text-text-muted hover:bg-surface-muted hover:text-text-main"
+      : "text-text-muted hover:bg-surface-muted hover:text-text-main",
   );
 
 export function AppShell() {
@@ -87,16 +87,16 @@ export function AppShell() {
             <div className="relative">
               <button
                 onClick={() => setShowOrgSwitcher(!showOrgSwitcher)}
-                className="flex items-center gap-2 rounded-xl border border-border-soft bg-surface-muted/50 px-4 py-2 text-sm font-bold transition-all hover:bg-surface-muted group"
+                className="flex w-48 items-center gap-2 rounded-xl border border-border-soft bg-surface-muted/50 px-4 py-2 text-sm font-bold transition-all hover:bg-surface-muted group"
               >
                 <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand/10 text-brand group-hover:bg-brand group-hover:text-white transition-all">
                   <Building2 size={14} />
                 </div>
-                <div className="text-left hidden sm:block">
-                  <span className="block text-xs text-text-main leading-tight truncate max-w-[120px]">
+                <div className="text-left hidden sm:block flex-1 min-w-0">
+                  <span className="block text-xs text-text-main leading-tight truncate">
                     {activeOrg?.name || "Selecionar Org"}
                   </span>
-                  <span className="block text-[10px] text-text-muted font-black uppercase tracking-tighter leading-none">
+                  <span className="block text-[10px] text-text-muted font-black uppercase tracking-tighter leading-none truncate">
                     {activeOrg?.roles[0] || "Visitante"}
                   </span>
                 </div>
@@ -118,7 +118,7 @@ export function AppShell() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="absolute left-0 mt-2 z-50 w-64 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
+                    className="absolute left-0 mt-2 z-50 w-48 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
                   >
                     <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-muted">
                       Suas Organizações
@@ -185,13 +185,13 @@ export function AppShell() {
                 <NavLink
                   to="/"
                   className={({ isActive }) => {
-                    const isBoardActive = window.location.pathname === '/board';
+                    const isBoardActive = window.location.pathname === "/board";
                     const active = isActive || isBoardActive;
                     return cn(
                       "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200",
                       active || showTasksDropdown
                         ? "bg-brand text-white shadow-md shadow-brand/20"
-                        : "text-text-muted hover:bg-surface-muted hover:text-text-main"
+                        : "text-text-muted hover:bg-surface-muted hover:text-text-main",
                     );
                   }}
                   onClick={(e) => {
@@ -201,33 +201,41 @@ export function AppShell() {
                 >
                   <ListTodo size={18} />
                   Tarefas
-                  <ChevronDown size={14} className={cn("transition-transform", showTasksDropdown && "rotate-180")} />
+                  <ChevronDown
+                    size={14}
+                    className={cn(
+                      "transition-transform",
+                      showTasksDropdown && "rotate-180",
+                    )}
+                  />
                 </NavLink>
 
                 {showTasksDropdown && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setShowTasksDropdown(false)} 
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowTasksDropdown(false)}
                     />
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="absolute left-0 mt-2 z-50 w-48 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
                     >
-                      <NavLink 
-                        to="/" 
-                        end 
+                      <NavLink
+                        to="/"
+                        end
                         onClick={() => setShowTasksDropdown(false)}
                         className={dropdownItemClassName}
                       >
                         <ListTodo size={18} />
                         Minhas Tarefas
                       </NavLink>
-                      <NavLink 
-                        to="/board" 
+                      <NavLink
+                        to="/board"
                         onClick={() => setShowTasksDropdown(false)}
-                        className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                        className={(props) =>
+                          cn(dropdownItemClassName(props), "mt-1")
+                        }
                       >
                         <Columns size={18} />
                         Quadro
@@ -247,14 +255,16 @@ export function AppShell() {
                 <NavLink
                   to="/organizations"
                   className={({ isActive }) => {
-                    const isRequestsActive = window.location.pathname === '/requests';
-                    const isAdminActive = window.location.pathname === '/admin';
-                    const active = isActive || isRequestsActive || isAdminActive;
+                    const isRequestsActive =
+                      window.location.pathname === "/requests";
+                    const isAdminActive = window.location.pathname === "/admin";
+                    const active =
+                      isActive || isRequestsActive || isAdminActive;
                     return cn(
                       "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200",
                       active || showOrgDropdown
                         ? "bg-brand text-white shadow-md shadow-brand/20"
-                        : "text-text-muted hover:bg-surface-muted hover:text-text-main"
+                        : "text-text-muted hover:bg-surface-muted hover:text-text-main",
                     );
                   }}
                   onClick={(e) => {
@@ -264,46 +274,58 @@ export function AppShell() {
                 >
                   <Building2 size={18} />
                   Organizações
-                  <ChevronDown size={14} className={cn("transition-transform", showOrgDropdown && "rotate-180")} />
+                  <ChevronDown
+                    size={14}
+                    className={cn(
+                      "transition-transform",
+                      showOrgDropdown && "rotate-180",
+                    )}
+                  />
                 </NavLink>
 
                 {showOrgDropdown && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setShowOrgDropdown(false)} 
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowOrgDropdown(false)}
                     />
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="absolute right-0 mt-2 z-50 w-56 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
                     >
-                      <NavLink 
-                        to="/organizations" 
+                      <NavLink
+                        to="/organizations"
                         onClick={() => setShowOrgDropdown(false)}
                         className={dropdownItemClassName}
                       >
                         <Building2 size={18} />
                         Minhas Organizações
                       </NavLink>
-                      <NavLink 
-                        to="/requests" 
+                      <NavLink
+                        to="/requests"
                         onClick={() => setShowOrgDropdown(false)}
-                        className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                        className={(props) =>
+                          cn(dropdownItemClassName(props), "mt-1")
+                        }
                       >
                         <Clock size={18} />
-                        Solicitações
+                        Minhas Solicitações
                       </NavLink>
                       {user?.organizations.some(
-                        (org) => org.roles.includes("OWNER") || org.roles.includes("ADMIN")
+                        (org) =>
+                          org.roles.includes("OWNER") ||
+                          org.roles.includes("ADMIN"),
                       ) && (
-                        <NavLink 
-                          to="/admin" 
+                        <NavLink
+                          to="/admin"
                           onClick={() => setShowOrgDropdown(false)}
-                          className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                          className={(props) =>
+                            cn(dropdownItemClassName(props), "mt-1")
+                          }
                         >
                           <Settings size={18} />
-                          Gestão da Org
+                          Solicitações Pendentes
                         </NavLink>
                       )}
                     </motion.div>
@@ -343,10 +365,12 @@ export function AppShell() {
             <button
               onClick={() => setShowTasksDropdown(!showTasksDropdown)}
               className={cn(
-                navLinkClassName({ 
-                  isActive: window.location.pathname === '/' || window.location.pathname === '/board' 
+                navLinkClassName({
+                  isActive:
+                    window.location.pathname === "/" ||
+                    window.location.pathname === "/board",
                 }),
-                "flex-col gap-0.5 py-1"
+                "flex-col gap-0.5 py-1",
               )}
             >
               <ListTodo size={20} />
@@ -355,28 +379,30 @@ export function AppShell() {
 
             {showTasksDropdown && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setShowTasksDropdown(false)} 
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowTasksDropdown(false)}
                 />
                 <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 z-50 w-40 rounded-2xl border border-border-soft bg-surface p-1 shadow-2xl"
                 >
-                  <NavLink 
-                    to="/" 
-                    end 
+                  <NavLink
+                    to="/"
+                    end
                     onClick={() => setShowTasksDropdown(false)}
                     className={dropdownItemClassName}
                   >
                     <ListTodo size={18} />
                     Lista
                   </NavLink>
-                  <NavLink 
-                    to="/board" 
+                  <NavLink
+                    to="/board"
                     onClick={() => setShowTasksDropdown(false)}
-                    className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                    className={(props) =>
+                      cn(dropdownItemClassName(props), "mt-1")
+                    }
                   >
                     <Columns size={18} />
                     Quadro
@@ -395,12 +421,13 @@ export function AppShell() {
             <button
               onClick={() => setShowOrgDropdown(!showOrgDropdown)}
               className={cn(
-                navLinkClassName({ 
-                  isActive: window.location.pathname === '/organizations' || 
-                            window.location.pathname === '/requests' ||
-                            window.location.pathname === '/admin'
+                navLinkClassName({
+                  isActive:
+                    window.location.pathname === "/organizations" ||
+                    window.location.pathname === "/requests" ||
+                    window.location.pathname === "/admin",
                 }),
-                "flex-col gap-0.5 py-1"
+                "flex-col gap-0.5 py-1",
               )}
             >
               <Building2 size={20} />
@@ -409,38 +436,44 @@ export function AppShell() {
 
             {showOrgDropdown && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setShowOrgDropdown(false)} 
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowOrgDropdown(false)}
                 />
                 <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 z-50 w-48 rounded-2xl border border-border-soft bg-surface p-1 shadow-2xl"
                 >
-                  <NavLink 
-                    to="/organizations" 
+                  <NavLink
+                    to="/organizations"
                     onClick={() => setShowOrgDropdown(false)}
                     className={dropdownItemClassName}
                   >
                     <Building2 size={18} />
                     Minhas Orgs
                   </NavLink>
-                  <NavLink 
-                    to="/requests" 
+                  <NavLink
+                    to="/requests"
                     onClick={() => setShowOrgDropdown(false)}
-                    className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                    className={(props) =>
+                      cn(dropdownItemClassName(props), "mt-1")
+                    }
                   >
                     <Clock size={18} />
                     Pedidos
                   </NavLink>
                   {user?.organizations.some(
-                    (org) => org.roles.includes("OWNER") || org.roles.includes("ADMIN")
+                    (org) =>
+                      org.roles.includes("OWNER") ||
+                      org.roles.includes("ADMIN"),
                   ) && (
-                    <NavLink 
-                      to="/admin" 
+                    <NavLink
+                      to="/admin"
                       onClick={() => setShowOrgDropdown(false)}
-                      className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                      className={(props) =>
+                        cn(dropdownItemClassName(props), "mt-1")
+                      }
                     >
                       <Settings size={18} />
                       Gestão
