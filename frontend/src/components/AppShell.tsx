@@ -27,11 +27,21 @@ const navLinkClassName = ({ isActive }: { isActive: boolean }) =>
       : "text-text-muted hover:bg-surface-muted hover:text-text-main",
   );
 
+const dropdownItemClassName = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200",
+    isActive
+      ? "bg-brand/10 text-brand"
+      : "text-text-muted hover:bg-surface-muted hover:text-text-main"
+  );
+
 export function AppShell() {
   const { user, isAuthenticated, isLoading, logout, activeOrg, setActiveOrg } =
     useAuth();
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
+  const [showTasksDropdown, setShowTasksDropdown] = useState(false);
+  const [showOrgDropdown, setShowOrgDropdown] = useState(false);
 
   React.useEffect(() => {
     if (isAuthenticated && user && user.organizations.length === 0) {
@@ -170,53 +180,142 @@ export function AppShell() {
             </div>
 
             <nav className="hidden items-center gap-1 md:flex">
-              <NavLink to="/" end className={navLinkClassName}>
-                <ListTodo size={18} />
-                Minhas Tarefas
-              </NavLink>
-              <NavLink to="/board" className={navLinkClassName}>
-                <Columns size={18} />
-                Quadro
-              </NavLink>
+              {/* Tarefas Dropdown */}
+              <div className="relative">
+                <NavLink
+                  to="/"
+                  className={({ isActive }) => {
+                    const isBoardActive = window.location.pathname === '/board';
+                    const active = isActive || isBoardActive;
+                    return cn(
+                      "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200",
+                      active || showTasksDropdown
+                        ? "bg-brand text-white shadow-md shadow-brand/20"
+                        : "text-text-muted hover:bg-surface-muted hover:text-text-main"
+                    );
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowTasksDropdown(!showTasksDropdown);
+                  }}
+                >
+                  <ListTodo size={18} />
+                  Tarefas
+                  <ChevronDown size={14} className={cn("transition-transform", showTasksDropdown && "rotate-180")} />
+                </NavLink>
+
+                {showTasksDropdown && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowTasksDropdown(false)} 
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="absolute left-0 mt-2 z-50 w-48 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
+                    >
+                      <NavLink 
+                        to="/" 
+                        end 
+                        onClick={() => setShowTasksDropdown(false)}
+                        className={dropdownItemClassName}
+                      >
+                        <ListTodo size={18} />
+                        Minhas Tarefas
+                      </NavLink>
+                      <NavLink 
+                        to="/board" 
+                        onClick={() => setShowTasksDropdown(false)}
+                        className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                      >
+                        <Columns size={18} />
+                        Quadro
+                      </NavLink>
+                    </motion.div>
+                  </>
+                )}
+              </div>
+
               <NavLink to="/projects" className={navLinkClassName}>
                 <FolderKanban size={18} />
                 Projetos
               </NavLink>
-              <NavLink to="/requests" className={navLinkClassName}>
-                <Clock size={18} />
-                Solicitações
-              </NavLink>
-              <NavLink to="/new" className={navLinkClassName}>
-                <PlusCircle size={18} />
-                Nova Tarefa
-              </NavLink>
-              <NavLink to="/organizations" className={navLinkClassName}>
-                <Building2 size={18} />
-                Organizações
-              </NavLink>
-              {user?.organizations.some(
-                (org) =>
-                  org.roles.includes("OWNER") || org.roles.includes("ADMIN"),
-              ) && (
-                <NavLink to="/admin" className={navLinkClassName}>
-                  <Settings size={18} />
-                  Gestão
+
+              {/* Organizações Dropdown */}
+              <div className="relative">
+                <NavLink
+                  to="/organizations"
+                  className={({ isActive }) => {
+                    const isRequestsActive = window.location.pathname === '/requests';
+                    const isAdminActive = window.location.pathname === '/admin';
+                    const active = isActive || isRequestsActive || isAdminActive;
+                    return cn(
+                      "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200",
+                      active || showOrgDropdown
+                        ? "bg-brand text-white shadow-md shadow-brand/20"
+                        : "text-text-muted hover:bg-surface-muted hover:text-text-main"
+                    );
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowOrgDropdown(!showOrgDropdown);
+                  }}
+                >
+                  <Building2 size={18} />
+                  Organizações
+                  <ChevronDown size={14} className={cn("transition-transform", showOrgDropdown && "rotate-180")} />
                 </NavLink>
-              )}
+
+                {showOrgDropdown && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowOrgDropdown(false)} 
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="absolute right-0 mt-2 z-50 w-56 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
+                    >
+                      <NavLink 
+                        to="/organizations" 
+                        onClick={() => setShowOrgDropdown(false)}
+                        className={dropdownItemClassName}
+                      >
+                        <Building2 size={18} />
+                        Minhas Organizações
+                      </NavLink>
+                      <NavLink 
+                        to="/requests" 
+                        onClick={() => setShowOrgDropdown(false)}
+                        className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                      >
+                        <Clock size={18} />
+                        Solicitações
+                      </NavLink>
+                      {user?.organizations.some(
+                        (org) => org.roles.includes("OWNER") || org.roles.includes("ADMIN")
+                      ) && (
+                        <NavLink 
+                          to="/admin" 
+                          onClick={() => setShowOrgDropdown(false)}
+                          className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                        >
+                          <Settings size={18} />
+                          Gestão da Org
+                        </NavLink>
+                      )}
+                    </motion.div>
+                  </>
+                )}
+              </div>
             </nav>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="hidden h-8 w-px bg-border-soft md:block" />
             <div className="flex items-center gap-3">
-              <img
-                src={user?.photo}
-                alt={user?.name}
-                className="h-8 w-8 rounded-full border border-accent/20 object-cover"
-              />
-              <span className="hidden text-sm font-medium text-text-muted lg:block">
-                {user?.name}
-              </span>
               <button
                 onClick={logout}
                 className="ml-2 p-2 text-text-muted hover:text-danger transition-colors"
@@ -239,38 +338,118 @@ export function AppShell() {
       {/* Footer / Mobile Nav */}
       <footer className="border-t border-border-soft bg-surface py-6 md:hidden">
         <nav className="flex justify-around px-4">
-          <NavLink to="/" end className={navLinkClassName}>
-            <ListTodo size={18} />
-            Tarefas
-          </NavLink>
-          <NavLink to="/board" className={navLinkClassName}>
-            <Columns size={18} />
-            Quadro
-          </NavLink>
+          {/* Mobile Tarefas Group */}
+          <div className="relative">
+            <button
+              onClick={() => setShowTasksDropdown(!showTasksDropdown)}
+              className={cn(
+                navLinkClassName({ 
+                  isActive: window.location.pathname === '/' || window.location.pathname === '/board' 
+                }),
+                "flex-col gap-0.5 py-1"
+              )}
+            >
+              <ListTodo size={20} />
+              <span className="text-[10px]">Tarefas</span>
+            </button>
+
+            {showTasksDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowTasksDropdown(false)} 
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 z-50 w-40 rounded-2xl border border-border-soft bg-surface p-1 shadow-2xl"
+                >
+                  <NavLink 
+                    to="/" 
+                    end 
+                    onClick={() => setShowTasksDropdown(false)}
+                    className={dropdownItemClassName}
+                  >
+                    <ListTodo size={18} />
+                    Lista
+                  </NavLink>
+                  <NavLink 
+                    to="/board" 
+                    onClick={() => setShowTasksDropdown(false)}
+                    className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                  >
+                    <Columns size={18} />
+                    Quadro
+                  </NavLink>
+                </motion.div>
+              </>
+            )}
+          </div>
           <NavLink to="/projects" className={navLinkClassName}>
             <FolderKanban size={18} />
             Projetos
           </NavLink>
-          <NavLink to="/requests" className={navLinkClassName}>
-            <Clock size={18} />
-            Pedidos
-          </NavLink>
-          <NavLink to="/new" className={navLinkClassName}>
-            <PlusCircle size={18} />
-            Criar
-          </NavLink>
-          <NavLink to="/organizations" className={navLinkClassName}>
-            <Building2 size={18} />
-            Org
-          </NavLink>
-          {user?.organizations.some(
-            (org) => org.roles.includes("OWNER") || org.roles.includes("ADMIN"),
-          ) && (
-            <NavLink to="/admin" className={navLinkClassName}>
-              <Settings size={18} />
-              Gestão
-            </NavLink>
-          )}
+
+          {/* Mobile Organizações Group */}
+          <div className="relative">
+            <button
+              onClick={() => setShowOrgDropdown(!showOrgDropdown)}
+              className={cn(
+                navLinkClassName({ 
+                  isActive: window.location.pathname === '/organizations' || 
+                            window.location.pathname === '/requests' ||
+                            window.location.pathname === '/admin'
+                }),
+                "flex-col gap-0.5 py-1"
+              )}
+            >
+              <Building2 size={20} />
+              <span className="text-[10px]">Org</span>
+            </button>
+
+            {showOrgDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowOrgDropdown(false)} 
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 z-50 w-48 rounded-2xl border border-border-soft bg-surface p-1 shadow-2xl"
+                >
+                  <NavLink 
+                    to="/organizations" 
+                    onClick={() => setShowOrgDropdown(false)}
+                    className={dropdownItemClassName}
+                  >
+                    <Building2 size={18} />
+                    Minhas Orgs
+                  </NavLink>
+                  <NavLink 
+                    to="/requests" 
+                    onClick={() => setShowOrgDropdown(false)}
+                    className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                  >
+                    <Clock size={18} />
+                    Pedidos
+                  </NavLink>
+                  {user?.organizations.some(
+                    (org) => org.roles.includes("OWNER") || org.roles.includes("ADMIN")
+                  ) && (
+                    <NavLink 
+                      to="/admin" 
+                      onClick={() => setShowOrgDropdown(false)}
+                      className={(props) => cn(dropdownItemClassName(props), "mt-1")}
+                    >
+                      <Settings size={18} />
+                      Gestão
+                    </NavLink>
+                  )}
+                </motion.div>
+              </>
+            )}
+          </div>
         </nav>
       </footer>
       <OnboardingModal
