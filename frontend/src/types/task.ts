@@ -18,7 +18,7 @@ export type CreateTaskPayload = {
   title: string
   description: string
   status: TaskStatus
-  project: string
+  projectId: number | null
 }
 
 export type TaskHistoryItem = {
@@ -32,5 +32,6 @@ export type TaskResponse = {
   description: string
   status: TaskStatus
   project: string
+  projectId?: number
   history?: TaskHistoryItem[]
 }

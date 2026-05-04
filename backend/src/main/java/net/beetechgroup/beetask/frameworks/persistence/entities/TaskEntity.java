@@ -11,7 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.task.TaskStatus;
 
 @Entity

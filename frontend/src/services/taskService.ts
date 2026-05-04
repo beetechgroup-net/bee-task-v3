@@ -6,7 +6,7 @@ export const taskService = {
     return apiFetch<TaskResponse[]>('/tasks')
   },
 
-  async createTask(task: { title: string; description?: string; project?: string }): Promise<TaskResponse> {
+  async createTask(task: { title: string; description?: string; projectId?: number | null; status?: TaskStatus }): Promise<TaskResponse> {
     return apiFetch<TaskResponse>('/tasks', {
       method: 'POST',
       body: task,
