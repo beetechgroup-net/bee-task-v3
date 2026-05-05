@@ -13,6 +13,7 @@ public record LoginResponse(
     List<Organization> organizations
 ) {
     public record Organization(
+        Long id,
         String name,
         List<String> roles
     ) {}

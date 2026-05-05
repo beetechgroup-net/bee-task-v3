@@ -35,7 +35,7 @@ public class AuthControllerMapper {
             output.expiresIn(),
             output.issuedAt(),
             output.organizations().stream()
-                .map(org -> new LoginResponse.Organization(org.name(), org.roles()))
+                .map(org -> new LoginResponse.Organization(org.id(), org.name(), org.roles()))
                 .collect(Collectors.toList())
         );
     }

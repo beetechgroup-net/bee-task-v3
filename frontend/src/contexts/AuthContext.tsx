@@ -18,6 +18,11 @@ interface AuthContextType {
   setActiveOrg: (id: number) => void;
 }
 
+const STORAGE_KEYS = {
+  USER: "user",
+  ACTIVE_ORG_ID: "activeOrgId",
+} as const;
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -26,9 +31,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<LoginResponse | null>(null);
   const [activeOrgId, setActiveOrgId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const setupActiveOrg = useCallback((organizations: LoginResponse["organizations"]) => {
+    const storedOrgId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ORG_ID);
+    const parsedStoredId = storedOrgId ? Number(storedOrgId) : null;
+    
+    const isValidOrg = organizations.some(org => org.id === parsedStoredId);
+
+    if (isValidOrg && parsedStoredId !== null) {
+      setActiveOrgId(parsedStoredId);
+    } else if (organizations.length > 0) {
+      const firstOrgId = organizations[0].id;
+      setActiveOrgId(firstOrgId);
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_ORG_ID, firstOrgId.toString());
+    }
+  }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("user");
+    localStorage.removeItem(STORAGE_KEYS.USER);
     setUser(null);
     window.location.href = "/login";
   }, []);
@@ -60,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const renewToken = async (refreshToken: string) => {
     try {
       const response = await authService.refresh(refreshToken);
-      localStorage.setItem("user", JSON.stringify(response));
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response));
       setUser(response);
     } catch (error) {
       console.error("Failed to renew token", error);
@@ -69,24 +89,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
     if (storedUser) {
       try {
         const userData: LoginResponse = JSON.parse(storedUser);
         if (checkTokenExpiration(userData)) {
           setUser(userData);
-          
-          const storedOrgId = localStorage.getItem("activeOrgId");
-          if (storedOrgId) {
-            setActiveOrgId(Number(storedOrgId));
-          } else if (userData.organizations.length > 0) {
-            const firstOrgId = userData.organizations[0].id;
-            setActiveOrgId(firstOrgId);
-            localStorage.setItem("activeOrgId", firstOrgId.toString());
-          }
+          setupActiveOrg(userData.organizations);
         }
       } catch (e) {
-        localStorage.removeItem("user");
+        localStorage.removeItem(STORAGE_KEYS.USER);
       }
     }
     setIsLoading(false);
@@ -105,27 +117,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password);
-    localStorage.setItem("user", JSON.stringify(response));
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response));
     setUser(response);
+    setupActiveOrg(response.organizations);
     return response;
   };
 
   const refreshUser = async () => {
     try {
       const response = await authService.me();
-      const storedUser = localStorage.getItem("user");
+      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
       if (storedUser) {
         const userData = JSON.parse(storedUser);
         const updatedUser = { ...userData, ...response };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
         setUser(updatedUser);
 
         // Update active org if not set or if current active org is gone
-        if (!activeOrgId && updatedUser.organizations.length > 0) {
-          const firstOrgId = updatedUser.organizations[0].id;
-          setActiveOrgId(firstOrgId);
-          localStorage.setItem("activeOrgId", firstOrgId.toString());
-        }
+        setupActiveOrg(updatedUser.organizations);
       }
     } catch (error) {
       console.error("Failed to refresh user profile", error);
@@ -134,12 +143,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setActiveOrg = (id: number) => {
     setActiveOrgId(id);
-    localStorage.setItem("activeOrgId", id.toString());
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_ORG_ID, id.toString());
   };
 
-  const activeOrg = React.useMemo(() => 
-    user?.organizations.find(org => org.id === activeOrgId) || null,
-    [user, activeOrgId]
+  const activeOrg = React.useMemo(
+    () => user?.organizations.find((org) => org.id === activeOrgId) || null,
+    [user, activeOrgId],
   );
 
   return (

@@ -53,6 +53,7 @@ public class LoginUseCase {
                 .collect(Collectors.groupingBy(uo -> uo.getOrganization().getName()))
                 .entrySet().stream()
                 .map(entry -> new LoginOutput.OrganizationOutput(
+                        entry.getValue().stream().map(uo -> uo.getOrganization().getId()).findFirst().orElse(null),
                         entry.getKey(),
                         entry.getValue().stream().map(uo -> uo.getRole().name()).collect(Collectors.toList())
                 ))
