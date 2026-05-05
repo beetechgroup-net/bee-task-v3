@@ -10,6 +10,8 @@ import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskStatusUseCase;
+import net.beetechgroup.beetask.usecase.task.update.UpdateTaskUseCase;
+import net.beetechgroup.beetask.usecase.task.get.GetTaskUseCase;
 
 @ApplicationScoped
 public class TaskUseCaseConfig {
@@ -37,5 +39,15 @@ public class TaskUseCaseConfig {
     @Produces
     public UpdateTaskStatusUseCase updateTaskStatusUseCase(TaskRepository taskRepository) {
         return new UpdateTaskStatusUseCase(taskRepository);
+    }
+
+    @Produces
+    public UpdateTaskUseCase updateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository) {
+        return new UpdateTaskUseCase(taskRepository, projectRepository);
+    }
+
+    @Produces
+    public GetTaskUseCase getTaskUseCase(TaskRepository taskRepository) {
+        return new GetTaskUseCase(taskRepository);
     }
 }

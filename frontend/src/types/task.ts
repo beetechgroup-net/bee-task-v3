@@ -22,6 +22,7 @@ export type CreateTaskPayload = {
 }
 
 export type TaskHistoryItem = {
+  id?: number
   startAt: string
   endAt: string | null
 }

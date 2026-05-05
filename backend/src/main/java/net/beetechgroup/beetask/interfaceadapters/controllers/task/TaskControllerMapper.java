@@ -4,6 +4,8 @@ import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskInput;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskInput;
+import net.beetechgroup.beetask.usecase.task.update.TaskHistoryItemInput;
+import net.beetechgroup.beetask.usecase.task.update.UpdateTaskInput;
 
 public class TaskControllerMapper {
 
@@ -24,7 +26,7 @@ public class TaskControllerMapper {
                 output.status(),
                 output.projectName(),
                 output.finishedAt(),
-                output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt())).toList()
+                output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt())).toList()
         );
     }
 
@@ -34,5 +36,18 @@ public class TaskControllerMapper {
 
     public static StopTaskInput toStopTaskInput(Long id) {
         return new StopTaskInput(id);
+    }
+
+    public static UpdateTaskInput toUpdateTaskInput(Long id, CreateTaskRequest request) {
+        return new UpdateTaskInput(
+                id,
+                request.title(),
+                request.description(),
+                request.status(),
+                request.projectId(),
+                request.history() != null ? request.history().stream()
+                        .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
+                        .toList() : null
+        );
     }
 }

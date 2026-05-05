@@ -12,7 +12,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { taskService } from '../services/taskService'
 import { cn } from '../lib/utils'
@@ -50,6 +50,7 @@ import { TaskTimer } from '../components/TaskTimer'
 export function TaskBoardPage() {
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const navigate = useNavigate()
 
   const loadTasks = async (silent = false) => {
     if (!silent) setIsLoading(true)
@@ -169,8 +170,9 @@ export function TaskBoardPage() {
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
+                            onClick={() => navigate(`/edit/${task.id}`)}
                             className={cn(
-                              'group rounded-2xl border border-border-soft bg-surface p-4 shadow-sm transition-all',
+                              'group cursor-pointer rounded-2xl border border-border-soft bg-surface p-4 shadow-sm transition-all',
                               snapshot.isDragging ? 'shadow-2xl ring-2 ring-brand/20' : 'hover:border-brand/30',
                             )}
                           >

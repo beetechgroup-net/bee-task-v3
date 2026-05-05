@@ -4,9 +4,18 @@ import java.time.LocalDateTime;
 import net.beetechgroup.beetask.entities.User;
 
 public class TaskHistoryItem {
+    private Long id;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private User user;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public void setEndAt(LocalDateTime endAt) {
         this.endAt = endAt;

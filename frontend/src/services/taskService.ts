@@ -31,4 +31,15 @@ export const taskService = {
       method: 'PUT',
     })
   },
+
+  async getTask(id: number): Promise<TaskResponse> {
+    return apiFetch<TaskResponse>(`/tasks/${id}`)
+  },
+
+  async updateTask(id: number, task: Partial<TaskResponse>): Promise<TaskResponse> {
+    return apiFetch<TaskResponse>(`/tasks/${id}`, {
+      method: 'PUT',
+      body: task,
+    })
+  },
 }
