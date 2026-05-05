@@ -27,6 +27,8 @@ import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskStatusUseCase;
+import net.beetechgroup.beetask.usecase.task.update.UpdateTaskUseCase;
+import net.beetechgroup.beetask.usecase.task.get.GetTaskUseCase;
 
 @Path("/tasks")
 @Produces(MediaType.APPLICATION_JSON)
@@ -48,6 +50,12 @@ public class TaskController {
 
     @Inject
     UpdateTaskStatusUseCase updateTaskStatusUseCase;
+    
+    @Inject
+    UpdateTaskUseCase updateTaskUseCase;
+
+    @Inject
+    GetTaskUseCase getTaskUseCase;
 
     @Inject
     SecurityIdentity securityIdentity;
@@ -59,6 +67,23 @@ public class TaskController {
         CreateTaskInput input = TaskControllerMapper.toCreateTaskInput(request);
         CreateTaskOutput output = createTaskUseCase.execute(input);
         return TaskControllerMapper.toCreateTaskResponse(output);
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Operation(summary = "Update a task", description = "Updates an existing task in the system")
+    @APIResponse(responseCode = "200", description = "Task updated successfully")
+    public CreateTaskResponse updateTask(@PathParam("id") Long id, CreateTaskRequest request) {
+        CreateTaskOutput output = updateTaskUseCase.execute(TaskControllerMapper.toUpdateTaskInput(id, request));
+        return TaskControllerMapper.toCreateTaskResponse(output);
+    }
+
+    @GET
+    @Path("/{id}")
+    @Operation(summary = "Get a task", description = "Gets a specific task by ID")
+    @APIResponse(responseCode = "200", description = "Task retrieved successfully")
+    public CreateTaskResponse getTask(@PathParam("id") Long id) {
+        return TaskControllerMapper.toCreateTaskResponse(getTaskUseCase.execute(id));
     }
 
     @PUT

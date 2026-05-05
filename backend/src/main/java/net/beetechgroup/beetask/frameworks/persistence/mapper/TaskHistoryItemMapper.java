@@ -6,6 +6,7 @@ import net.beetechgroup.beetask.frameworks.persistence.entities.TaskHistoryItemE
 public class TaskHistoryItemMapper {
     public static TaskHistoryItemEntity toEntity(TaskHistoryItem item) {
         TaskHistoryItemEntity entity = new TaskHistoryItemEntity();
+        entity.setId(item.getId());
         entity.setStartAt(item.getStartAt());
         entity.setEndAt(item.getEndAt());
         if (item.getUser() != null) {
@@ -18,6 +19,7 @@ public class TaskHistoryItemMapper {
         if (entity == null) return null;
 
         TaskHistoryItem item = new TaskHistoryItem();
+        item.setId(entity.getId());
         item.setStartAt(entity.getStartAt());
         item.setEndAt(entity.getEndAt());
         if (entity.getUser() != null) {

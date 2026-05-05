@@ -71,7 +71,8 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
     }
   }, [runningItem, accumulatedSeconds])
 
-  async function handleStart() {
+  async function handleStart(e: React.MouseEvent) {
+    e.stopPropagation()
     setIsActionLoading(true)
     try {
       await taskService.startTask(task.id)
@@ -83,7 +84,8 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
     }
   }
 
-  async function handleStop() {
+  async function handleStop(e: React.MouseEvent) {
+    e.stopPropagation()
     setIsActionLoading(true)
     try {
       await taskService.stopTask(task.id)

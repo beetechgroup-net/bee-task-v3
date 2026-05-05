@@ -1,8 +1,8 @@
-package net.beetechgroup.beetask.usecase.task.create;
+package net.beetechgroup.beetask.usecase.task.update;
 
 import java.time.LocalDateTime;
 
-public record TaskHistoryItemOutput(
+public record TaskHistoryItemInput(
         Long id,
         LocalDateTime startAt,
         LocalDateTime endAt) {

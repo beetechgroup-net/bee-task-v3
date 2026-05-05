@@ -44,6 +44,10 @@ export const router = createBrowserRouter([
         element: <CreateTaskPage />,
       },
       {
+        path: "edit/:id",
+        element: <CreateTaskPage />,
+      },
+      {
         path: "board",
         element: <TaskBoardPage />,
       },

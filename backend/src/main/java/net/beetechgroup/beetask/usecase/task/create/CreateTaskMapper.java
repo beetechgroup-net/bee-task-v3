@@ -17,6 +17,7 @@ public class CreateTaskMapper {
 
     private static TaskHistoryItemOutput toTaskHistoryItemOutput(TaskHistoryItem taskHistoryItem) {
         return new TaskHistoryItemOutput(
+                taskHistoryItem.getId(),
                 taskHistoryItem.getStartAt(),
                 taskHistoryItem.getEndAt());
     }

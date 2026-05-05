@@ -2,30 +2,36 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft,
   CheckCircle2,
+  Clock,
   FileText,
   Layout,
   PlusCircle,
   Send,
+  XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { taskService } from "../services/taskService";
 import { cn } from "../lib/utils";
 import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from "../types/task";
-import type { CreateTaskPayload, TaskResponse } from "../types/task";
+import type { CreateTaskPayload, TaskResponse, TaskHistoryItem } from "../types/task";
 import { useAuth } from "../contexts/AuthContext";
 import { useEffect } from "react";
 import { projectService, type Project } from "../services/projectService";
 
-type FormState = Omit<CreateTaskPayload, 'projectId'> & { projectId: string };
+type FormState = Omit<CreateTaskPayload, 'projectId'> & { 
+  projectId: string;
+  history: TaskHistoryItem[];
+};
 
 const initialFormState: FormState = {
   title: "",
   description: "",
   status: "NOT_STARTED",
   projectId: "",
+  history: [],
 };
 
 export function CreateTaskPage() {
@@ -35,6 +41,30 @@ export function CreateTaskPage() {
   const [createdTask, setCreatedTask] = useState<TaskResponse | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const { activeOrg } = useAuth();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEdit = !!id;
+
+  useEffect(() => {
+    if (isEdit) {
+      async function loadTask() {
+        try {
+          const data = await taskService.getTask(Number(id));
+          setForm({
+            title: data.title,
+            description: data.description || "",
+            status: data.status,
+            projectId: data.projectId?.toString() || "",
+            history: data.history || [],
+          });
+        } catch (error) {
+          console.error("Erro ao carregar tarefa:", error);
+          setErrorMessage("Não foi possível carregar os dados da tarefa.");
+        }
+      }
+      loadTask();
+    }
+  }, [id, isEdit]);
 
   useEffect(() => {
     async function loadProjects() {
@@ -67,17 +97,22 @@ export function CreateTaskPage() {
     setIsSubmitting(true);
 
     try {
-      const payload: CreateTaskPayload = {
+      const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
         status: form.status,
         projectId: form.projectId ? Number(form.projectId) : null,
+        history: form.history,
       };
 
-      const response = await taskService.createTask(payload);
-
-      setCreatedTask(response);
-      setForm(initialFormState);
+      if (isEdit) {
+        await taskService.updateTask(Number(id), payload);
+        navigate("/");
+      } else {
+        const response = await taskService.createTask(payload);
+        setCreatedTask(response);
+        setForm(initialFormState);
+      }
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -168,10 +203,10 @@ export function CreateTaskPage() {
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight">
-                Nova Tarefa
+                {isEdit ? "Editar Tarefa" : "Nova Tarefa"}
               </h1>
               <p className="text-sm font-medium text-white/80">
-                Preencha os detalhes abaixo para começar.
+                {isEdit ? `Editando tarefa #${id}` : "Preencha os detalhes abaixo para começar."}
               </p>
             </div>
           </div>
@@ -254,6 +289,76 @@ export function CreateTaskPage() {
                 className="w-full rounded-2xl border border-border-soft bg-app-bg px-5 py-4 text-sm font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
               />
             </label>
+
+            {/* History Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-bold text-text-main">
+                  <Clock size={16} />
+                  Histórico de Execução
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm(prev => ({
+                      ...prev,
+                      history: [...prev.history, { startAt: new Date().toISOString(), endAt: null }]
+                    }))
+                  }}
+                  className="text-xs font-bold text-brand hover:underline"
+                >
+                  + Adicionar Registro Manual
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {form.history.map((item, index) => (
+                  <div key={index} className="flex flex-wrap items-end gap-4 rounded-xl border border-border-soft bg-app-bg/50 p-4">
+                    <div className="flex-1 space-y-1">
+                      <label className="text-[10px] font-black uppercase text-text-muted">Início</label>
+                      <input
+                        type="datetime-local"
+                        value={item.startAt ? item.startAt.slice(0, 16) : ""}
+                        onChange={(e) => {
+                          const newHistory = [...form.history];
+                          newHistory[index] = { ...item, startAt: new Date(e.target.value).toISOString() };
+                          setForm(prev => ({ ...prev, history: newHistory }));
+                        }}
+                        className="w-full rounded-lg border border-border-soft bg-surface px-3 py-2 text-xs outline-none focus:border-brand"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <label className="text-[10px] font-black uppercase text-text-muted">Fim</label>
+                      <input
+                        type="datetime-local"
+                        value={item.endAt ? item.endAt.slice(0, 16) : ""}
+                        onChange={(e) => {
+                          const newHistory = [...form.history];
+                          newHistory[index] = { ...item, endAt: e.target.value ? new Date(e.target.value).toISOString() : null };
+                          setForm(prev => ({ ...prev, history: newHistory }));
+                        }}
+                        className="w-full rounded-lg border border-border-soft bg-surface px-3 py-2 text-xs outline-none focus:border-brand"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm(prev => ({
+                          ...prev,
+                          history: prev.history.filter((_, i) => i !== index)
+                        }))
+                      }}
+                      className="mb-1 rounded-lg p-2 text-danger hover:bg-danger-soft"
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+                ))}
+                {form.history.length === 0 && (
+                  <p className="py-4 text-center text-xs font-medium text-text-muted">Nenhum registro de execução encontrado.</p>
+                )}
+              </div>
+            </div>
           </div>
 
           {errorMessage && (
@@ -282,11 +387,11 @@ export function CreateTaskPage() {
               )}
             >
               {isSubmitting ? (
-                "Criando..."
+                isEdit ? "Salvando..." : "Criando..."
               ) : (
                 <>
                   <Send size={18} />
-                  Criar Tarefa
+                  {isEdit ? "Salvar Alterações" : "Criar Tarefa"}
                 </>
               )}
             </button>

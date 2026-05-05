@@ -13,7 +13,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { taskService } from '../services/taskService'
 import { cn } from '../lib/utils'
@@ -55,6 +55,7 @@ export function TaskListPage() {
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | 'ALL'>('ALL')
 
@@ -178,7 +179,8 @@ export function TaskListPage() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2, delay: i * 0.05 }}
                 key={task.id}
-                className="group relative flex flex-col rounded-[2rem] border border-border-soft bg-surface p-6 shadow-sm transition-all hover:shadow-xl hover:shadow-brand/5"
+                onClick={() => navigate(`/edit/${task.id}`)}
+                className="group relative flex cursor-pointer flex-col rounded-[2rem] border border-border-soft bg-surface p-6 shadow-sm transition-all hover:shadow-xl hover:shadow-brand/5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div
