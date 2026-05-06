@@ -6,5 +6,6 @@ public record CreateTaskInput(
         String title,
         String description,
         TaskStatus status,
-        Long projectId) {
+        Long projectId,
+        String userEmail) {
 }

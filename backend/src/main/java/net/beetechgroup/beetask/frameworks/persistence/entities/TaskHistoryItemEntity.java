@@ -21,10 +21,6 @@ public class TaskHistoryItemEntity {
     private LocalDateTime endAt;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private UserEntity user;
-
-    @ManyToOne
     @JoinColumn(name = "task_id")
     private TaskEntity task;
 
@@ -50,14 +46,6 @@ public class TaskHistoryItemEntity {
 
     public void setEndAt(LocalDateTime endAt) {
         this.endAt = endAt;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
     }
 
     public TaskEntity getTask() {

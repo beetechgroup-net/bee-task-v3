@@ -23,7 +23,6 @@ public class LoginUseCase {
     }
 
     public LoginOutput execute(LoginInput input) {
-        System.out.println(input.email() + " " + input.password());
         Optional<User> userOptional = userRepository.findByEmail(input.email());
 
         if (userOptional.isEmpty()) {
@@ -50,14 +49,17 @@ public class LoginUseCase {
                 .sign();
 
         List<LoginOutput.OrganizationOutput> orgs = userOrganizations.stream()
-                .collect(Collectors.groupingBy(uo -> uo.getOrganization().getName()))
+                .collect(Collectors.groupingBy(uo -> uo.getOrganization().getId()))
                 .entrySet().stream()
-                .map(entry -> new LoginOutput.OrganizationOutput(
-                        entry.getValue().stream().map(uo -> uo.getOrganization().getId()).findFirst().orElse(null),
-                        entry.getKey(),
-                        entry.getValue().stream().map(uo -> uo.getRole().name()).collect(Collectors.toList())
-                ))
-                .collect(Collectors.toList());
+                .map(entry -> {
+                    UserOrganization first = entry.getValue().get(0);
+                    return new LoginOutput.OrganizationOutput(
+                            entry.getKey(),
+                            first.getOrganization().getName(),
+                            entry.getValue().stream().map(uo -> uo.getRole().name()).toList()
+                    );
+                })
+                .toList();
 
         String refreshToken = Jwt.issuer(this.issuer)
                 .upn(user.getEmail())

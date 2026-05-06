@@ -29,6 +29,9 @@ public class TaskEntity {
     @ManyToOne
     @JoinColumn(name = "project_id")
     private ProjectEntity project;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TaskHistoryItemEntity> history;
 
@@ -88,4 +91,11 @@ public class TaskEntity {
         this.project = project;
     }
 
+    public UserEntity getUser() {
+        return user;
+    }
+
+    public void setUser(UserEntity user) {
+        this.user = user;
+    }
 }

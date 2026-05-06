@@ -62,13 +62,17 @@ public class RefreshTokenUseCase {
                     .sign();
 
             List<LoginOutput.OrganizationOutput> orgs = userOrganizations.stream()
-                    .collect(Collectors.groupingBy(uo -> uo.getOrganization().getName()))
+                    .collect(Collectors.groupingBy(uo -> uo.getOrganization().getId()))
                     .entrySet().stream()
-                    .map(entry -> new LoginOutput.OrganizationOutput(
-                            entry.getKey(),
-                            entry.getValue().stream().map(uo -> uo.getRole().name()).collect(Collectors.toList())
-                    ))
-                    .collect(Collectors.toList());
+                    .map(entry -> {
+                        UserOrganization first = entry.getValue().get(0);
+                        return new LoginOutput.OrganizationOutput(
+                                entry.getKey(),
+                                first.getOrganization().getName(),
+                                entry.getValue().stream().map(uo -> uo.getRole().name()).toList()
+                        );
+                    })
+                    .toList();
 
             return new LoginOutput(
                     user.getName(),

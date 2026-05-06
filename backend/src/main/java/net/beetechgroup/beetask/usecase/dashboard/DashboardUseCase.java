@@ -45,7 +45,6 @@ public class DashboardUseCase {
 
         for (Task task : workedTasks) {
             long taskMinutesInPeriod = task.getHistory().stream()
-                .filter(h -> h.getUser() != null && h.getUser().getEmail().equals(input.userEmail()))
                 .filter(h -> isWithinPeriod(h, input.startDate(), input.endDate()))
                 .mapToLong(h -> calculateMinutesInRange(h, input.startDate(), input.endDate()))
                 .sum();

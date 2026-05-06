@@ -41,6 +41,10 @@ public class DashboardController {
             ? LocalDateTime.parse(endDateStr, DateTimeFormatter.ISO_DATE_TIME) 
             : LocalDateTime.now();
 
+        if (endDateStr != null && end.toLocalTime().equals(java.time.LocalTime.MIDNIGHT)) {
+            end = end.with(java.time.LocalTime.MAX);
+        }
+
         DashboardInput input = new DashboardInput(email, start, end);
         return dashboardUseCase.execute(input);
     }

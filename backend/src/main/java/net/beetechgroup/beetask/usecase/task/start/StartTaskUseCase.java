@@ -20,9 +20,12 @@ public class StartTaskUseCase {
 
     public CreateTaskOutput execute(StartTaskInput input) {
         Task task = taskRepository.findTaskById(input.id());
-        User user = userRepository.findByEmail(input.userEmail())
-                .orElseThrow(() -> new UserNotFoundException(input.userEmail()));
-        task.start(user);
+        
+        if (task.getUser() != null && !task.getUser().getEmail().equals(input.userEmail())) {
+            throw new SecurityException("Você não tem permissão para iniciar esta tarefa.");
+        }
+        
+        task.start();
         return CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
     }
 }
