@@ -17,8 +17,8 @@ import net.beetechgroup.beetask.usecase.task.get.GetTaskUseCase;
 public class TaskUseCaseConfig {
 
     @Produces
-    public CreateTaskUseCase createTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository) {
-        return new CreateTaskUseCase(taskRepository, projectRepository);
+    public CreateTaskUseCase createTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository, UserRepository userRepository) {
+        return new CreateTaskUseCase(taskRepository, projectRepository, userRepository);
     }
 
     @Produces
@@ -42,8 +42,8 @@ public class TaskUseCaseConfig {
     }
 
     @Produces
-    public UpdateTaskUseCase updateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository) {
-        return new UpdateTaskUseCase(taskRepository, projectRepository);
+    public UpdateTaskUseCase updateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository, UserRepository userRepository) {
+        return new UpdateTaskUseCase(taskRepository, projectRepository, userRepository);
     }
 
     @Produces

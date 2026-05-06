@@ -9,12 +9,13 @@ import net.beetechgroup.beetask.usecase.task.update.UpdateTaskInput;
 
 public class TaskControllerMapper {
 
-    public static CreateTaskInput toCreateTaskInput(CreateTaskRequest request) {
+    public static CreateTaskInput toCreateTaskInput(CreateTaskRequest request, String userEmail) {
         return new CreateTaskInput(
                 request.title(),
                 request.description(),
                 request.status(),
-                request.projectId()
+                request.projectId(),
+                userEmail
         );
     }
 
@@ -38,13 +39,14 @@ public class TaskControllerMapper {
         return new StopTaskInput(id);
     }
 
-    public static UpdateTaskInput toUpdateTaskInput(Long id, CreateTaskRequest request) {
+    public static UpdateTaskInput toUpdateTaskInput(Long id, CreateTaskRequest request, String userEmail) {
         return new UpdateTaskInput(
                 id,
                 request.title(),
                 request.description(),
                 request.status(),
                 request.projectId(),
+                userEmail,
                 request.history() != null ? request.history().stream()
                         .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
                         .toList() : null

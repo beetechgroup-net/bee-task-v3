@@ -9,6 +9,7 @@ import {
   Send,
   XCircle,
 } from "lucide-react";
+import { format } from "date-fns";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -302,7 +303,7 @@ export function CreateTaskPage() {
                   onClick={() => {
                     setForm(prev => ({
                       ...prev,
-                      history: [...prev.history, { startAt: new Date().toISOString(), endAt: null }]
+                      history: [...prev.history, { startAt: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"), endAt: null }]
                     }))
                   }}
                   className="text-xs font-bold text-brand hover:underline"
@@ -321,7 +322,7 @@ export function CreateTaskPage() {
                         value={item.startAt ? item.startAt.slice(0, 16) : ""}
                         onChange={(e) => {
                           const newHistory = [...form.history];
-                          newHistory[index] = { ...item, startAt: new Date(e.target.value).toISOString() };
+                          newHistory[index] = { ...item, startAt: e.target.value };
                           setForm(prev => ({ ...prev, history: newHistory }));
                         }}
                         className="w-full rounded-lg border border-border-soft bg-surface px-3 py-2 text-xs outline-none focus:border-brand"
@@ -334,7 +335,7 @@ export function CreateTaskPage() {
                         value={item.endAt ? item.endAt.slice(0, 16) : ""}
                         onChange={(e) => {
                           const newHistory = [...form.history];
-                          newHistory[index] = { ...item, endAt: e.target.value ? new Date(e.target.value).toISOString() : null };
+                          newHistory[index] = { ...item, endAt: e.target.value || null };
                           setForm(prev => ({ ...prev, history: newHistory }));
                         }}
                         className="w-full rounded-lg border border-border-soft bg-surface px-3 py-2 text-xs outline-none focus:border-brand"

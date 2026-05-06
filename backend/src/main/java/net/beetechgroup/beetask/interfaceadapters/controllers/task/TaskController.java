@@ -64,7 +64,8 @@ public class TaskController {
     @Operation(summary = "Create a new task", description = "Creates a new task in the system")
     @APIResponse(responseCode = "201", description = "Task created successfully")
     public CreateTaskResponse createTask(CreateTaskRequest request) {
-        CreateTaskInput input = TaskControllerMapper.toCreateTaskInput(request);
+        String email = securityIdentity.getPrincipal().getName();
+        CreateTaskInput input = TaskControllerMapper.toCreateTaskInput(request, email);
         CreateTaskOutput output = createTaskUseCase.execute(input);
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
@@ -74,7 +75,8 @@ public class TaskController {
     @Operation(summary = "Update a task", description = "Updates an existing task in the system")
     @APIResponse(responseCode = "200", description = "Task updated successfully")
     public CreateTaskResponse updateTask(@PathParam("id") Long id, CreateTaskRequest request) {
-        CreateTaskOutput output = updateTaskUseCase.execute(TaskControllerMapper.toUpdateTaskInput(id, request));
+        String email = securityIdentity.getPrincipal().getName();
+        CreateTaskOutput output = updateTaskUseCase.execute(TaskControllerMapper.toUpdateTaskInput(id, request, email));
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 

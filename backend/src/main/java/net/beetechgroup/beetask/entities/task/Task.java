@@ -13,6 +13,7 @@ public class Task {
     private String description;
     private TaskStatus status;
     private Project project;
+    private User user;
     private LocalDateTime finishedAt;
     private List<TaskHistoryItem> history = new ArrayList<>();
 
@@ -75,6 +76,14 @@ public class Task {
         this.project = project;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     public List<TaskHistoryItem> getHistory() {
         return history;
     }
@@ -94,18 +103,17 @@ public class Task {
         .orElse(null);
 }
 
-    public void start(User user) {
-    TaskHistoryItem current = getCurrentRunningItem();
-    
-    if (current != null) {
-        throw new IllegalStateException("Tarefa já está em execução");
-    }
+    public void start() {
+        TaskHistoryItem current = getCurrentRunningItem();
+        
+        if (current != null) {
+            throw new IllegalStateException("Tarefa já está em execução");
+        }
 
-    this.status = TaskStatus.IN_PROGRESS;
-    TaskHistoryItem item = new TaskHistoryItem();
-    item.setStartAt(LocalDateTime.now());
-    item.setUser(user);
-    this.history.add(item);
+        this.status = TaskStatus.IN_PROGRESS;
+        TaskHistoryItem item = new TaskHistoryItem();
+        item.setStartAt(LocalDateTime.now());
+        this.history.add(item);
     }
 
     public void stop() {

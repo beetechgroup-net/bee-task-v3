@@ -9,5 +9,6 @@ public record UpdateTaskInput(
         String description,
         TaskStatus status,
         Long projectId,
+        String userEmail,
         List<TaskHistoryItemInput> history) {
 }

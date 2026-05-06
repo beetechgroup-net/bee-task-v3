@@ -6,21 +6,28 @@ import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskMapper;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 
 public class UpdateTaskUseCase {
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
 
-    public UpdateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository) {
+    public UpdateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.projectRepository = projectRepository;
+        this.userRepository = userRepository;
     }
 
     public CreateTaskOutput execute(UpdateTaskInput input) {
-        //TODO deve validar se o usuario logado é o dono da task
         Task task = taskRepository.findTaskById(input.id());
+        
+        if (task.getUser() == null) {
+            task.setUser(userRepository.findByEmail(input.userEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado: " + input.userEmail())));
+        }
 
         task.setTitle(input.title());
         task.setDescription(input.description());

@@ -35,8 +35,8 @@ export const DashboardPage: React.FC = () => {
     setIsLoading(true);
     try {
       const result = await dashboardService.getDashboard(
-        startDate.toISOString(),
-        endDate.toISOString(),
+        format(startDate, "yyyy-MM-dd'T'HH:mm:ss"),
+        format(endDate, "yyyy-MM-dd'T'HH:mm:ss"),
       );
       setData(result);
     } catch (err) {
@@ -80,7 +80,7 @@ export const DashboardPage: React.FC = () => {
             <input
               type="date"
               value={format(startDate, "yyyy-MM-dd")}
-              onChange={(e) => setStartDate(new Date(e.target.value))}
+              onChange={(e) => setStartDate(new Date(e.target.value + 'T00:00:00'))}
               className="bg-transparent border-none text-sm font-bold text-text-main focus:ring-0 outline-none"
             />
           </div>
@@ -88,7 +88,7 @@ export const DashboardPage: React.FC = () => {
             <input
               type="date"
               value={format(endDate, "yyyy-MM-dd")}
-              onChange={(e) => setEndDate(new Date(e.target.value))}
+              onChange={(e) => setEndDate(new Date(e.target.value + 'T23:59:59'))}
               className="bg-transparent border-none text-sm font-bold text-text-main focus:ring-0 outline-none"
             />
           </div>
