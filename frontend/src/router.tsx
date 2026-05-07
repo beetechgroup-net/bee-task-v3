@@ -13,6 +13,7 @@ import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { OrganizationsPage } from "./pages/OrganizationsPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { RoleGate } from "./components/RoleGate";
 
 export const router = createBrowserRouter([
   {
@@ -53,7 +54,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "admin",
-        element: <OrganizationAdminPage />,
+        element: (
+          <RoleGate allowedRoles={["OWNER", "ADMIN"]} message="Apenas administradores e proprietários podem gerenciar solicitações.">
+            <OrganizationAdminPage />
+          </RoleGate>
+        ),
       },
       {
         path: "requests",
@@ -61,7 +66,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "projects",
-        element: <ProjectsPage />,
+        element: (
+          <RoleGate allowedRoles={["OWNER", "ADMIN"]} message="Apenas administradores e proprietários podem gerenciar projetos.">
+            <ProjectsPage />
+          </RoleGate>
+        ),
       },
       {
         path: "organizations",

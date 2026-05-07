@@ -251,10 +251,13 @@ export function AppShell() {
                 )}
               </div>
 
-              <NavLink to="/projects" className={navLinkClassName}>
-                <FolderKanban size={18} />
-                Projetos
-              </NavLink>
+              {(activeOrg?.roles.includes("OWNER") ||
+                activeOrg?.roles.includes("ADMIN")) && (
+                <NavLink to="/projects" className={navLinkClassName}>
+                  <FolderKanban size={18} />
+                  Projetos
+                </NavLink>
+              )}
 
               {/* Organizações Dropdown */}
               <div className="relative">
@@ -318,10 +321,8 @@ export function AppShell() {
                         <Clock size={18} />
                         Minhas Solicitações
                       </NavLink>
-                      {user?.organizations.some(
-                        (org) =>
-                          org.roles.includes("OWNER") ||
-                          org.roles.includes("ADMIN"),
+                      {activeOrg?.roles.some(
+                        (role) => role === "OWNER" || role === "ADMIN",
                       ) && (
                         <NavLink
                           to="/admin"
@@ -427,10 +428,13 @@ export function AppShell() {
               </>
             )}
           </div>
-          <NavLink to="/projects" className={navLinkClassName}>
-            <FolderKanban size={18} />
-            Projetos
-          </NavLink>
+          {(activeOrg?.roles.includes("OWNER") ||
+            activeOrg?.roles.includes("ADMIN")) && (
+            <NavLink to="/projects" className={navLinkClassName}>
+              <FolderKanban size={18} />
+              Projetos
+            </NavLink>
+          )}
 
           {/* Mobile Organizações Group */}
           <div className="relative">
@@ -479,10 +483,8 @@ export function AppShell() {
                     <Clock size={18} />
                     Pedidos
                   </NavLink>
-                  {user?.organizations.some(
-                    (org) =>
-                      org.roles.includes("OWNER") ||
-                      org.roles.includes("ADMIN"),
+                  {activeOrg?.roles.some(
+                    (role) => role === "OWNER" || role === "ADMIN",
                   ) && (
                     <NavLink
                       to="/admin"

@@ -1,61 +1,53 @@
-import React, { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Users, Check, X, ShieldAlert, Mail } from 'lucide-react'
-import { organizationService, type JoinRequest } from '../services/organizationService'
-import { useAuth } from '../contexts/AuthContext'
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Users, Check, X, ShieldAlert, Mail } from "lucide-react";
+import {
+  organizationService,
+  type JoinRequest,
+} from "../services/organizationService";
+import { useAuth } from "../contexts/AuthContext";
 
 export const OrganizationAdminPage: React.FC = () => {
-  const { user } = useAuth()
-  const [requests, setRequests] = useState<JoinRequest[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { activeOrg } = useAuth();
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // For this simplified version, we manage the first organization where the user is OWNER
-  const orgToManage = user?.organizations.find(org => org.roles.includes('OWNER') || org.roles.includes('ADMIN'))
+  const orgToManage = activeOrg!;
 
   useEffect(() => {
     if (orgToManage) {
-      loadRequests()
+      loadRequests();
     }
-  }, [orgToManage])
+  }, [orgToManage]);
 
   const loadRequests = async () => {
-    if (!orgToManage) return
+    if (!orgToManage) return;
     try {
-      const data = await organizationService.listPendingRequests(orgToManage.id)
-      setRequests(data)
+      const data = await organizationService.listPendingRequests(
+        orgToManage.id,
+      );
+      setRequests(data);
     } catch (error) {
-      console.error('Failed to load requests', error)
+      console.error("Failed to load requests", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleAction = async (userId: number, approved: boolean) => {
-    if (!orgToManage) return
+    if (!orgToManage) return;
     try {
       if (approved) {
-        await organizationService.approveRequest(orgToManage.id, userId)
+        await organizationService.approveRequest(orgToManage.id, userId);
       } else {
-        await organizationService.rejectRequest(orgToManage.id, userId)
+        await organizationService.rejectRequest(orgToManage.id, userId);
       }
-      setRequests(prev => prev.filter(r => r.userId !== userId))
+      setRequests((prev) => prev.filter((r) => r.userId !== userId));
     } catch (error) {
-      console.error('Action failed', error)
-      alert('Erro ao processar solicitação.')
+      console.error("Action failed", error);
+      alert("Erro ao processar solicitação.");
     }
-  }
-
-  if (!orgToManage) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mb-6">
-          <ShieldAlert size={32} />
-        </div>
-        <h2 className="text-2xl font-black text-text-main mb-2">Acesso Negado</h2>
-        <p className="text-text-muted max-w-xs">Você não tem permissão para gerenciar nenhuma organização.</p>
-      </div>
-    )
-  }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -76,7 +68,9 @@ export const OrganizationAdminPage: React.FC = () => {
             <div className="w-10 h-10 bg-brand/10 text-brand rounded-xl flex items-center justify-center">
               <Users size={20} />
             </div>
-            <h2 className="text-xl font-bold text-text-main">Solicitações Pendentes</h2>
+            <h2 className="text-xl font-bold text-text-main">
+              Solicitações Pendentes
+            </h2>
             <span className="ml-auto bg-brand text-white text-xs font-bold px-3 py-1 rounded-full">
               {requests.length} novos
             </span>
@@ -102,12 +96,17 @@ export const OrganizationAdminPage: React.FC = () => {
               >
                 <div className="flex items-center gap-4">
                   <img
-                    src={request.photo || `https://ui-avatars.com/api/?name=${request.name}&background=random`}
+                    src={
+                      request.photo ||
+                      `https://ui-avatars.com/api/?name=${request.name}&background=random`
+                    }
                     alt={request.name}
                     className="w-12 h-12 rounded-full border border-border-soft object-cover"
                   />
                   <div>
-                    <h3 className="font-bold text-text-main text-lg">{request.name}</h3>
+                    <h3 className="font-bold text-text-main text-lg">
+                      {request.name}
+                    </h3>
                     <div className="flex items-center gap-2 text-text-muted text-sm font-medium">
                       <Mail size={14} />
                       {request.email}
@@ -137,5 +136,5 @@ export const OrganizationAdminPage: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
