@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Clock,
   Filter,
-  Layers,
   Plus,
   RefreshCw,
   Search,
@@ -64,7 +63,7 @@ export function TaskListPage() {
     setErrorMessage(null)
 
     try {
-      const response = await taskService.getTasks()
+      const response = await taskService.getMyTasks()
       setTasks(response)
     } catch (error) {
       setErrorMessage(

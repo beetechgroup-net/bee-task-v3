@@ -7,6 +7,7 @@ import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
+import net.beetechgroup.beetask.usecase.task.listall.ListMyTasksUseCase;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskStatusUseCase;
@@ -34,6 +35,11 @@ public class TaskUseCaseConfig {
     @Produces
     public ListAllTasksUseCase listAllTasksUseCase(TaskRepository taskRepository) {
         return new ListAllTasksUseCase(taskRepository);
+    }
+
+    @Produces
+    public ListMyTasksUseCase listMyTasksUseCase(TaskRepository taskRepository) {
+        return new ListMyTasksUseCase(taskRepository);
     }
 
     @Produces

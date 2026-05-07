@@ -1,6 +1,5 @@
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import type { DropResult } from '@hello-pangea/dnd'
-import { motion } from 'framer-motion'
 import {
   AlertCircle,
   CheckCircle2,
@@ -55,7 +54,7 @@ export function TaskBoardPage() {
   const loadTasks = async (silent = false) => {
     if (!silent) setIsLoading(true)
     try {
-      const response = await taskService.getTasks()
+      const response = await taskService.getMyTasks()
       setTasks(response)
     } catch (error) {
       console.error('Failed to load tasks', error)

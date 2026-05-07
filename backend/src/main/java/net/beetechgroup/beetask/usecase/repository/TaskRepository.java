@@ -11,4 +11,5 @@ public interface TaskRepository {
     List<Task> findAllTasks();
     List<Task> findTasksWorkedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksFinishedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end);
+    List<Task> findTasksByUser(String email);
 }

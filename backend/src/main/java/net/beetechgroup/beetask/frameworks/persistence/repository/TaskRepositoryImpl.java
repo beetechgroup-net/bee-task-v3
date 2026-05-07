@@ -53,4 +53,9 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
                 "and t.finishedAt >= ?2 and t.finishedAt <= ?3",
                 email, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
     }
+
+    @Override
+    public List<Task> findTasksByUser(String email) {
+        return find("user.email = ?1", email).list().stream().map(TaskEntityMapper::toDomain).toList();
+    }
 }
