@@ -72,23 +72,6 @@ export const ProjectsPage: React.FC = () => {
     p.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  if (!activeOrg) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-        <div className="w-20 h-20 bg-surface-muted rounded-[2rem] flex items-center justify-center mb-6 text-text-muted">
-          <Building2 size={40} />
-        </div>
-        <h2 className="text-2xl font-black text-text-main mb-2">
-          Nenhuma Organização Ativa
-        </h2>
-        <p className="text-text-muted max-w-sm">
-          Selecione uma organização no menu superior para gerenciar seus
-          projetos.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-12 pb-20">
       {/* Header Section */}
