@@ -24,6 +24,7 @@ import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
+import net.beetechgroup.beetask.usecase.task.listall.ListMyTasksUseCase;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskStatusUseCase;
@@ -47,6 +48,9 @@ public class TaskController {
 
     @Inject
     ListAllTasksUseCase listAllTasksUseCase;
+
+    @Inject
+    ListMyTasksUseCase listMyTasksUseCase;
 
     @Inject
     UpdateTaskStatusUseCase updateTaskStatusUseCase;
@@ -121,6 +125,15 @@ public class TaskController {
     @APIResponse(responseCode = "200", description = "Tasks listed successfully")
     public List<CreateTaskResponse> listTasks() {
         return listAllTasksUseCase.execute().stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
+    }
+
+    @GET
+    @Path("/mine")
+    @Operation(summary = "List my tasks", description = "Lists all tasks belonging to the authenticated user")
+    @APIResponse(responseCode = "200", description = "Tasks listed successfully")
+    public List<CreateTaskResponse> listMyTasks() {
+        String email = securityIdentity.getPrincipal().getName();
+        return listMyTasksUseCase.execute(email).stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
     }
 
 }
