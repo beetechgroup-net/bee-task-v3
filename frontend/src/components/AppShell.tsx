@@ -12,6 +12,7 @@ import {
   Shield,
   FolderKanban,
   BarChart3,
+  PieChart,
 } from "lucide-react";
 import { NavLink, Outlet, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -259,6 +260,14 @@ export function AppShell() {
                 </NavLink>
               )}
 
+              {(activeOrg?.roles.includes("OWNER") ||
+                activeOrg?.roles.includes("ADMIN")) && (
+                <NavLink to="/org-dashboard" className={navLinkClassName}>
+                  <PieChart size={18} />
+                  Org Dashboard
+                </NavLink>
+              )}
+
               {/* Organizações Dropdown */}
               <div className="relative">
                 <NavLink
@@ -433,6 +442,19 @@ export function AppShell() {
             <NavLink to="/projects" className={navLinkClassName}>
               <FolderKanban size={18} />
               Projetos
+            </NavLink>
+          )}
+
+          {(activeOrg?.roles.includes("OWNER") ||
+            activeOrg?.roles.includes("ADMIN")) && (
+            <NavLink
+              to="/org-dashboard"
+              className={({ isActive }) =>
+                cn(navLinkClassName({ isActive }), "flex-col gap-0.5 py-1")
+              }
+            >
+              <PieChart size={20} />
+              <span className="text-[10px]">Org</span>
             </NavLink>
           )}
 
