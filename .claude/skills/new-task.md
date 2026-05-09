@@ -38,12 +38,6 @@ git checkout -b feat/nome-descritivo-da-tarefa
 
 Implemente as mudanças seguindo os padrões definidos no `CLAUDE.md` do projeto.
 
-Lembre-se de:
-- Não usar SQL nativo nem JPQL nas repositories
-- Usar `Objects.isNull()` / `Objects.nonNull()` ao invés de `== null` / `!= null`
-- Seguir a Clean Architecture (entities → use cases → interface adapters → frameworks)
-- Não importar frameworks nas camadas de domínio
-
 ## Passo 4 — Commit
 
 Formato obrigatório: `<tipo>: <descrição em inglês no imperativo>`
