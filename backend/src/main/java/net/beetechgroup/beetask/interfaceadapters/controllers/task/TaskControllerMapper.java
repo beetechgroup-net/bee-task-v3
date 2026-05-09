@@ -26,7 +26,7 @@ public class TaskControllerMapper {
                 output.title(),
                 output.description(),
                 output.status(),
-                output.projectName(),
+                Objects.nonNull(output.project()) ? new CreateTaskResponse.ProjectResponse(output.project().id(), output.project().name()) : null,
                 output.finishedAt(),
                 output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt())).toList()
         );

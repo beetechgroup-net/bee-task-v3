@@ -27,13 +27,17 @@ export type TaskHistoryItem = {
   endAt: string | null
 }
 
+export type TaskProject = {
+  id: number
+  name: string
+}
+
 export type TaskResponse = {
   id: number
   title: string
   description: string
   status: TaskStatus
-  projectName: string
-  projectId?: number
+  project: TaskProject | null
   finishedAt?: string
   history?: TaskHistoryItem[]
 }

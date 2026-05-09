@@ -11,7 +11,7 @@ public class CreateTaskMapper {
                 task.getTitle(),
                 task.getDescription(),
                 task.getStatus(),
-                Objects.nonNull(task.getProject()) ? task.getProject().getName() : null,
+                Objects.nonNull(task.getProject()) ? new CreateTaskOutput.ProjectOutput(task.getProject().getId(), task.getProject().getName()) : null,
                 task.getFinishedAt(),
                 task.getHistory().stream().map(CreateTaskMapper::toTaskHistoryItemOutput).toList());
     }

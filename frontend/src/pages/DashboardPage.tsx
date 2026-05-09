@@ -296,7 +296,7 @@ export const DashboardPage: React.FC = () => {
                             {task.title}
                           </div>
                           <div className="text-[10px] font-black uppercase text-brand tracking-widest">
-                            {task.projectName}
+                            {task.project?.name}
                           </div>
                         </div>
                       </div>
@@ -360,7 +360,7 @@ export const DashboardPage: React.FC = () => {
                         </td>
                         <td className="py-4 text-sm font-medium text-text-muted">
                           <span className="px-2 py-1 bg-surface-muted rounded-lg border border-border-soft">
-                            {task.projectName}
+                            {task.project?.name}
                           </span>
                         </td>
                         <td className="py-4 text-sm font-bold text-text-main">
