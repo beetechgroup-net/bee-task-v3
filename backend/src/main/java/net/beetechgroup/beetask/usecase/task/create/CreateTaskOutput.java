@@ -9,8 +9,9 @@ public record CreateTaskOutput(
                 String title,
                 String description,
                 TaskStatus status,
-                String projectName,
+                ProjectOutput project,
                 LocalDateTime finishedAt,
                 List<TaskHistoryItemOutput> history) {
 
+    public record ProjectOutput(Long id, String name) {}
 }

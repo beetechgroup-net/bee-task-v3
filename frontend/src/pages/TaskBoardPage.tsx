@@ -192,7 +192,7 @@ export function TaskBoardPage() {
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-1 text-[10px] font-bold text-text-muted">
                                   <Tag size={12} className="text-brand" />
-                                  {task.projectName || 'Geral'}
+                                  {task.project?.name || 'Geral'}
                                 </div>
                                 <span className="font-mono text-[10px] font-bold text-text-muted/50">
                                   #{task.id}
