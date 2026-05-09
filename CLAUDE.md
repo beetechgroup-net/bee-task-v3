@@ -1,145 +1,115 @@
-# Bee Task — Guia de Desenvolvimento
+# CLAUDE.md
 
-## Stack
+Guidance for Claude Code when working in this repository. Keep edits aligned with the conventions below.
 
-- **Backend**: Quarkus + Hibernate ORM + Panache (Java 17+)
-- **Frontend**: React + TypeScript + Tailwind CSS
-- **Banco de dados**: PostgreSQL (via Docker Compose)
+## Project
 
-## Arquitetura
+**bee-task-v3 / TimeTrack** — task & time-tracking SaaS. Monorepo with React (Vite) frontend and Quarkus backend, PostgreSQL + Keycloak via Docker. Backlog and user stories live in `backlog.md`.
 
-O backend segue **Clean Architecture** adaptada:
+## Layout
 
 ```
-entities/          → Domínio puro: entidades e regras de negócio
-usecase/           → Casos de uso: orquestram entidades e repositórios (interfaces)
-interfaceadapters/ → Controllers REST (JAX-RS), mappers de entrada/saída
-frameworks/        → Implementações: Panache repositories, JPA entities, mappers de persistência
+backend/    Quarkus 3.34, Java 17, Hibernate ORM + Panache, Flyway, JWT (smallrye)
+frontend/   Vite + React 19 + TypeScript + Tailwind v4
+docker/     Postgres init scripts
+docker-compose.yml   Postgres + Keycloak
+specification/       Domain specs
+backlog.md           User stories (US-001…)
 ```
 
-**Regras de dependência (nunca viole):**
-- `entities` não importa nada externo (sem frameworks, sem Jakarta, sem Quarkus)
-- `usecase` só importa `entities` e interfaces próprias
-- `interfaceadapters` importa `usecase` e `entities`, nunca `frameworks`
-- `frameworks` implementa as interfaces de `usecase`
+Java root package: `net.beetechgroup.beetask`.
 
-## Padrões de Código Java
+## Commands
 
-### Repositories — Sem SQL nativo e sem JPQL explícito
+Infra: `docker-compose up` (Postgres :5432, Keycloak :8081).
 
-Nas implementações de repository (`frameworks/persistence/repository/`), use **sempre** o estilo shorthand do Panache:
+Backend (`cd backend`):
+- Dev: `./mvnw quarkus:dev` (port 8080, uses H2 in dev profile, swagger at `/swagger`, OpenAPI at `/openapi`)
+- Test: `./mvnw test`
+- Build: `./mvnw package`
 
-```java
-// CORRETO — shorthand Panache (propriedades da entidade)
-find("user.email = ?1 and status = ?2", email, status).list();
-find("organization.id", organizationId).stream().toList();
-findByIdOptional(id).map(mapper::toDomain);
+Frontend (`cd frontend`):
+- Dev: `npm run dev` (port 5173, proxies `/api/*` → `http://localhost:8080`)
+- Build: `npm run build` (runs `tsc -b` then `vite build`)
+- Lint: `npm run lint`
 
-// ERRADO — JPQL explícito
-find("SELECT t FROM TaskEntity t WHERE t.user.email = ?1", email);
-find("select distinct t from TaskEntity t join t.history h where ...", ...);
+## Backend Architecture (Clean Architecture, adapted)
 
-// ERRADO — SQL nativo
-getEntityManager().createNativeQuery("SELECT * FROM tasks WHERE ...");
-```
+Four layers, dependencies point inward. **Never** import outward.
 
-Para consultas complexas que envolvem JOINs com coleções, prefira buscar via shorthand e filtrar em Java:
+| Package | Role | May depend on |
+|---|---|---|
+| `entities/` | Pure domain POJOs and enums (`Task`, `Project`, `User`, `Organization`, `TaskStatus`, …). Plain Java, no annotations. | nothing |
+| `usecase/<feature>/<action>/` | Business logic. Plain classes with constructor DI. Records for `XxxInput`/`XxxOutput`. Static `XxxMapper` for domain→Output. | `entities`, `usecase.repository` |
+| `usecase/repository/` | Repository **ports** (interfaces) returning domain types. | `entities` |
+| `interfaceadapters/controllers/<feature>/` | JAX-RS controllers, `XxxRequest`/`XxxResponse` records, `XxxControllerMapper`. Translates HTTP ↔ use case I/O. | `usecase`, `entities` |
+| `frameworks/persistence/` | Panache `XxxEntity`, `XxxRepositoryImpl` (implements port + `PanacheRepository<XxxEntity>`), `XxxEntityMapper` (entity ↔ domain). | everything |
+| `frameworks/config/` | `@ApplicationScoped` classes with `@Produces` methods that build use cases from injected repository ports. | everything |
 
-```java
-// Busca por propriedade simples + filtragem em Java
-return find("user.email = ?1", email).list().stream()
-    .filter(entity -> entity.getHistory().stream().anyMatch(h ->
-        Objects.nonNull(h.getStartAt()) &&
-        !h.getStartAt().isAfter(end) &&
-        (Objects.isNull(h.getEndAt()) || !h.getEndAt().isBefore(start))))
-    .map(mapper::toDomain)
-    .toList();
-```
+### Use case anatomy
 
-### Verificações de nulo — `Objects.isNull` e `Objects.nonNull`
+A new use case `usecase/<feature>/<action>/` contains exactly:
+- `XxxInput.java` — `record` with primitives/IDs/email (no domain entities in the signature unless intentional)
+- `XxxOutput.java` — `record` with the response shape
+- `XxxUseCase.java` — plain class, constructor-injected repository ports, single `execute(XxxInput)` method
+- `XxxMapper.java` — static `toXxxOutput(domain)` only
 
-Use sempre `Objects.isNull(x)` e `Objects.nonNull(x)` ao invés dos operadores `== null` e `!= null`:
+Then **wire it** via `@Produces` in the matching `frameworks/config/<Feature>UseCaseConfig.java`. Use cases are NOT annotated with CDI scopes themselves — the producer is what makes them injectable.
 
-```java
-// CORRETO
-if (Objects.isNull(entity.getId())) {
-    persist(entity);
-}
+### Controller anatomy
 
-if (Objects.nonNull(input.projectId())) {
-    task.setProject(projectRepository.findProjectById(input.projectId()).orElseThrow());
-}
+`interfaceadapters/controllers/<feature>/`:
+- `XxxController.java` — `@Path`, JAX-RS verbs, `@Inject` use cases + `SecurityIdentity`, OpenAPI annotations (`@Tag`, `@Operation`, `@APIResponse`)
+- `XxxRequest.java` / `XxxResponse.java` — records mirroring the use case Input/Output (don't reuse use case records in HTTP layer)
+- `XxxControllerMapper.java` — static `toXxxInput(request, email)` / `toXxxResponse(output)`
 
-// ERRADO
-if (entity.getId() == null) { ... }
-if (input.projectId() != null) { ... }
-```
+The authenticated email comes from `securityIdentity.getPrincipal().getName()` and is passed into the Input.
 
-Isso se aplica a: repositories, mappers, use cases e entities.  
-Exceção tolerada: ternários simples inline onde a legibilidade é melhor com `!=`.
+### Repository pattern
 
-### Mappers de persistência
+- Port: `usecase/repository/XxxRepository.java`, methods return **domain** types.
+- Impl: `frameworks/persistence/repository/XxxRepositoryImpl.java`:
+  - `@ApplicationScoped`
+  - `implements XxxRepository, PanacheRepository<XxxEntity>`
+  - `@Transactional` on writes
+  - Uses `XxxEntityMapper.toEntity` / `toDomain` at the boundary
 
-Sempre verifique nulo na entrada de métodos de mapeamento:
+### DB / migrations
 
-```java
-public static MyEntity toEntity(MyDomain domain) {
-    if (Objects.isNull(domain)) return null;
-    // ...
-}
-```
+- Postgres in prod, **H2 in dev** (`%dev` profile, file at `backend/data/beetask`).
+- `quarkus.hibernate-orm.database.generation=validate` (prod) / `update` (dev).
+- Flyway migrations live at `backend/src/main/resources/db/migration/V{N}__{snake_name}.sql`.
+- `quarkus.flyway.migrate-at-start=false` — migrations are not auto-applied; run them deliberately.
 
-### Padrão de save nos repositories
+### Auth
 
-```java
-if (Objects.isNull(entity.getId())) {
-    persist(entity);
-} else {
-    entity = getEntityManager().merge(entity);
-}
-```
+- JWT signed with `privateKey.pem`, verified with `publicKey.pem`. Issuer `https://beetech.net`.
+- Keycloak is provisioned in docker-compose but **not yet integrated** into the app — JWTs are minted by `usecase/auth/login`.
 
-## Workflow de Tarefas
+## Frontend Conventions
 
-Use o skill `/new-task` para seguir o guia completo de início ao PR.
+- **React 19**, **Tailwind v4** (`@tailwindcss/vite`, no Tailwind config file required), **react-router-dom v7**.
+- Folder layout: `pages/`, `components/`, `services/`, `contexts/`, `types/`, `lib/`.
+- HTTP through `apiFetch` in `src/lib/api.ts` — it auto-injects the JWT from `localStorage.user.jwt` and prefixes `VITE_API_URL` (defaults to `/api`, proxied by Vite to the backend).
+- Each backend feature gets a service in `services/<feature>Service.ts` exporting an object of methods.
+- Class merging uses `cn(...inputs)` from `src/lib/utils.ts` (clsx + tailwind-merge).
+- Icons: `lucide-react`. Animations: `framer-motion`. DnD: `@hello-pangea/dnd`.
+- Auth state: `AuthContext` (`src/contexts/AuthContext.tsx`) — `user`, `activeOrg`, `login`, `logout`, `refreshUser`. Persisted in `localStorage` (`user`, `activeOrgId`).
+- Authenticated routes nest under `<AppShell />` in `src/router.tsx`. Role-restricted routes wrap with `<RoleGate allowedRoles={["OWNER", "ADMIN"]}>`.
+- UI strings are in pt-BR. Keep that consistent.
 
-### Branches
+## Conventions & Constraints
 
-| Tipo | Prefixo |
-|------|---------|
-| Funcionalidade | `feat/` |
-| Bug | `fix/` |
-| Manutenção | `chore/` |
-| Testes | `test/` |
+- Don't put business logic in controllers — they only translate HTTP ↔ use case I/O.
+- **Never return a use case Output record directly from a controller.** Controllers must define their own `XxxResponse` records and use `XxxControllerMapper.toResponse(output)` to convert. Use case I/O types must not leak into the HTTP layer.
+- Don't import `jakarta.*`, `io.quarkus.*`, or Panache from `entities/` or `usecase/` (except `usecase.repository` ports which are pure interfaces).
+- Don't reach for a UI library on the frontend — Tailwind only.
+- Don't create files outside the conventional folders.
+- Vertical slices first; refactor when a pattern repeats. The backlog is in `backlog.md`.
 
-### Commits
+## Skills
 
-Formato: `<tipo>: <descrição em inglês no imperativo>`
-
-```
-feat: add task filtering by user organization
-fix: prevent null pointer in task history mapper
-chore: replace JPQL with Panache shorthand queries
-```
-
-### Pull Requests
-
-- Título em inglês, curto (< 70 chars)
-- Descrição em **português**, seguindo `.github/PULL_REQUEST_TEMPLATE.md`
-- Vincular a issue com `Fecha #<número>`
-
-## Rodando o projeto
-
-```bash
-# Backend
-cd backend
-./mvnw quarkus:dev
-
-# Frontend
-cd frontend
-npm install
-npm run dev
-
-# Banco de dados
-docker-compose up -d
-```
+Project skills live in `.claude/skills/`:
+- `scaffold-usecase` — generate a backend use case + controller wiring.
+- `scaffold-feature` — generate a frontend page + service + types + route.
+- `architecture-review` — audit Clean Architecture violations.
