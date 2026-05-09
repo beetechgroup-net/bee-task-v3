@@ -10,7 +10,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import net.beetechgroup.beetask.usecase.orgdashboard.OrgDashboardInput;
-import net.beetechgroup.beetask.usecase.orgdashboard.OrgDashboardOutput;
 import net.beetechgroup.beetask.usecase.orgdashboard.OrgDashboardUseCase;
 
 import java.time.LocalDateTime;
@@ -28,7 +27,7 @@ public class OrgDashboardController {
     SecurityIdentity securityIdentity;
 
     @GET
-    public OrgDashboardOutput getDashboard(
+    public OrgDashboardResponse getDashboard(
             @PathParam("id") Long organizationId,
             @QueryParam("startDate") String startDateStr,
             @QueryParam("endDate") String endDateStr) {
@@ -47,6 +46,8 @@ public class OrgDashboardController {
             end = end.with(java.time.LocalTime.MAX);
         }
 
-        return orgDashboardUseCase.execute(new OrgDashboardInput(email, organizationId, start, end));
+        return OrgDashboardControllerMapper.toResponse(
+            orgDashboardUseCase.execute(new OrgDashboardInput(email, organizationId, start, end))
+        );
     }
 }
