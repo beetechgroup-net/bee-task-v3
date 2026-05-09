@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.usecase.task.create;
 
+import java.util.Objects;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
 
@@ -10,7 +11,7 @@ public class CreateTaskMapper {
                 task.getTitle(),
                 task.getDescription(),
                 task.getStatus(),
-                task.getProject() != null ? task.getProject().getName() : null,
+                Objects.nonNull(task.getProject()) ? task.getProject().getName() : null,
                 task.getFinishedAt(),
                 task.getHistory().stream().map(CreateTaskMapper::toTaskHistoryItemOutput).toList());
     }

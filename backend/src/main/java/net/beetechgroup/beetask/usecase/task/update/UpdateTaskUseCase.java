@@ -1,6 +1,7 @@
 package net.beetechgroup.beetask.usecase.task.update;
 
 import java.util.List;
+import java.util.Objects;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
@@ -23,8 +24,8 @@ public class UpdateTaskUseCase {
 
     public CreateTaskOutput execute(UpdateTaskInput input) {
         Task task = taskRepository.findTaskById(input.id());
-        
-        if (task.getUser() == null) {
+
+        if (Objects.isNull(task.getUser())) {
             task.setUser(userRepository.findByEmail(input.userEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado: " + input.userEmail())));
         }
@@ -33,7 +34,7 @@ public class UpdateTaskUseCase {
         task.setDescription(input.description());
         task.setStatus(input.status());
 
-        if (input.projectId() != null) {
+        if (Objects.nonNull(input.projectId())) {
             Project project = projectRepository.findProjectById(input.projectId())
                     .orElseThrow(() -> new IllegalArgumentException("Projeto não encontrado com ID: " + input.projectId()));
             task.setProject(project);
@@ -41,9 +42,9 @@ public class UpdateTaskUseCase {
             task.setProject(null);
         }
 
-        if (input.history() != null) {
+        if (Objects.nonNull(input.history())) {
             List<TaskHistoryItem> updatedHistory = input.history().stream().map(hInput -> {
-                if (hInput.id() != null) {
+                if (Objects.nonNull(hInput.id())) {
                     return task.getHistory().stream()
                             .filter(existing -> existing.getId().equals(hInput.id()))
                             .findFirst()
@@ -65,7 +66,7 @@ public class UpdateTaskUseCase {
                     return newItem;
                 }
             }).toList();
-            
+
             task.getHistory().clear();
             task.getHistory().addAll(updatedHistory);
         }

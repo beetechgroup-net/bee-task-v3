@@ -1,6 +1,7 @@
 package net.beetechgroup.beetask.entities;
 
 import java.util.List;
+import java.util.Objects;
 
 import net.beetechgroup.beetask.entities.organization.Organization;
 
@@ -47,7 +48,7 @@ public class Project {
         return "Project{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
-                ", organization=" + (organization != null ? organization.getName() : "null") +
+                ", organization=" + (Objects.nonNull(organization) ? organization.getName() : "null") +
                 '}';
     }
 }

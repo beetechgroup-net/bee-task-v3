@@ -1,6 +1,7 @@
 package net.beetechgroup.beetask.entities.task;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class TaskHistoryItem {
     private Long id;
@@ -32,6 +33,6 @@ public class TaskHistoryItem {
     }
 
     public boolean isRunning() {
-        return endAt == null;
+        return Objects.isNull(endAt);
     }
 }

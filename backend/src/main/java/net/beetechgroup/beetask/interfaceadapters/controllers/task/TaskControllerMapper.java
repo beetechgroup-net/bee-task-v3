@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.interfaceadapters.controllers.task;
 
+import java.util.Objects;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskInput;
@@ -47,7 +48,7 @@ public class TaskControllerMapper {
                 request.status(),
                 request.projectId(),
                 userEmail,
-                request.history() != null ? request.history().stream()
+                Objects.nonNull(request.history()) ? request.history().stream()
                         .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
                         .toList() : null
         );

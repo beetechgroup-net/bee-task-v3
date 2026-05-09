@@ -1,12 +1,13 @@
 package net.beetechgroup.beetask.frameworks.persistence.mapper;
 
+import java.util.Objects;
 import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.frameworks.persistence.entities.UserEntity;
 
 public class UserEntityMapper {
 
     public static UserEntity toEntity(User user) {
-        if (user == null) return null;
+        if (Objects.isNull(user)) return null;
         UserEntity entity = new UserEntity();
         entity.setId(user.getId());
         entity.setName(user.getName());
@@ -17,7 +18,7 @@ public class UserEntityMapper {
     }
 
     public static User toDomain(UserEntity entity) {
-        if (entity == null) return null;
+        if (Objects.isNull(entity)) return null;
         User user = new User();
         user.setId(entity.getId());
         user.setName(entity.getName());
