@@ -55,7 +55,7 @@ export function CreateTaskPage() {
             title: data.title,
             description: data.description || "",
             status: data.status,
-            projectId: data.projectId?.toString() || "",
+            projectId: data.project?.id?.toString() || "",
             history: data.history || [],
           });
         } catch (error) {
@@ -156,7 +156,7 @@ export function CreateTaskPage() {
                 {TASK_STATUS_LABELS[createdTask.status]}
               </span>
               <span className="text-[10px] font-bold text-text-muted">
-                {createdTask.project || "Geral"}
+                {createdTask.project?.name || "Geral"}
               </span>
             </div>
           </div>
