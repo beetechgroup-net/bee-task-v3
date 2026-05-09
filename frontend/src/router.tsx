@@ -13,6 +13,7 @@ import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { OrganizationsPage } from "./pages/OrganizationsPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { OrgDashboardPage } from "./pages/OrgDashboardPage";
 import { RoleGate } from "./components/RoleGate";
 
 export const router = createBrowserRouter([
@@ -79,6 +80,14 @@ export const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <DashboardPage />,
+      },
+      {
+        path: "org-dashboard",
+        element: (
+          <RoleGate allowedRoles={["OWNER", "ADMIN"]} message="Apenas administradores e proprietários podem acessar o dashboard da organização.">
+            <OrgDashboardPage />
+          </RoleGate>
+        ),
       },
     ],
   },
