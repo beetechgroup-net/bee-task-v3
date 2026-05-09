@@ -8,6 +8,7 @@ import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,7 +70,7 @@ public class LoginUseCase {
         return new LoginOutput(
                 user.getName(),
                 user.getEmail(),
-                user.getPhoto() != null ? user.getPhoto() : "https://ui-avatars.com/api/?name=" + user.getName().replace(" ", "+") + "&background=random",
+                Objects.nonNull(user.getPhoto()) ? user.getPhoto() : "https://ui-avatars.com/api/?name=" + user.getName().replace(" ", "+") + "&background=random",
                 token,
                 refreshToken,
                 3600L,

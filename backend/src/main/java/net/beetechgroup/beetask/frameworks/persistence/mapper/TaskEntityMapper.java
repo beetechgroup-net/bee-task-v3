@@ -1,6 +1,7 @@
 package net.beetechgroup.beetask.frameworks.persistence.mapper;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.frameworks.persistence.entities.TaskEntity;
@@ -26,7 +27,7 @@ public class TaskEntityMapper {
     }
 
     public static Task toDomain(TaskEntity entity) {
-        if (entity == null) return null;
+        if (Objects.isNull(entity)) return null;
 
         Task task = new Task();
         task.setId(entity.getId());

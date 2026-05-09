@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.frameworks.persistence.mapper;
 
+import java.util.Objects;
 import net.beetechgroup.beetask.entities.organization.Organization;
 import net.beetechgroup.beetask.frameworks.persistence.entities.OrganizationEntity;
 
@@ -12,7 +13,7 @@ public class OrganizationEntityMapper {
     }
 
     public static Organization toDomain(OrganizationEntity entity) {
-        if (entity == null) return null;
+        if (Objects.isNull(entity)) return null;
 
         Organization organization = new Organization();
         organization.setId(entity.getId());
