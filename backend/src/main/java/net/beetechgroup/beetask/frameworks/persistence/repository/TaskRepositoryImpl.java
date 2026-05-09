@@ -58,4 +58,20 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     public List<Task> findTasksByUser(String email) {
         return find("user.email = ?1", email).list().stream().map(TaskEntityMapper::toDomain).toList();
     }
+
+    @Override
+    public List<Task> findTasksWorkedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end) {
+        return find("select distinct t from TaskEntity t join t.history h " +
+                "where t.project.organization.id = ?1 " +
+                "and h.startAt <= ?3 and (h.endAt is null or h.endAt >= ?2)",
+                orgId, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<Task> findTasksFinishedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end) {
+        return find("select distinct t from TaskEntity t where t.project.organization.id = ?1 " +
+                "and t.status = net.beetechgroup.beetask.entities.task.TaskStatus.COMPLETED " +
+                "and t.finishedAt >= ?2 and t.finishedAt <= ?3",
+                orgId, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
+    }
 }
