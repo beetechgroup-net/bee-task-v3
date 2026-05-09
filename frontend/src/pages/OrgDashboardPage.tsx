@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { MemberDetailModal } from "../components/MemberDetailModal";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -134,6 +135,7 @@ export const OrgDashboardPage: React.FC = () => {
   const [startDate, setStartDate] = useState(startOfMonth(new Date()));
   const [endDate, setEndDate] = useState(endOfMonth(new Date()));
   const [error, setError] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!activeOrg) return;
@@ -361,10 +363,11 @@ export const OrgDashboardPage: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.06 }}
+                      onClick={() => setSelectedMemberId(member.userId)}
                       className={cn(
-                        "relative rounded-[1.5rem] p-6 border transition-all flex flex-col items-center text-center gap-3",
+                        "relative rounded-[1.5rem] p-6 border transition-all flex flex-col items-center text-center gap-3 cursor-pointer",
                         isFirst
-                          ? "border-amber-400/50 bg-gradient-to-b from-amber-500/10 to-amber-500/5 shadow-xl shadow-amber-500/10"
+                          ? "border-amber-400/50 bg-gradient-to-b from-amber-500/10 to-amber-500/5 shadow-xl shadow-amber-500/10 hover:shadow-2xl"
                           : "border-border-soft bg-app-bg hover:border-brand/30 hover:shadow-md",
                       )}
                     >
@@ -416,6 +419,14 @@ export const OrgDashboardPage: React.FC = () => {
           </section>
         </>
       ) : null}
+
+      {activeOrg && (
+        <MemberDetailModal
+          memberId={selectedMemberId}
+          orgId={activeOrg.id}
+          onClose={() => setSelectedMemberId(null)}
+        />
+      )}
     </div>
   );
 };
