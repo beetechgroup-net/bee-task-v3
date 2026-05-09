@@ -9,6 +9,7 @@ import net.beetechgroup.beetask.frameworks.persistence.mapper.ProjectEntityMappe
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -18,7 +19,7 @@ public class ProjectRepositoryImpl implements ProjectRepository, PanacheReposito
     @Transactional
     public Project saveProject(Project project) {
         ProjectEntity entity = ProjectEntityMapper.toEntity(project);
-        if (entity.getId() == null) {
+        if (Objects.isNull(entity.getId())) {
             persist(entity);
         } else {
             entity = getEntityManager().merge(entity);

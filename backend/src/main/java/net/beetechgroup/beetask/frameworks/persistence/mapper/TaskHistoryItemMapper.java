@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.frameworks.persistence.mapper;
 
+import java.util.Objects;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
 import net.beetechgroup.beetask.frameworks.persistence.entities.TaskHistoryItemEntity;
 
@@ -13,7 +14,7 @@ public class TaskHistoryItemMapper {
     }
 
     public static TaskHistoryItem toDomain(TaskHistoryItemEntity entity) {
-        if (entity == null) return null;
+        if (Objects.isNull(entity)) return null;
 
         TaskHistoryItem item = new TaskHistoryItem();
         item.setId(entity.getId());

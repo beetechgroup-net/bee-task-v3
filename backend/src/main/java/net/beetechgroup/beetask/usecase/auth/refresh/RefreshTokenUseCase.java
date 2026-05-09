@@ -12,6 +12,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ public class RefreshTokenUseCase {
             JsonWebToken token = jwtParser.parse(input.refreshToken());
             String email = token.getSubject(); // Or token.getName() / token.getClaim(Claims.upn.name())
 
-            if (email == null) {
+            if (Objects.isNull(email)) {
                 throw new RuntimeException("Invalid refresh token: email not found");
             }
 
@@ -77,7 +78,7 @@ public class RefreshTokenUseCase {
             return new LoginOutput(
                     user.getName(),
                     user.getEmail(),
-                    user.getPhoto() != null ? user.getPhoto() : "https://ui-avatars.com/api/?name=" + user.getName().replace(" ", "+") + "&background=random",
+                    Objects.nonNull(user.getPhoto()) ? user.getPhoto() : "https://ui-avatars.com/api/?name=" + user.getName().replace(" ", "+") + "&background=random",
                     newToken,
                     newRefreshToken,
                     3600L,

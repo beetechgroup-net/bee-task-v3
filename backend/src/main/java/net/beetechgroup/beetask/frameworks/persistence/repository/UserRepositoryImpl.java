@@ -4,6 +4,7 @@ import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.util.Objects;
 import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.frameworks.persistence.entities.UserEntity;
 import net.beetechgroup.beetask.frameworks.persistence.mapper.UserEntityMapper;
@@ -25,7 +26,7 @@ public class UserRepositoryImpl implements UserRepository, PanacheRepository<Use
     @Transactional
     public User save(User user) {
         UserEntity entity = UserEntityMapper.toEntity(user);
-        if (entity.getId() == null) {
+        if (Objects.isNull(entity.getId())) {
             persist(entity);
         } else {
             entity = getEntityManager().merge(entity);

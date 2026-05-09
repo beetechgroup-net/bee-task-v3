@@ -10,6 +10,7 @@ import net.beetechgroup.beetask.frameworks.persistence.mapper.UserOrganizationEn
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -47,9 +48,8 @@ public class UserOrganizationRepositoryImpl implements UserOrganizationRepositor
     @Transactional
     public void save(UserOrganization userOrganization) {
         UserOrganizationEntity entity = UserOrganizationEntityMapper.toEntity(userOrganization);
-        if (entity.getUser().getId() != null && entity.getOrganization().getId() != null) {
-            // Find existing by user and org to update instead of creating new if it exists
-            Optional<UserOrganizationEntity> existing = find("user.id = ?1 and organization.id = ?2", 
+        if (Objects.nonNull(entity.getUser().getId()) && Objects.nonNull(entity.getOrganization().getId())) {
+            Optional<UserOrganizationEntity> existing = find("user.id = ?1 and organization.id = ?2",
                 entity.getUser().getId(), entity.getOrganization().getId()).firstResultOptional();
             if (existing.isPresent()) {
                 UserOrganizationEntity existingEntity = existing.get();

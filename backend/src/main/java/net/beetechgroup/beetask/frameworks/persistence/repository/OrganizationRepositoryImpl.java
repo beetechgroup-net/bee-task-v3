@@ -19,7 +19,7 @@ public class OrganizationRepositoryImpl implements OrganizationRepository, Panac
     @Transactional
     public Organization saveOrganization(Organization organization) {
         OrganizationEntity entity = OrganizationEntityMapper.toEntity(organization);
-        if (entity.getId() == null) {
+        if (Objects.isNull(entity.getId())) {
             persist(entity);
         } else {
             entity = getEntityManager().merge(entity);

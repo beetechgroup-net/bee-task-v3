@@ -1,12 +1,14 @@
 package net.beetechgroup.beetask.frameworks.persistence.repository;
 
 import java.util.List;
+import java.util.Objects;
 import java.time.LocalDateTime;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import net.beetechgroup.beetask.entities.task.Task;
+import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.frameworks.persistence.entities.TaskEntity;
 import net.beetechgroup.beetask.frameworks.persistence.mapper.TaskEntityMapper;
 import net.beetechgroup.beetask.usecase.exceptions.TaskNotFoundException;
@@ -19,7 +21,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     @Transactional
     public Task saveTask(Task task) {
         TaskEntity entity = TaskEntityMapper.toEntity(task);
-        if (entity.getId() == null) {
+        if (Objects.isNull(entity.getId())) {
             persist(entity);
         } else {
             entity = getEntityManager().merge(entity);
@@ -41,17 +43,20 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksWorkedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end) {
-        return find("select distinct t from TaskEntity t join t.history h where t.user.email = ?1 " +
-                "and h.startAt <= ?3 and (h.endAt is null or h.endAt >= ?2)",
-                email, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
+        return find("user.email = ?1", email).list().stream()
+                .filter(entity -> entity.getHistory().stream().anyMatch(h ->
+                        Objects.nonNull(h.getStartAt()) &&
+                        !h.getStartAt().isAfter(end) &&
+                        (Objects.isNull(h.getEndAt()) || !h.getEndAt().isBefore(start))))
+                .map(TaskEntityMapper::toDomain)
+                .toList();
     }
 
     @Override
     public List<Task> findTasksFinishedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end) {
-        return find("select distinct t from TaskEntity t where t.user.email = ?1 " +
-                "and t.status = net.beetechgroup.beetask.entities.task.TaskStatus.COMPLETED " +
-                "and t.finishedAt >= ?2 and t.finishedAt <= ?3",
-                email, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
+        return find("user.email = ?1 and status = ?2 and finishedAt >= ?3 and finishedAt <= ?4",
+                email, TaskStatus.COMPLETED, start, end)
+                .list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
     @Override
@@ -61,17 +66,19 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksWorkedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end) {
-        return find("select distinct t from TaskEntity t join t.history h " +
-                "where t.project.organization.id = ?1 " +
-                "and h.startAt <= ?3 and (h.endAt is null or h.endAt >= ?2)",
-                orgId, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
+        return find("project.organization.id = ?1", orgId).list().stream()
+                .filter(entity -> entity.getHistory().stream().anyMatch(h ->
+                        Objects.nonNull(h.getStartAt()) &&
+                        !h.getStartAt().isAfter(end) &&
+                        (Objects.isNull(h.getEndAt()) || !h.getEndAt().isBefore(start))))
+                .map(TaskEntityMapper::toDomain)
+                .toList();
     }
 
     @Override
     public List<Task> findTasksFinishedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end) {
-        return find("select distinct t from TaskEntity t where t.project.organization.id = ?1 " +
-                "and t.status = net.beetechgroup.beetask.entities.task.TaskStatus.COMPLETED " +
-                "and t.finishedAt >= ?2 and t.finishedAt <= ?3",
-                orgId, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
+        return find("project.organization.id = ?1 and status = ?2 and finishedAt >= ?3 and finishedAt <= ?4",
+                orgId, TaskStatus.COMPLETED, start, end)
+                .list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 }

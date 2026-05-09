@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.usecase.task.create;
 
+import java.util.Objects;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
@@ -23,7 +24,7 @@ public class CreateTaskUseCase {
         task.setDescription(input.description());
         task.setStatus(input.status());
 
-        if (input.projectId() != null) {
+        if (Objects.nonNull(input.projectId())) {
             Project project = projectRepository.findProjectById(input.projectId())
                     .orElseThrow(() -> new IllegalArgumentException("Projeto não encontrado com ID: " + input.projectId()));
             task.setProject(project);
