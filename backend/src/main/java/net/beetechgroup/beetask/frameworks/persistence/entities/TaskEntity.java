@@ -3,9 +3,10 @@ package net.beetechgroup.beetask.frameworks.persistence.entities;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,7 +24,9 @@ public class TaskEntity {
     private Long id;
     private String title;
     private String description;
+    @Enumerated(EnumType.STRING)
     private TaskStatus status;
+    @Column(name = "finished_at")
     private java.time.LocalDateTime finishedAt;
 
     @ManyToOne

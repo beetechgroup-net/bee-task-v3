@@ -2,6 +2,7 @@ package net.beetechgroup.beetask.frameworks.persistence.entities;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,7 +18,9 @@ public class TaskHistoryItemEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "start_at")
     private LocalDateTime startAt;
+    @Column(name = "end_at")
     private LocalDateTime endAt;
 
     @ManyToOne

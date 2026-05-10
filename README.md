@@ -36,11 +36,18 @@ cd backend
 ./mvnw quarkus:dev
 ```
 
-Default database settings already point to the local Docker PostgreSQL instance:
+Default database settings point to the local Docker PostgreSQL instance, including in the `dev` profile:
 
-- database: `timetrack`
-- user: `timetrack`
-- password: `timetrack`
+- database: `beetask`
+- user: `beetask`
+- password: `beetask`
+- JDBC URL: `jdbc:postgresql://localhost:5432/beetask`
+
+If needed, you can override them with:
+
+- `DB_URL`
+- `DB_USER`
+- `DB_PASSWORD`
 
 Main API endpoints:
 
