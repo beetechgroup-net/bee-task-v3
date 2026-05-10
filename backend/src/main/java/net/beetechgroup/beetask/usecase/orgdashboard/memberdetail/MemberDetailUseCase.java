@@ -8,13 +8,15 @@ import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class MemberDetailUseCase {
 
@@ -37,57 +39,90 @@ public class MemberDetailUseCase {
                 .findByUserAndOrganization(input.memberId(), input.organizationId())
                 .orElseThrow(() -> new IllegalArgumentException("Member not found in organization"));
 
-        LocalDateTime end = LocalDateTime.now();
-        LocalDateTime start = end.minusMonths(5).withDayOfMonth(1).toLocalDate().atStartOfDay();
+        LocalDateTime start = input.startDate();
+        LocalDateTime end = input.endDate();
+
+        long daySpan = ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate());
+        boolean groupByDay = daySpan <= 30;
 
         List<Task> workedTasks = taskRepository.findTasksWorkedByUserIdInPeriod(input.memberId(), start, end);
         List<Task> finishedTasks = taskRepository.findTasksFinishedByUserIdInPeriod(input.memberId(), start, end);
 
+        Map<Long, MemberDetailOutput.ProjectStats> projectStatsMap = new HashMap<>();
+        Map<LocalDate, Long> minutesPerDay = new HashMap<>();
         Map<YearMonth, Long> minutesPerMonth = new HashMap<>();
-        Map<YearMonth, Long> finishedPerMonth = new HashMap<>();
 
         for (Task task : workedTasks) {
             for (TaskHistoryItem h : task.getHistory()) {
                 if (!isWithinPeriod(h, start, end)) continue;
                 LocalDateTime effectiveStart = h.getStartAt().isBefore(start) ? start : h.getStartAt();
-                LocalDateTime effectiveEnd = (h.getEndAt() == null || h.getEndAt().isAfter(end)) ? end : h.getEndAt();
+                LocalDateTime effectiveEnd = (Objects.isNull(h.getEndAt()) || h.getEndAt().isAfter(end)) ? end : h.getEndAt();
                 if (effectiveStart.isAfter(effectiveEnd)) continue;
 
-                YearMonth ym = YearMonth.from(effectiveStart);
                 long minutes = Duration.between(effectiveStart, effectiveEnd).toMinutes();
-                minutesPerMonth.merge(ym, minutes, Long::sum);
+
+                if (groupByDay) {
+                    minutesPerDay.merge(effectiveStart.toLocalDate(), minutes, Long::sum);
+                } else {
+                    minutesPerMonth.merge(YearMonth.from(effectiveStart), minutes, Long::sum);
+                }
+
+                if (Objects.nonNull(task.getProject())) {
+                    Long projectId = task.getProject().getId();
+                    MemberDetailOutput.ProjectStats existing = projectStatsMap.getOrDefault(projectId,
+                            new MemberDetailOutput.ProjectStats(projectId, task.getProject().getName(), 0L));
+                    projectStatsMap.put(projectId, new MemberDetailOutput.ProjectStats(
+                            projectId, existing.projectName(), existing.totalMinutes() + minutes));
+                }
             }
         }
 
-        for (Task task : finishedTasks) {
-            if (task.getFinishedAt() == null) continue;
-            YearMonth ym = YearMonth.from(task.getFinishedAt());
-            finishedPerMonth.merge(ym, 1L, Long::sum);
+        List<MemberDetailOutput.PeriodStats> periodStats = new ArrayList<>();
+
+        if (groupByDay) {
+            Map<LocalDate, Long> finishedPerDay = new HashMap<>();
+            for (Task task : finishedTasks) {
+                if (Objects.isNull(task.getFinishedAt())) continue;
+                finishedPerDay.merge(task.getFinishedAt().toLocalDate(), 1L, Long::sum);
+            }
+
+            LocalDate current = start.toLocalDate();
+            LocalDate endDate = end.toLocalDate();
+            while (!current.isAfter(endDate)) {
+                periodStats.add(new MemberDetailOutput.PeriodStats(
+                        current.getYear(), current.getMonthValue(), current.getDayOfMonth(),
+                        finishedPerDay.getOrDefault(current, 0L),
+                        minutesPerDay.getOrDefault(current, 0L)
+                ));
+                current = current.plusDays(1);
+            }
+        } else {
+            Map<YearMonth, Long> finishedPerMonth = new HashMap<>();
+            for (Task task : finishedTasks) {
+                if (Objects.isNull(task.getFinishedAt())) continue;
+                finishedPerMonth.merge(YearMonth.from(task.getFinishedAt()), 1L, Long::sum);
+            }
+
+            YearMonth current = YearMonth.from(start);
+            YearMonth endMonth = YearMonth.from(end);
+            while (!current.isAfter(endMonth)) {
+                periodStats.add(new MemberDetailOutput.PeriodStats(
+                        current.getYear(), current.getMonthValue(), null,
+                        finishedPerMonth.getOrDefault(current, 0L),
+                        minutesPerMonth.getOrDefault(current, 0L)
+                ));
+                current = current.plusMonths(1);
+            }
         }
 
-        List<MemberDetailOutput.MonthlyStats> monthlyStats = new ArrayList<>();
-        YearMonth current = YearMonth.from(start);
-        YearMonth endMonth = YearMonth.from(end);
-        while (!current.isAfter(endMonth)) {
-            monthlyStats.add(new MemberDetailOutput.MonthlyStats(
-                    current.getYear(),
-                    current.getMonthValue(),
-                    finishedPerMonth.getOrDefault(current, 0L),
-                    minutesPerMonth.getOrDefault(current, 0L)
-            ));
-            current = current.plusMonths(1);
-        }
-
-        monthlyStats.sort(Comparator.comparingInt(MemberDetailOutput.MonthlyStats::year)
-                .thenComparingInt(MemberDetailOutput.MonthlyStats::month));
-
-        return MemberDetailMapper.toOutput(member, monthlyStats);
+        return MemberDetailMapper.toOutput(member, groupByDay ? "DAY" : "MONTH", periodStats,
+                new ArrayList<>(projectStatsMap.values()));
     }
 
     private boolean isWithinPeriod(TaskHistoryItem item, LocalDateTime start, LocalDateTime end) {
-        if (item.getStartAt() == null) return false;
+        if (Objects.isNull(item.getStartAt())) return false;
         if (item.getStartAt().isAfter(end)) return false;
-        if (item.getEndAt() != null && item.getEndAt().isBefore(start)) return false;
+        if (Objects.nonNull(item.getEndAt()) && item.getEndAt().isBefore(start)) return false;
         return true;
     }
 }

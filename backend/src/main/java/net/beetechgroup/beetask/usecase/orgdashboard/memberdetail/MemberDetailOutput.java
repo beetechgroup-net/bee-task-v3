@@ -7,7 +7,10 @@ public record MemberDetailOutput(
         String userName,
         String userEmail,
         String userPhoto,
-        List<MonthlyStats> monthlyStats
+        String groupedBy,
+        List<PeriodStats> periodStats,
+        List<ProjectStats> projectStats
 ) {
-    public record MonthlyStats(int year, int month, long finishedTasksCount, long totalMinutesWorked) {}
+    public record PeriodStats(int year, int month, Integer day, long finishedTasksCount, long totalMinutesWorked) {}
+    public record ProjectStats(Long projectId, String projectName, long totalMinutes) {}
 }

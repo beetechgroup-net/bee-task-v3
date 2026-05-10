@@ -27,11 +27,18 @@ export interface OrgDashboardData {
   memberStats: OrgMemberStats[]
 }
 
-export interface MonthlyStats {
+export interface PeriodStats {
   year: number
   month: number
+  day: number | null
   finishedTasksCount: number
   totalMinutesWorked: number
+}
+
+export interface MemberProjectStats {
+  projectId: number
+  projectName: string
+  totalMinutes: number
 }
 
 export interface MemberDetailData {
@@ -39,7 +46,9 @@ export interface MemberDetailData {
   userName: string
   userEmail: string
   userPhoto: string | null
-  monthlyStats: MonthlyStats[]
+  groupedBy: 'DAY' | 'MONTH'
+  periodStats: PeriodStats[]
+  projectStats: MemberProjectStats[]
 }
 
 export const orgDashboardService = {
@@ -50,7 +59,8 @@ export const orgDashboardService = {
     return apiFetch<OrgDashboardData>(`/organizations/${orgId}/dashboard?${params.toString()}`)
   },
 
-  async getMemberStats(orgId: number, memberId: number): Promise<MemberDetailData> {
-    return apiFetch<MemberDetailData>(`/organizations/${orgId}/members/${memberId}/stats`)
+  async getMemberStats(orgId: number, memberId: number, startDate: string, endDate: string): Promise<MemberDetailData> {
+    const params = new URLSearchParams({ startDate, endDate })
+    return apiFetch<MemberDetailData>(`/organizations/${orgId}/members/${memberId}/stats?${params.toString()}`)
   }
 }
