@@ -109,7 +109,5 @@ The authenticated email comes from `securityIdentity.getPrincipal().getName()` a
 
 ## Skills
 
-Project skills live in `.claude/skills/`:
-- `scaffold-usecase` — generate a backend use case + controller wiring.
-- `scaffold-feature` — generate a frontend page + service + types + route.
-- `architecture-review` — audit Clean Architecture violations.
+Skills do projeto em `.claude/skills/`:
+- `new-task` — workflow completo: ler issue → branch → código → commit → PR.
