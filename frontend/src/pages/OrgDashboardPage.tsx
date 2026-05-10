@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { MemberDetailModal } from "../components/MemberDetailModal";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -34,7 +35,12 @@ const CHART_COLORS = [
   "#EC4899",
 ];
 
+interface TooltipState { x: number; y: number; content: string }
+
 function PieChart({ data }: { data: OrgProjectStats[] }) {
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const total = data.reduce((sum, d) => sum + d.totalMinutes, 0);
   if (total === 0 || data.length === 0) {
     return (
@@ -75,30 +81,58 @@ function PieChart({ data }: { data: OrgProjectStats[] }) {
       "Z",
     ].join(" ");
 
-    const result = { path, color: CHART_COLORS[i % CHART_COLORS.length], fraction, name: d.projectName };
+    const pct = ((fraction) * 100).toFixed(1);
+    const result = {
+      path,
+      color: CHART_COLORS[i % CHART_COLORS.length],
+      fraction,
+      label: `${d.projectName}: ${formatMinutes(d.totalMinutes)} (${pct}%)`,
+    };
     startAngle = endAngle;
     return result;
   });
 
+  const handleMouseMove = (e: React.MouseEvent, content: string) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, content });
+  };
+
   return (
-    <svg viewBox="0 0 200 200" className="w-full h-full">
-      {slices.map((slice, i) => (
-        <path
-          key={i}
-          d={slice.path}
-          fill={slice.color}
-          stroke="var(--color-surface, #fff)"
-          strokeWidth="2"
-          className="transition-opacity hover:opacity-80"
-        />
-      ))}
-      <text x={cx} y={cy - 8} textAnchor="middle" className="text-xs" fontSize="11" fill="currentColor" opacity="0.5">
-        projetos
-      </text>
-      <text x={cx} y={cy + 10} textAnchor="middle" fontSize="20" fontWeight="900" fill="currentColor">
-        {data.length}
-      </text>
-    </svg>
+    <div className="relative w-full h-full">
+      <svg
+        ref={svgRef}
+        viewBox="0 0 200 200"
+        className="w-full h-full"
+        onMouseLeave={() => setTooltip(null)}
+      >
+        {slices.map((slice, i) => (
+          <path
+            key={i}
+            d={slice.path}
+            fill={slice.color}
+            stroke="var(--color-surface, #fff)"
+            strokeWidth="2"
+            className="cursor-pointer transition-opacity hover:opacity-80"
+            onMouseMove={(e) => handleMouseMove(e, slice.label)}
+          />
+        ))}
+        <text x={cx} y={cy - 8} textAnchor="middle" className="text-xs" fontSize="11" fill="currentColor" opacity="0.5">
+          projetos
+        </text>
+        <text x={cx} y={cy + 10} textAnchor="middle" fontSize="20" fontWeight="900" fill="currentColor">
+          {data.length}
+        </text>
+      </svg>
+      {tooltip && (
+        <div
+          className="absolute pointer-events-none z-20 bg-surface border border-border-soft rounded-lg px-2 py-1 text-xs font-bold text-text-main shadow-lg whitespace-nowrap"
+          style={{ left: tooltip.x, top: tooltip.y - 36, transform: "translateX(-50%)" }}
+        >
+          {tooltip.content}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -134,6 +168,7 @@ export const OrgDashboardPage: React.FC = () => {
   const [startDate, setStartDate] = useState(startOfMonth(new Date()));
   const [endDate, setEndDate] = useState(endOfMonth(new Date()));
   const [error, setError] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!activeOrg) return;
@@ -244,7 +279,7 @@ export const OrgDashboardPage: React.FC = () => {
                       .map((stat, i) => {
                         const pct = totalMinutes > 0 ? ((stat.totalMinutes / totalMinutes) * 100).toFixed(1) : "0";
                         return (
-                          <div key={stat.projectId} className="flex items-center gap-3">
+                          <div key={stat.projectId ?? "geral"} className="flex items-center gap-3">
                             <div
                               className="w-3 h-3 rounded-full shrink-0"
                               style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
@@ -281,7 +316,7 @@ export const OrgDashboardPage: React.FC = () => {
             <section className="bg-surface border border-border-soft rounded-[2.5rem] p-8 shadow-sm">
               <div className="flex items-center gap-2 mb-8">
                 <Trophy size={20} className="text-amber-500" />
-                <h2 className="text-xl font-black text-text-main">Top 5 Tarefas</h2>
+                <h2 className="text-xl font-black text-text-main">Top 3 Tarefas</h2>
                 <span className="ml-auto text-xs font-bold text-text-muted bg-surface-muted px-2 py-1 rounded-lg">
                   por tempo
                 </span>
@@ -361,10 +396,11 @@ export const OrgDashboardPage: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.06 }}
+                      onClick={() => setSelectedMemberId(member.userId)}
                       className={cn(
-                        "relative rounded-[1.5rem] p-6 border transition-all flex flex-col items-center text-center gap-3",
+                        "relative rounded-[1.5rem] p-6 border transition-all flex flex-col items-center text-center gap-3 cursor-pointer",
                         isFirst
-                          ? "border-amber-400/50 bg-gradient-to-b from-amber-500/10 to-amber-500/5 shadow-xl shadow-amber-500/10"
+                          ? "border-amber-400/50 bg-gradient-to-b from-amber-500/10 to-amber-500/5 shadow-xl shadow-amber-500/10 hover:shadow-2xl"
                           : "border-border-soft bg-app-bg hover:border-brand/30 hover:shadow-md",
                       )}
                     >
@@ -416,6 +452,16 @@ export const OrgDashboardPage: React.FC = () => {
           </section>
         </>
       ) : null}
+
+      {activeOrg && (
+        <MemberDetailModal
+          memberId={selectedMemberId}
+          orgId={activeOrg.id}
+          startDate={startDate}
+          endDate={endDate}
+          onClose={() => setSelectedMemberId(null)}
+        />
+      )}
     </div>
   );
 };
