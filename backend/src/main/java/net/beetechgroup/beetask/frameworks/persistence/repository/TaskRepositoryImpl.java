@@ -13,9 +13,11 @@ import net.beetechgroup.beetask.frameworks.persistence.entities.TaskEntity;
 import net.beetechgroup.beetask.frameworks.persistence.mapper.TaskEntityMapper;
 import net.beetechgroup.beetask.usecase.exceptions.TaskNotFoundException;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<TaskEntity> {
+    private static final Logger LOGGER = Logger.getLogger(TaskRepositoryImpl.class);
 
     @Override
     @Transactional
@@ -26,19 +28,26 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
         } else {
             entity = getEntityManager().merge(entity);
         }
-        return TaskEntityMapper.toDomain(entity);
+        Task savedTask = TaskEntityMapper.toDomain(entity);
+        LOGGER.infof("Persisted task %d with status %s", savedTask.getId(), savedTask.getStatus());
+        return savedTask;
     }
 
     @Override
     public Task findTaskById(Long id) {
         TaskEntity entity = find("id = ?1", id).firstResultOptional()
-                .orElseThrow(() -> new TaskNotFoundException(id));
+                .orElseThrow(() -> {
+                    LOGGER.warnf("Task %d was not found in repository", id);
+                    return new TaskNotFoundException(id);
+                });
         return TaskEntityMapper.toDomain(entity);
     }
 
     @Override
     public List<Task> findAllTasks() {
-        return findAll().list().stream().map(TaskEntityMapper::toDomain).toList();
+        List<Task> tasks = findAll().list().stream().map(TaskEntityMapper::toDomain).toList();
+        LOGGER.infof("Loaded %d tasks from database", tasks.size());
+        return tasks;
     }
 
     @Override
@@ -61,7 +70,9 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksByUser(String email) {
-        return find("user.email = ?1", email).list().stream().map(TaskEntityMapper::toDomain).toList();
+        List<Task> tasks = find("user.email = ?1", email).list().stream().map(TaskEntityMapper::toDomain).toList();
+        LOGGER.infof("Loaded %d tasks for user %s", tasks.size(), email);
+        return tasks;
     }
 
     @Override
@@ -100,7 +111,10 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksWorkedByUserEmailsInPeriod(List<String> emails, LocalDateTime start, LocalDateTime end) {
-        if (emails.isEmpty()) return List.of();
+        if (emails.isEmpty()) {
+            LOGGER.warn("Task search by user emails skipped because the email list is empty");
+            return List.of();
+        }
         return find("user.email in ?1", emails).list().stream()
                 .filter(entity -> entity.getHistory().stream().anyMatch(h ->
                         Objects.nonNull(h.getStartAt()) &&
@@ -112,7 +126,10 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksFinishedByUserEmailsInPeriod(List<String> emails, LocalDateTime start, LocalDateTime end) {
-        if (emails.isEmpty()) return List.of();
+        if (emails.isEmpty()) {
+            LOGGER.warn("Finished task search by user emails skipped because the email list is empty");
+            return List.of();
+        }
         return find("user.email in ?1 and status = ?2 and finishedAt >= ?3 and finishedAt <= ?4",
                 emails, TaskStatus.COMPLETED, start, end)
                 .list().stream().map(TaskEntityMapper::toDomain).toList();

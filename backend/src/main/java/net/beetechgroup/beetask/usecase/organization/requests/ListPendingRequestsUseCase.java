@@ -8,8 +8,10 @@ import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 public class ListPendingRequestsUseCase extends AuthenticatedOrganizationUseCase<Void, List<JoinRequestOutput>> {
+    private static final Logger LOGGER = Logger.getLogger(ListPendingRequestsUseCase.class);
     private final UserOrganizationRepository userOrganizationRepository;
 
     public ListPendingRequestsUseCase(AuthorizeOrganizationAdminUseCase authorizer, 
@@ -21,7 +23,7 @@ public class ListPendingRequestsUseCase extends AuthenticatedOrganizationUseCase
     @Override
     protected List<JoinRequestOutput> doExecute(Long organizationId, Void input) {
         List<UserOrganization> pending = userOrganizationRepository.findByOrganizationIdAndStatus(organizationId, UserOrganizationStatus.PENDING);
-        return pending.stream()
+        List<JoinRequestOutput> requests = pending.stream()
                 .map(uo -> new JoinRequestOutput(
                         uo.getUser().getId(),
                         uo.getUser().getName(),
@@ -29,5 +31,7 @@ public class ListPendingRequestsUseCase extends AuthenticatedOrganizationUseCase
                         uo.getUser().getPhoto()
                 ))
                 .collect(Collectors.toList());
+        LOGGER.infof("Loaded %d pending requests for organization %d", requests.size(), organizationId);
+        return requests;
     }
 }

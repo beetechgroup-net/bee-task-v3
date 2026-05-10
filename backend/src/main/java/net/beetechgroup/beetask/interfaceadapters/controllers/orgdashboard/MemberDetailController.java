@@ -11,6 +11,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import net.beetechgroup.beetask.usecase.orgdashboard.memberdetail.MemberDetailInput;
 import net.beetechgroup.beetask.usecase.orgdashboard.memberdetail.MemberDetailUseCase;
+import org.jboss.logging.Logger;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 @Produces(MediaType.APPLICATION_JSON)
 @Authenticated
 public class MemberDetailController {
+    private static final Logger LOGGER = Logger.getLogger(MemberDetailController.class);
 
     @Inject
     MemberDetailUseCase memberDetailUseCase;
@@ -47,6 +49,8 @@ public class MemberDetailController {
             end = end.with(java.time.LocalTime.MAX);
         }
 
+        LOGGER.infof("Member stats requested by user %s for organization %d member %d and period %s to %s",
+                email, organizationId, memberId, start, end);
         return MemberDetailControllerMapper.toResponse(
                 memberDetailUseCase.execute(new MemberDetailInput(email, organizationId, memberId, start, end))
         );

@@ -10,8 +10,10 @@ import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 
 import java.util.Optional;
+import org.jboss.logging.Logger;
 
 public class RequestJoinOrganizationUseCase {
+    private static final Logger LOGGER = Logger.getLogger(RequestJoinOrganizationUseCase.class);
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final UserOrganizationRepository userOrganizationRepository;
@@ -29,6 +31,7 @@ public class RequestJoinOrganizationUseCase {
         Optional<Organization> orgOptional = organizationRepository.findOrganizationById(organizationId);
 
         if (userOptional.isEmpty() || orgOptional.isEmpty()) {
+            LOGGER.warnf("Join request failed because user %s or organization %d was not found", userEmail, organizationId);
             throw new RuntimeException("User or Organization not found");
         }
 
@@ -38,8 +41,10 @@ public class RequestJoinOrganizationUseCase {
         Optional<UserOrganization> existing = userOrganizationRepository.findByUserAndOrganization(user.getId(), organization.getId());
         if (existing.isPresent()) {
             if (existing.get().getStatus() == UserOrganizationStatus.ACTIVE) {
+                LOGGER.warnf("Join request ignored because user %s is already active in organization %d", userEmail, organizationId);
                 throw new RuntimeException("User is already a member of this organization");
             } else if (existing.get().getStatus() == UserOrganizationStatus.PENDING) {
+                LOGGER.warnf("Join request ignored because user %s already has a pending request for organization %d", userEmail, organizationId);
                 throw new RuntimeException("A join request is already pending for this organization");
             }
             // If REJECTED, we allow a new request (or we could just update the existing one to PENDING)
@@ -52,5 +57,6 @@ public class RequestJoinOrganizationUseCase {
         request.setStatus(UserOrganizationStatus.PENDING);
         
         userOrganizationRepository.save(request);
+        LOGGER.infof("Join request created for user %s in organization %d", userEmail, organizationId);
     }
 }

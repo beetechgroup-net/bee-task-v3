@@ -27,12 +27,14 @@ import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.ws.rs.GET;
 import net.beetechgroup.beetask.usecase.user.profile.GetUserProfileUseCase;
 import net.beetechgroup.beetask.usecase.user.profile.UserProfileOutput;
+import org.jboss.logging.Logger;
 
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Authentication", description = "Authentication operations")
 public class AuthController {
+    private static final Logger LOGGER = Logger.getLogger(AuthController.class);
 
     @Inject
     CreateUserUseCase createUserUseCase;
@@ -55,6 +57,7 @@ public class AuthController {
     @Operation(summary = "Get current user profile", description = "Returns details of the logged in user")
     public UserProfileOutput me() {
         String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Profile requested for authenticated user %s", email);
         return getUserProfileUseCase.execute(email);
     }
 
@@ -62,8 +65,10 @@ public class AuthController {
     @POST
     @Operation(summary = "Register", description = "Creates a new user account")
     public CreateAccountResponse register(CreateAccountRequest request) {
+        LOGGER.infof("Registration requested for email %s", request.email());
         CreateUserInput input = AuthControllerMapper.toCreateUserInput(request);
         CreateUserOutput output = createUserUseCase.execute(input);
+        LOGGER.infof("User account created successfully for email %s", output.email());
         return AuthControllerMapper.toCreateAccountResponse(output);
     }
 
@@ -71,8 +76,10 @@ public class AuthController {
     @POST
     @Operation(summary = "Login", description = "Login that returns real user data and JWT")
     public LoginResponse login(LoginRequest request) {
+        LOGGER.infof("Login requested for email %s", request.email());
         LoginInput input = AuthControllerMapper.toLoginInput(request);
         LoginOutput output = loginUseCase.execute(input);
+        LOGGER.infof("Login succeeded for email %s", output.email());
         return AuthControllerMapper.toLoginResponse(output);
     }
 
@@ -80,8 +87,10 @@ public class AuthController {
     @POST
     @Operation(summary = "Refresh token", description = "Token refresh using refresh token")
     public LoginResponse refresh(RefreshTokenRequest request) {
+        LOGGER.info("Refresh token requested");
         RefreshTokenInput input = AuthControllerMapper.toRefreshTokenInput(request);
         LoginOutput output = refreshTokenUseCase.execute(input);
+        LOGGER.infof("Refresh token succeeded for email %s", output.email());
         return AuthControllerMapper.toLoginResponse(output);
     }
 }

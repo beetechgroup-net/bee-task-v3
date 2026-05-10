@@ -7,8 +7,10 @@ import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationA
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 
 import java.util.Optional;
+import org.jboss.logging.Logger;
 
 public class HandleJoinRequestUseCase extends AuthenticatedOrganizationUseCase<HandleJoinRequestUseCase.Input, Void> {
+    private static final Logger LOGGER = Logger.getLogger(HandleJoinRequestUseCase.class);
     private final UserOrganizationRepository userOrganizationRepository;
 
     public HandleJoinRequestUseCase(AuthorizeOrganizationAdminUseCase authorizer,
@@ -22,16 +24,22 @@ public class HandleJoinRequestUseCase extends AuthenticatedOrganizationUseCase<H
         Optional<UserOrganization> associationOptional = userOrganizationRepository.findByUserAndOrganization(input.userId(), organizationId);
 
         if (associationOptional.isEmpty()) {
+            LOGGER.warnf("Join request handling failed because request for user %d in organization %d was not found",
+                    input.userId(), organizationId);
             throw new RuntimeException("Request not found");
         }
 
         UserOrganization association = associationOptional.get();
         if (association.getStatus() != UserOrganizationStatus.PENDING) {
+            LOGGER.warnf("Join request handling failed because request for user %d in organization %d is %s",
+                    input.userId(), organizationId, association.getStatus());
             throw new RuntimeException("Request is not pending");
         }
 
         association.setStatus(input.approved() ? UserOrganizationStatus.ACTIVE : UserOrganizationStatus.REJECTED);
         userOrganizationRepository.save(association);
+        LOGGER.infof("Join request for user %d in organization %d was %s",
+                input.userId(), organizationId, input.approved() ? "approved" : "rejected");
         return null;
     }
 

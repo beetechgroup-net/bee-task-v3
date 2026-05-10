@@ -11,6 +11,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import net.beetechgroup.beetask.usecase.orgdashboard.OrgDashboardInput;
 import net.beetechgroup.beetask.usecase.orgdashboard.OrgDashboardUseCase;
+import org.jboss.logging.Logger;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 @Produces(MediaType.APPLICATION_JSON)
 @Authenticated
 public class OrgDashboardController {
+    private static final Logger LOGGER = Logger.getLogger(OrgDashboardController.class);
 
     @Inject
     OrgDashboardUseCase orgDashboardUseCase;
@@ -46,6 +48,8 @@ public class OrgDashboardController {
             end = end.with(java.time.LocalTime.MAX);
         }
 
+        LOGGER.infof("Organization dashboard requested by user %s for organization %d and period %s to %s",
+                email, organizationId, start, end);
         return OrgDashboardControllerMapper.toResponse(
             orgDashboardUseCase.execute(new OrgDashboardInput(email, organizationId, start, end))
         );
