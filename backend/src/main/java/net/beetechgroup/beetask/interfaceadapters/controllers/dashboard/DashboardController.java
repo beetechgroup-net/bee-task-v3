@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.MediaType;
 import net.beetechgroup.beetask.usecase.dashboard.DashboardInput;
 import net.beetechgroup.beetask.usecase.dashboard.DashboardOutput;
 import net.beetechgroup.beetask.usecase.dashboard.DashboardUseCase;
+import org.jboss.logging.Logger;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 @Produces(MediaType.APPLICATION_JSON)
 @Authenticated
 public class DashboardController {
+    private static final Logger LOGGER = Logger.getLogger(DashboardController.class);
 
     @Inject
     DashboardUseCase dashboardUseCase;
@@ -46,6 +48,7 @@ public class DashboardController {
         }
 
         DashboardInput input = new DashboardInput(email, start, end);
+        LOGGER.infof("Dashboard requested by user %s for period %s to %s", email, start, end);
         return dashboardUseCase.execute(input);
     }
 }

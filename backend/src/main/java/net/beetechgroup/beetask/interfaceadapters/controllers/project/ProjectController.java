@@ -12,6 +12,7 @@ import jakarta.ws.rs.core.MediaType;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.usecase.project.create.CreateProjectUseCase;
 import net.beetechgroup.beetask.usecase.project.list.ListProjectsUseCase;
+import org.jboss.logging.Logger;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProjectController {
+    private static final Logger LOGGER = Logger.getLogger(ProjectController.class);
 
     @Inject
     CreateProjectUseCase createProjectUseCase;
@@ -29,15 +31,19 @@ public class ProjectController {
     @GET
     @Authenticated
     public List<ProjectResponse> listProjects(@PathParam("orgId") Long orgId) {
-        return listProjectsUseCase.execute(orgId).stream()
+        List<ProjectResponse> projects = listProjectsUseCase.execute(orgId).stream()
                 .map(p -> new ProjectResponse(p.getId(), p.getName()))
                 .toList();
+        LOGGER.infof("Listed %d projects for organization %d", projects.size(), orgId);
+        return projects;
     }
 
     @POST
     @Authenticated
     public ProjectResponse createProject(@PathParam("orgId") Long orgId, CreateProjectRequest request) {
+        LOGGER.infof("Project creation requested for organization %d with name '%s'", orgId, request.name());
         Project project = createProjectUseCase.execute(orgId, request.name());
+        LOGGER.infof("Project %d created successfully for organization %d", project.getId(), orgId);
         return new ProjectResponse(project.getId(), project.getName());
     }
 

@@ -12,8 +12,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 public class LoginUseCase {
+    private static final Logger LOGGER = Logger.getLogger(LoginUseCase.class);
 
     private final UserRepository userRepository;
     private final String issuer;
@@ -27,6 +29,7 @@ public class LoginUseCase {
         Optional<User> userOptional = userRepository.findByEmail(input.email());
 
         if (userOptional.isEmpty()) {
+            LOGGER.warnf("Login failed because email %s was not found", input.email());
             throw new RuntimeException("Invalid credentials");
         }
 
@@ -34,9 +37,11 @@ public class LoginUseCase {
 
         // Simple password check for now (should use Bcrypt)
         if (!user.getPassword().equals(input.password())) {
+            LOGGER.warnf("Login failed because password did not match for email %s", input.email());
             throw new RuntimeException("Invalid credentials");
         }
 
+        LOGGER.infof("Login authenticated for user %s", input.email());
         List<UserOrganization> userOrganizations = userRepository.findUserOrganizations(user.getId());
 
         Set<String> groups = new HashSet<>();
@@ -67,6 +72,7 @@ public class LoginUseCase {
                 .expiresIn(86400) // 24 hours
                 .sign();
 
+        LOGGER.infof("Login completed for user %s with %d organizations", user.getEmail(), orgs.size());
         return new LoginOutput(
                 user.getName(),
                 user.getEmail(),

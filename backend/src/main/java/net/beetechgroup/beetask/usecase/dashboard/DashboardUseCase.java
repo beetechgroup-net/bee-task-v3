@@ -13,8 +13,10 @@ import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskMapper;
+import org.jboss.logging.Logger;
 
 public class DashboardUseCase {
+    private static final Logger LOGGER = Logger.getLogger(DashboardUseCase.class);
 
     private final TaskRepository taskRepository;
 
@@ -23,6 +25,8 @@ public class DashboardUseCase {
     }
 
     public DashboardOutput execute(DashboardInput input) {
+        LOGGER.infof("Calculating dashboard for user %s in period %s to %s",
+                input.userEmail(), input.startDate(), input.endDate());
         List<Task> workedTasks = taskRepository.findTasksWorkedByUserInPeriod(
             input.userEmail(), input.startDate(), input.endDate()
         );
@@ -61,12 +65,15 @@ public class DashboardUseCase {
             }
         }
 
-        return new DashboardOutput(
+        DashboardOutput output = new DashboardOutput(
             totalMinutes,
             new ArrayList<>(projectStatsMap.values()),
             yesterdayTasks.stream().map(CreateTaskMapper::toCreateTaskOutput).toList(),
             finishedTasks.stream().map(CreateTaskMapper::toCreateTaskOutput).toList()
         );
+        LOGGER.infof("Dashboard calculated for user %s with %d worked tasks, %d finished tasks and %d total minutes",
+                input.userEmail(), workedTasks.size(), finishedTasks.size(), totalMinutes);
+        return output;
     }
 
     private boolean isWithinPeriod(TaskHistoryItem item, LocalDateTime start, LocalDateTime end) {

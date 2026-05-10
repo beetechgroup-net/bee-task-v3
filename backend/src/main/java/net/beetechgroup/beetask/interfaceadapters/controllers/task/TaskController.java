@@ -18,6 +18,7 @@ import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 
 import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
@@ -36,6 +37,7 @@ import net.beetechgroup.beetask.usecase.task.get.GetTaskUseCase;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Tasks", description = "Task management operations")
 public class TaskController {
+    private static final Logger LOGGER = Logger.getLogger(TaskController.class);
 
     @Inject
     CreateTaskUseCase createTaskUseCase;
@@ -69,8 +71,10 @@ public class TaskController {
     @APIResponse(responseCode = "201", description = "Task created successfully")
     public CreateTaskResponse createTask(CreateTaskRequest request) {
         String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("User %s requested task creation with title '%s'", email, request.title());
         CreateTaskInput input = TaskControllerMapper.toCreateTaskInput(request, email);
         CreateTaskOutput output = createTaskUseCase.execute(input);
+        LOGGER.infof("Task %d created successfully by user %s", output.id(), email);
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 
@@ -80,7 +84,9 @@ public class TaskController {
     @APIResponse(responseCode = "200", description = "Task updated successfully")
     public CreateTaskResponse updateTask(@PathParam("id") Long id, CreateTaskRequest request) {
         String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("User %s requested update for task %d", email, id);
         CreateTaskOutput output = updateTaskUseCase.execute(TaskControllerMapper.toUpdateTaskInput(id, request, email));
+        LOGGER.infof("Task %d updated successfully by user %s", id, email);
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 
@@ -89,6 +95,7 @@ public class TaskController {
     @Operation(summary = "Get a task", description = "Gets a specific task by ID")
     @APIResponse(responseCode = "200", description = "Task retrieved successfully")
     public CreateTaskResponse getTask(@PathParam("id") Long id) {
+        LOGGER.infof("Task details requested for task %d", id);
         return TaskControllerMapper.toCreateTaskResponse(getTaskUseCase.execute(id));
     }
 
@@ -98,7 +105,9 @@ public class TaskController {
     @APIResponse(responseCode = "200", description = "Task started successfully")
     public CreateTaskResponse startTask(@PathParam("id") Long id) {
         String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("User %s requested start for task %d", email, id);
         CreateTaskOutput output = startTaskUseCase.execute(new StartTaskInput(id, email));
+        LOGGER.infof("Task %d started successfully by user %s", id, email);
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 
@@ -107,7 +116,9 @@ public class TaskController {
     @Operation(summary = "Stop a task", description = "Stops a task in the system")
     @APIResponse(responseCode = "200", description = "Task stopped successfully")
     public CreateTaskResponse stopTask(@PathParam("id") Long id) {
+        LOGGER.infof("Stop requested for task %d", id);
         CreateTaskOutput output = stopTaskUseCase.execute(TaskControllerMapper.toStopTaskInput(id));
+        LOGGER.infof("Task %d stopped successfully", id);
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 
@@ -116,7 +127,9 @@ public class TaskController {
     @Operation(summary = "Update task status", description = "Updates the status of a task")
     @APIResponse(responseCode = "200", description = "Task status updated successfully")
     public CreateTaskResponse updateTaskStatus(@PathParam("id") Long id, TaskStatus status) {
+        LOGGER.infof("Status update requested for task %d to %s", id, status);
         CreateTaskOutput output = updateTaskStatusUseCase.execute(id, status);
+        LOGGER.infof("Task %d status updated successfully to %s", id, status);
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 
@@ -124,7 +137,9 @@ public class TaskController {
     @Operation(summary = "List all tasks", description = "Lists all tasks in the system")
     @APIResponse(responseCode = "200", description = "Tasks listed successfully")
     public List<CreateTaskResponse> listTasks() {
-        return listAllTasksUseCase.execute().stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
+        List<CreateTaskResponse> tasks = listAllTasksUseCase.execute().stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
+        LOGGER.infof("Listed %d tasks", tasks.size());
+        return tasks;
     }
 
     @GET
@@ -133,7 +148,9 @@ public class TaskController {
     @APIResponse(responseCode = "200", description = "Tasks listed successfully")
     public List<CreateTaskResponse> listMyTasks() {
         String email = securityIdentity.getPrincipal().getName();
-        return listMyTasksUseCase.execute(email).stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
+        List<CreateTaskResponse> tasks = listMyTasksUseCase.execute(email).stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
+        LOGGER.infof("Listed %d tasks for user %s", tasks.size(), email);
+        return tasks;
     }
 
 }

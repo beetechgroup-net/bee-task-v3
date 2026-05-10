@@ -10,8 +10,10 @@ import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskMapper;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
+import org.jboss.logging.Logger;
 
 public class UpdateTaskUseCase {
+    private static final Logger LOGGER = Logger.getLogger(UpdateTaskUseCase.class);
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -23,11 +25,15 @@ public class UpdateTaskUseCase {
     }
 
     public CreateTaskOutput execute(UpdateTaskInput input) {
+        LOGGER.infof("Updating task %d requested by user %s", input.id(), input.userEmail());
         Task task = taskRepository.findTaskById(input.id());
 
         if (Objects.isNull(task.getUser())) {
             task.setUser(userRepository.findByEmail(input.userEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado: " + input.userEmail())));
+                .orElseThrow(() -> {
+                    LOGGER.warnf("Task update failed because user %s was not found", input.userEmail());
+                    return new IllegalArgumentException("Usuário não encontrado: " + input.userEmail());
+                }));
         }
 
         task.setTitle(input.title());
@@ -36,7 +42,10 @@ public class UpdateTaskUseCase {
 
         if (Objects.nonNull(input.projectId())) {
             Project project = projectRepository.findProjectById(input.projectId())
-                    .orElseThrow(() -> new IllegalArgumentException("Projeto não encontrado com ID: " + input.projectId()));
+                    .orElseThrow(() -> {
+                        LOGGER.warnf("Task update failed because project %d was not found", input.projectId());
+                        return new IllegalArgumentException("Projeto não encontrado com ID: " + input.projectId());
+                    });
             task.setProject(project);
         } else {
             task.setProject(null);
@@ -69,8 +78,11 @@ public class UpdateTaskUseCase {
 
             task.getHistory().clear();
             task.getHistory().addAll(updatedHistory);
+            LOGGER.infof("Task %d history updated with %d entries", input.id(), updatedHistory.size());
         }
 
-        return CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
+        CreateTaskOutput output = CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
+        LOGGER.infof("Task %d updated successfully", input.id());
+        return output;
     }
 }

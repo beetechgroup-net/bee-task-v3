@@ -17,8 +17,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.jboss.logging.Logger;
 
 public class MemberDetailUseCase {
+    private static final Logger LOGGER = Logger.getLogger(MemberDetailUseCase.class);
 
     private final TaskRepository taskRepository;
     private final UserOrganizationRepository userOrganizationRepository;
@@ -33,11 +35,17 @@ public class MemberDetailUseCase {
     }
 
     public MemberDetailOutput execute(MemberDetailInput input) {
+        LOGGER.infof("Calculating member detail for member %d in organization %d requested by %s from %s to %s",
+                input.memberId(), input.organizationId(), input.userEmail(), input.startDate(), input.endDate());
         authorizer.execute(input.userEmail(), input.organizationId());
 
         UserOrganization member = userOrganizationRepository
                 .findByUserAndOrganization(input.memberId(), input.organizationId())
-                .orElseThrow(() -> new IllegalArgumentException("Member not found in organization"));
+                .orElseThrow(() -> {
+                    LOGGER.warnf("Member detail failed because member %d was not found in organization %d",
+                            input.memberId(), input.organizationId());
+                    return new IllegalArgumentException("Member not found in organization");
+                });
 
         LocalDateTime start = input.startDate();
         LocalDateTime end = input.endDate();
@@ -114,8 +122,11 @@ public class MemberDetailUseCase {
             }
         }
 
-        return MemberDetailMapper.toOutput(member, groupByDay ? "DAY" : "MONTH", periodStats,
+        MemberDetailOutput output = MemberDetailMapper.toOutput(member, groupByDay ? "DAY" : "MONTH", periodStats,
                 new ArrayList<>(projectStatsMap.values()));
+        LOGGER.infof("Member detail calculated for member %d in organization %d with %d worked tasks and %d finished tasks",
+                input.memberId(), input.organizationId(), workedTasks.size(), finishedTasks.size());
+        return output;
     }
 
     private boolean isWithinPeriod(TaskHistoryItem item, LocalDateTime start, LocalDateTime end) {

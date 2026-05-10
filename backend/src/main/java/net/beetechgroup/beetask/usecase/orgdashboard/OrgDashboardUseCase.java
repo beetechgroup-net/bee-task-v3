@@ -16,8 +16,10 @@ import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationAdminUseCase;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
+import org.jboss.logging.Logger;
 
 public class OrgDashboardUseCase {
+    private static final Logger LOGGER = Logger.getLogger(OrgDashboardUseCase.class);
 
     private final TaskRepository taskRepository;
     private final UserOrganizationRepository userOrganizationRepository;
@@ -32,6 +34,8 @@ public class OrgDashboardUseCase {
     }
 
     public OrgDashboardOutput execute(OrgDashboardInput input) {
+        LOGGER.infof("Calculating organization dashboard for org %d requested by %s in period %s to %s",
+                input.organizationId(), input.userEmail(), input.startDate(), input.endDate());
         authorizer.execute(input.userEmail(), input.organizationId());
 
         List<UserOrganization> members = userOrganizationRepository.findByOrganizationIdAndStatus(
@@ -98,11 +102,14 @@ public class OrgDashboardUseCase {
             .sorted(Comparator.comparingLong(OrgMemberStats::totalMinutesWorked).reversed())
             .toList();
 
-        return new OrgDashboardOutput(
+        OrgDashboardOutput output = new OrgDashboardOutput(
             new ArrayList<>(projectStatsMap.values()),
             topTasks,
             memberStats
         );
+        LOGGER.infof("Organization dashboard calculated for org %d with %d members, %d worked tasks and %d finished tasks",
+                input.organizationId(), members.size(), workedTasks.size(), finishedTasks.size());
+        return output;
     }
 
     private long calculateMinutesInPeriod(Task task, LocalDateTime start, LocalDateTime end) {

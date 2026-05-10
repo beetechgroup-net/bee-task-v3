@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 public class GetUserProfileUseCase {
+    private static final Logger LOGGER = Logger.getLogger(GetUserProfileUseCase.class);
 
     private final UserRepository userRepository;
 
@@ -21,11 +23,13 @@ public class GetUserProfileUseCase {
         Optional<User> userOptional = userRepository.findByEmail(email);
 
         if (userOptional.isEmpty()) {
+            LOGGER.warnf("Profile lookup failed because user %s was not found", email);
             throw new RuntimeException("User not found");
         }
 
         User user = userOptional.get();
         List<UserOrganization> userOrganizations = userRepository.findUserOrganizations(user.getId());
+        LOGGER.infof("Loaded profile for user %s with %d active organizations", email, userOrganizations.size());
 
         List<UserProfileOutput.OrganizationProfileOutput> orgs = userOrganizations.stream()
                 .collect(Collectors.groupingBy(uo -> uo.getOrganization().getId()))

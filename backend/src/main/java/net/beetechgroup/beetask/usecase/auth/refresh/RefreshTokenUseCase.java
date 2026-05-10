@@ -16,8 +16,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 public class RefreshTokenUseCase {
+    private static final Logger LOGGER = Logger.getLogger(RefreshTokenUseCase.class);
 
     private final UserRepository userRepository;
     private final JWTParser jwtParser;
@@ -35,11 +37,14 @@ public class RefreshTokenUseCase {
             String email = token.getSubject(); // Or token.getName() / token.getClaim(Claims.upn.name())
 
             if (Objects.isNull(email)) {
+                LOGGER.warn("Refresh token rejected because subject/email was not present");
                 throw new RuntimeException("Invalid refresh token: email not found");
             }
 
+            LOGGER.infof("Refreshing authentication token for user %s", email);
             Optional<User> userOptional = userRepository.findByEmail(email);
             if (userOptional.isEmpty()) {
+                LOGGER.warnf("Refresh token rejected because user %s was not found", email);
                 throw new RuntimeException("User not found for the provided refresh token");
             }
 
@@ -75,6 +80,7 @@ public class RefreshTokenUseCase {
                     })
                     .toList();
 
+            LOGGER.infof("Refresh token completed for user %s with %d organizations", user.getEmail(), orgs.size());
             return new LoginOutput(
                     user.getName(),
                     user.getEmail(),
@@ -86,6 +92,7 @@ public class RefreshTokenUseCase {
                     orgs
             );
         } catch (ParseException e) {
+            LOGGER.error("Refresh token parsing failed", e);
             throw new RuntimeException("Invalid refresh token: " + e.getMessage());
         }
     }
