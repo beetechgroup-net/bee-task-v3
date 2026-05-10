@@ -294,7 +294,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                               const total = data.projectStats.reduce((s, x) => s + x.totalMinutes, 0);
                               const pct = total > 0 ? ((p.totalMinutes / total) * 100).toFixed(0) : "0";
                               return (
-                                <div key={p.projectId} className="flex items-center gap-2">
+                                <div key={p.projectId ?? "geral"} className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full shrink-0" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
                                   <span className="text-xs font-bold text-text-main truncate flex-1">{p.projectName}</span>
                                   <span className="text-[10px] font-black text-text-muted shrink-0">

@@ -246,7 +246,7 @@ export const OrgDashboardPage: React.FC = () => {
                       .map((stat, i) => {
                         const pct = totalMinutes > 0 ? ((stat.totalMinutes / totalMinutes) * 100).toFixed(1) : "0";
                         return (
-                          <div key={stat.projectId} className="flex items-center gap-3">
+                          <div key={stat.projectId ?? "geral"} className="flex items-center gap-3">
                             <div
                               className="w-3 h-3 rounded-full shrink-0"
                               style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
