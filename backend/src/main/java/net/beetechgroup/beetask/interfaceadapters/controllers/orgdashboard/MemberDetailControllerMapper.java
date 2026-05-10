@@ -10,9 +10,14 @@ public class MemberDetailControllerMapper {
                 output.userName(),
                 output.userEmail(),
                 output.userPhoto(),
-                output.monthlyStats().stream()
-                        .map(s -> new MemberDetailResponse.MonthlyStatsResponse(
-                                s.year(), s.month(), s.finishedTasksCount(), s.totalMinutesWorked()))
+                output.groupedBy(),
+                output.periodStats().stream()
+                        .map(s -> new MemberDetailResponse.PeriodStatsResponse(
+                                s.year(), s.month(), s.day(), s.finishedTasksCount(), s.totalMinutesWorked()))
+                        .toList(),
+                output.projectStats().stream()
+                        .map(p -> new MemberDetailResponse.ProjectStatsResponse(
+                                p.projectId(), p.projectName(), p.totalMinutes()))
                         .toList()
         );
     }

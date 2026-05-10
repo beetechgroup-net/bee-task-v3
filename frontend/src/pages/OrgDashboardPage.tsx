@@ -424,6 +424,8 @@ export const OrgDashboardPage: React.FC = () => {
         <MemberDetailModal
           memberId={selectedMemberId}
           orgId={activeOrg.id}
+          startDate={startDate}
+          endDate={endDate}
           onClose={() => setSelectedMemberId(null)}
         />
       )}

@@ -7,7 +7,10 @@ public record MemberDetailResponse(
         String userName,
         String userEmail,
         String userPhoto,
-        List<MonthlyStatsResponse> monthlyStats
+        String groupedBy,
+        List<PeriodStatsResponse> periodStats,
+        List<ProjectStatsResponse> projectStats
 ) {
-    public record MonthlyStatsResponse(int year, int month, long finishedTasksCount, long totalMinutesWorked) {}
+    public record PeriodStatsResponse(int year, int month, Integer day, long finishedTasksCount, long totalMinutesWorked) {}
+    public record ProjectStatsResponse(Long projectId, String projectName, long totalMinutes) {}
 }
