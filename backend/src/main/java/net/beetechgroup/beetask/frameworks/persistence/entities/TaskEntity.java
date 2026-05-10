@@ -3,6 +3,7 @@ package net.beetechgroup.beetask.frameworks.persistence.entities;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -25,6 +26,7 @@ public class TaskEntity {
     private String description;
     @Enumerated(EnumType.STRING)
     private TaskStatus status;
+    @Column(name = "finished_at")
     private java.time.LocalDateTime finishedAt;
 
     @ManyToOne
