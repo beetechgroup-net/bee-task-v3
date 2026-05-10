@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { projectService, type Project } from "../services/projectService";
+import { cn } from "../lib/utils";
 
 export const ProjectsPage: React.FC = () => {
   const { activeOrg } = useAuth();
@@ -67,10 +68,6 @@ export const ProjectsPage: React.FC = () => {
   const filteredProjects = projects.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
-
-  if (!activeOrg) {
-    return null;
-  }
 
   return (
     <div className="space-y-12 pb-20">

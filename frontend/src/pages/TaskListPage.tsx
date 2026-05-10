@@ -21,9 +21,6 @@ import { cn } from '../lib/utils'
 import { TASK_STATUS_LABELS } from '../types/task'
 import type { TaskResponse } from '../types/task'
 
-const STATUS_FILTERS = ['ALL', 'NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELED'] as const
-type StatusFilter = (typeof STATUS_FILTERS)[number]
-
 function getStatusConfig(status: TaskResponse['status']) {
   switch (status) {
     case 'COMPLETED':
@@ -61,7 +58,7 @@ export function TaskListPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+  const [statusFilter, setStatusFilter] = useState<string | 'ALL'>('ALL')
 
   const loadTasks = async (silent = false) => {
     if (!silent) setIsLoading(true)
@@ -157,7 +154,7 @@ export function TaskListPage() {
 
         <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
           <Filter size={18} className="mr-2 text-text-muted shrink-0" />
-          {STATUS_FILTERS.map(
+          {['ALL', 'NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELED'].map(
             (status) => (
               <button
                 key={status}
@@ -183,12 +180,6 @@ export function TaskListPage() {
           <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
         </button>
       </div>
-
-      {errorMessage && (
-        <div className="rounded-2xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm font-medium text-danger">
-          {errorMessage}
-        </div>
-      )}
 
       {/* Task List */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
