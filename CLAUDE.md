@@ -199,6 +199,3 @@ chore: replace JPQL with Panache shorthand queries
 
 Skills do projeto em `.claude/skills/`:
 - `new-task` — workflow completo: ler issue → branch → código → commit → PR.
-- `scaffold-usecase` — gerar caso de uso backend + wiring do controller.
-- `scaffold-feature` — gerar página frontend + service + types + rota.
-- `architecture-review` — auditar violações de Clean Architecture.
