@@ -106,12 +106,9 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          <div className="mt-10 pt-8 border-t border-border-soft text-center space-y-4">
+          <div className="mt-10 pt-8 border-t border-border-soft text-center">
             <p className="text-text-muted text-sm font-medium">
               Não tem uma conta? <Link to="/register" className="text-brand font-bold hover:underline">Criar conta</Link>
-            </p>
-            <p className="text-text-muted text-sm font-medium">
-              Precisa de ajuda? <span className="text-brand font-bold cursor-pointer hover:underline">Falar com suporte</span>
             </p>
           </div>
         </div>
