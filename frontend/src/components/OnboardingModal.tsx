@@ -56,7 +56,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
             <button
               onClick={() => {
-                navigate('/organizations');
+                navigate('/organizations/new');
                 onClose?.();
               }}
               className="group p-6 bg-surface-muted/30 border border-border-soft rounded-[2rem] text-left hover:border-brand hover:bg-brand/5 transition-all active:scale-[0.98]"
@@ -70,7 +70,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
             <button
               onClick={() => {
-                navigate('/organizations');
+                navigate('/organizations/join');
                 onClose?.();
               }}
               className="group p-6 bg-surface-muted/30 border border-border-soft rounded-[2rem] text-left hover:border-accent hover:bg-accent/5 transition-all active:scale-[0.98]"

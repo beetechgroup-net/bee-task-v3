@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users, Check, X, ShieldAlert, Mail } from "lucide-react";
+import { Users, Check, X, Mail } from "lucide-react";
 import {
   organizationService,
   type JoinRequest,
