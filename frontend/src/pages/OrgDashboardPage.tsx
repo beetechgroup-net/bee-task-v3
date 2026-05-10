@@ -283,7 +283,7 @@ export const OrgDashboardPage: React.FC = () => {
             <section className="bg-surface border border-border-soft rounded-[2.5rem] p-8 shadow-sm">
               <div className="flex items-center gap-2 mb-8">
                 <Trophy size={20} className="text-amber-500" />
-                <h2 className="text-xl font-black text-text-main">Top 5 Tarefas</h2>
+                <h2 className="text-xl font-black text-text-main">Top 3 Tarefas</h2>
                 <span className="ml-auto text-xs font-bold text-text-muted bg-surface-muted px-2 py-1 rounded-lg">
                   por tempo
                 </span>

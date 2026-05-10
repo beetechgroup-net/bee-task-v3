@@ -74,7 +74,7 @@ public class OrgDashboardUseCase {
                 return new OrgTopTask(t.getId(), t.getTitle(), projectName, minutes);
             })
             .sorted(Comparator.comparingLong(OrgTopTask::totalMinutes).reversed())
-            .limit(5)
+            .limit(3)
             .toList();
 
         Map<String, Long> finishedByMember = new HashMap<>();
