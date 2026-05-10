@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Building2, 
-  Plus, 
-  Search, 
-  Users, 
-  Settings, 
+  Building2,
+  Plus,
+  Search,
+  Users,
+  Settings,
   ArrowRight,
-  ExternalLink,
   ShieldCheck,
   UserPlus,
   X,
@@ -238,10 +237,6 @@ export function OrganizationsPage() {
           <p className="mt-3 text-text-muted leading-relaxed font-medium">
             Organizações são espaços isolados para seus projetos e tarefas. Você pode alternar facilmente entre elas e gerenciar diferentes equipes.
           </p>
-          <a href="#" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:underline">
-            Entender hierarquia
-            <ExternalLink size={14} />
-          </a>
         </div>
 
         <div className="rounded-[2rem] border border-border-soft bg-surface p-8">
@@ -252,10 +247,6 @@ export function OrganizationsPage() {
           <p className="mt-3 text-text-muted leading-relaxed font-medium">
             Crie uma organização em segundos e comece a convidar seus membros. O BeeTask facilita a colaboração desde o primeiro dia.
           </p>
-          <a href="#" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-brand hover:underline">
-            Dicas de onboarding
-            <ExternalLink size={14} />
-          </a>
         </div>
       </div>
 

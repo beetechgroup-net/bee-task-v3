@@ -4,15 +4,12 @@ import {
   FolderKanban,
   Plus,
   Search,
-  Building2,
   ArrowRight,
   Loader2,
   X,
   Target,
   Rocket,
   ShieldCheck,
-  ExternalLink,
-  ChevronRight
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { projectService, type Project } from "../services/projectService";
@@ -146,7 +143,7 @@ export const ProjectsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="mt-8 flex items-center justify-between">
+                  <div className="mt-8 flex items-center">
                     <div className="flex -space-x-2">
                       {[1, 2, 3].map(i => (
                         <div key={i} className="h-8 w-8 rounded-full border-2 border-surface bg-surface-muted flex items-center justify-center text-[10px] font-bold text-text-muted">
@@ -154,9 +151,6 @@ export const ProjectsPage: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                    <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-app-bg text-text-muted transition-all hover:bg-brand hover:text-white">
-                      <ChevronRight size={20} />
-                    </button>
                   </div>
                 </div>
 
@@ -233,10 +227,6 @@ export const ProjectsPage: React.FC = () => {
           <p className="mt-3 text-text-muted leading-relaxed font-medium">
             Cada projeto pode ser encarado como um objetivo específico. Use-os para separar demandas de diferentes clientes ou departamentos da sua organização.
           </p>
-          <a href="#" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-brand hover:underline">
-            Melhores práticas de organização
-            <ExternalLink size={14} />
-          </a>
         </div>
 
         <div className="rounded-[2rem] border border-border-soft bg-surface p-8">
@@ -247,10 +237,6 @@ export const ProjectsPage: React.FC = () => {
           <p className="mt-3 text-text-muted leading-relaxed font-medium">
             Projetos herdam as permissões da organização. Apenas membros autorizados podem visualizar e interagir com as tarefas de cada projeto.
           </p>
-          <a href="#" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-accent hover:underline">
-            Ver detalhes de visibilidade
-            <ExternalLink size={14} />
-          </a>
         </div>
       </div>
 

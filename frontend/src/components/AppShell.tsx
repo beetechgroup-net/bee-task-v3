@@ -2,17 +2,20 @@ import React, { useState } from "react";
 import {
   Layout,
   ListTodo,
-  PlusCircle,
+  Plus,
   Columns,
   LogOut,
   Settings,
   Building2,
   Clock,
   ChevronDown,
-  Shield,
   FolderKanban,
   BarChart3,
   PieChart,
+  Search,
+  User,
+  Users,
+  PlusCircle,
 } from "lucide-react";
 import { NavLink, Outlet, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -43,7 +46,11 @@ export function AppShell() {
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const [showTasksDropdown, setShowTasksDropdown] = useState(false);
-  const [showOrgDropdown, setShowOrgDropdown] = useState(false);
+  const [showTeamDropdown, setShowTeamDropdown] = useState(false);
+  const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
+
+  const isAdmin =
+    activeOrg?.roles.includes("OWNER") || activeOrg?.roles.includes("ADMIN");
 
   React.useEffect(() => {
     if (isAuthenticated && user && user.organizations.length === 0) {
@@ -181,10 +188,11 @@ export function AppShell() {
               )}
             </div>
 
+            {/* Desktop Navigation */}
             <nav className="hidden items-center gap-1 md:flex">
               <NavLink to="/dashboard" className={navLinkClassName}>
                 <BarChart3 size={18} />
-                Dashboard
+                Meu Dashboard
               </NavLink>
 
               {/* Tarefas Dropdown */}
@@ -252,69 +260,85 @@ export function AppShell() {
                 )}
               </div>
 
-              {(activeOrg?.roles.includes("OWNER") ||
-                activeOrg?.roles.includes("ADMIN")) && (
+              {isAdmin && (
                 <NavLink to="/projects" className={navLinkClassName}>
                   <FolderKanban size={18} />
                   Projetos
                 </NavLink>
               )}
 
-              {(activeOrg?.roles.includes("OWNER") ||
-                activeOrg?.roles.includes("ADMIN")) && (
-                <NavLink to="/org-dashboard" className={navLinkClassName}>
-                  <PieChart size={18} />
-                  Org Dashboard
-                </NavLink>
-              )}
-
-              {/* Organizações Dropdown */}
+              {/* Equipe Dropdown */}
               <div className="relative">
                 <NavLink
                   to="/organizations"
                   className={({ isActive }) => {
-                    const isRequestsActive =
-                      window.location.pathname === "/requests";
-                    const isAdminActive = window.location.pathname === "/admin";
+                    const path = window.location.pathname;
                     const active =
-                      isActive || isRequestsActive || isAdminActive;
+                      isActive ||
+                      path === "/requests" ||
+                      path === "/admin" ||
+                      path === "/org-dashboard" ||
+                      path === "/organizations/join";
                     return cn(
                       "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200",
-                      active || showOrgDropdown
+                      active || showTeamDropdown
                         ? "bg-brand text-white shadow-md shadow-brand/20"
                         : "text-text-muted hover:bg-surface-muted hover:text-text-main",
                     );
                   }}
                   onClick={(e) => {
                     e.preventDefault();
-                    setShowOrgDropdown(!showOrgDropdown);
+                    setShowTeamDropdown(!showTeamDropdown);
                   }}
                 >
-                  <Building2 size={18} />
-                  Organizações
+                  <Users size={18} />
+                  Equipe
                   <ChevronDown
                     size={14}
                     className={cn(
                       "transition-transform",
-                      showOrgDropdown && "rotate-180",
+                      showTeamDropdown && "rotate-180",
                     )}
                   />
                 </NavLink>
 
-                {showOrgDropdown && (
+                {showTeamDropdown && (
                   <>
                     <div
                       className="fixed inset-0 z-40"
-                      onClick={() => setShowOrgDropdown(false)}
+                      onClick={() => setShowTeamDropdown(false)}
                     />
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="absolute right-0 mt-2 z-50 w-56 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
+                      className="absolute right-0 mt-2 z-50 w-60 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
                     >
+                      {isAdmin && (
+                        <>
+                          <NavLink
+                            to="/org-dashboard"
+                            onClick={() => setShowTeamDropdown(false)}
+                            className={dropdownItemClassName}
+                          >
+                            <PieChart size={18} />
+                            Dashboard da Org
+                          </NavLink>
+                          <NavLink
+                            to="/admin"
+                            onClick={() => setShowTeamDropdown(false)}
+                            className={(props) =>
+                              cn(dropdownItemClassName(props), "mt-1")
+                            }
+                          >
+                            <Settings size={18} />
+                            Solicitações Pendentes
+                          </NavLink>
+                          <div className="my-2 border-t border-border-soft" />
+                        </>
+                      )}
                       <NavLink
                         to="/organizations"
-                        onClick={() => setShowOrgDropdown(false)}
+                        onClick={() => setShowTeamDropdown(false)}
                         className={dropdownItemClassName}
                       >
                         <Building2 size={18} />
@@ -322,7 +346,7 @@ export function AppShell() {
                       </NavLink>
                       <NavLink
                         to="/requests"
-                        onClick={() => setShowOrgDropdown(false)}
+                        onClick={() => setShowTeamDropdown(false)}
                         className={(props) =>
                           cn(dropdownItemClassName(props), "mt-1")
                         }
@@ -330,20 +354,16 @@ export function AppShell() {
                         <Clock size={18} />
                         Minhas Solicitações
                       </NavLink>
-                      {activeOrg?.roles.some(
-                        (role) => role === "OWNER" || role === "ADMIN",
-                      ) && (
-                        <NavLink
-                          to="/admin"
-                          onClick={() => setShowOrgDropdown(false)}
-                          className={(props) =>
-                            cn(dropdownItemClassName(props), "mt-1")
-                          }
-                        >
-                          <Settings size={18} />
-                          Solicitações Pendentes
-                        </NavLink>
-                      )}
+                      <NavLink
+                        to="/organizations/join"
+                        onClick={() => setShowTeamDropdown(false)}
+                        className={(props) =>
+                          cn(dropdownItemClassName(props), "mt-1")
+                        }
+                      >
+                        <Search size={18} />
+                        Buscar Organização
+                      </NavLink>
                     </motion.div>
                   </>
                 )}
@@ -351,16 +371,60 @@ export function AppShell() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Right Actions */}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/new"
+              className="hidden md:inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-bold text-white shadow-md shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-dark active:scale-95"
+            >
+              <Plus size={16} />
+              Nova Tarefa
+            </Link>
+
             <div className="hidden h-8 w-px bg-border-soft md:block" />
-            <div className="flex items-center gap-3">
+
+            {/* Avatar Dropdown */}
+            <div className="relative">
               <button
-                onClick={logout}
-                className="ml-2 p-2 text-text-muted hover:text-danger transition-colors"
-                title="Sair"
+                onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 text-brand hover:bg-brand hover:text-white transition-all"
+                title={user?.name}
               >
-                <LogOut size={18} />
+                <User size={18} />
               </button>
+
+              {showAvatarDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowAvatarDropdown(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute right-0 mt-2 z-50 w-56 rounded-2xl border border-border-soft bg-surface p-2 shadow-xl shadow-brand/10"
+                  >
+                    <div className="px-3 py-3 border-b border-border-soft mb-1">
+                      <p className="text-sm font-bold text-text-main truncate">
+                        {user?.name}
+                      </p>
+                      <p className="text-xs text-text-muted truncate mt-0.5">
+                        {user?.email}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowAvatarDropdown(false);
+                        logout();
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-text-muted hover:bg-danger/5 hover:text-danger transition-all"
+                    >
+                      <LogOut size={16} />
+                      Sair
+                    </button>
+                  </motion.div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -383,7 +447,7 @@ export function AppShell() {
             }
           >
             <BarChart3 size={20} />
-            <span className="text-[10px]">Dash</span>
+            <span className="text-[10px]">Dashboard</span>
           </NavLink>
 
           {/* Mobile Tarefas Group */}
@@ -437,59 +501,88 @@ export function AppShell() {
               </>
             )}
           </div>
-          {(activeOrg?.roles.includes("OWNER") ||
-            activeOrg?.roles.includes("ADMIN")) && (
-            <NavLink to="/projects" className={navLinkClassName}>
-              <FolderKanban size={18} />
-              Projetos
-            </NavLink>
-          )}
 
-          {(activeOrg?.roles.includes("OWNER") ||
-            activeOrg?.roles.includes("ADMIN")) && (
-            <NavLink
-              to="/org-dashboard"
-              className={({ isActive }) =>
-                cn(navLinkClassName({ isActive }), "flex-col gap-0.5 py-1")
-              }
-            >
-              <PieChart size={20} />
-              <span className="text-[10px]">Org</span>
-            </NavLink>
-          )}
+          {/* Mobile + New Task */}
+          <Link
+            to="/new"
+            className={cn(
+              navLinkClassName({ isActive: window.location.pathname === "/new" }),
+              "flex-col gap-0.5 py-1",
+            )}
+          >
+            <Plus size={20} />
+            <span className="text-[10px]">Nova</span>
+          </Link>
 
-          {/* Mobile Organizações Group */}
+          {/* Mobile Equipe Group */}
           <div className="relative">
             <button
-              onClick={() => setShowOrgDropdown(!showOrgDropdown)}
+              onClick={() => setShowTeamDropdown(!showTeamDropdown)}
               className={cn(
                 navLinkClassName({
-                  isActive:
-                    window.location.pathname === "/organizations" ||
-                    window.location.pathname === "/requests" ||
-                    window.location.pathname === "/admin",
+                  isActive: [
+                    "/organizations",
+                    "/requests",
+                    "/admin",
+                    "/org-dashboard",
+                    "/organizations/join",
+                    "/projects",
+                  ].includes(window.location.pathname),
                 }),
                 "flex-col gap-0.5 py-1",
               )}
             >
-              <Building2 size={20} />
-              <span className="text-[10px]">Org</span>
+              <Users size={20} />
+              <span className="text-[10px]">Equipe</span>
             </button>
 
-            {showOrgDropdown && (
+            {showTeamDropdown && (
               <>
                 <div
                   className="fixed inset-0 z-40"
-                  onClick={() => setShowOrgDropdown(false)}
+                  onClick={() => setShowTeamDropdown(false)}
                 />
                 <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 z-50 w-48 rounded-2xl border border-border-soft bg-surface p-1 shadow-2xl"
+                  className="absolute bottom-full right-0 mb-4 z-50 w-52 rounded-2xl border border-border-soft bg-surface p-1 shadow-2xl"
                 >
+                  {isAdmin && (
+                    <>
+                      <NavLink
+                        to="/projects"
+                        onClick={() => setShowTeamDropdown(false)}
+                        className={dropdownItemClassName}
+                      >
+                        <FolderKanban size={18} />
+                        Projetos
+                      </NavLink>
+                      <NavLink
+                        to="/org-dashboard"
+                        onClick={() => setShowTeamDropdown(false)}
+                        className={(props) =>
+                          cn(dropdownItemClassName(props), "mt-1")
+                        }
+                      >
+                        <PieChart size={18} />
+                        Dashboard da Org
+                      </NavLink>
+                      <NavLink
+                        to="/admin"
+                        onClick={() => setShowTeamDropdown(false)}
+                        className={(props) =>
+                          cn(dropdownItemClassName(props), "mt-1")
+                        }
+                      >
+                        <Settings size={18} />
+                        Gestão
+                      </NavLink>
+                      <div className="my-1 border-t border-border-soft" />
+                    </>
+                  )}
                   <NavLink
                     to="/organizations"
-                    onClick={() => setShowOrgDropdown(false)}
+                    onClick={() => setShowTeamDropdown(false)}
                     className={dropdownItemClassName}
                   >
                     <Building2 size={18} />
@@ -497,7 +590,7 @@ export function AppShell() {
                   </NavLink>
                   <NavLink
                     to="/requests"
-                    onClick={() => setShowOrgDropdown(false)}
+                    onClick={() => setShowTeamDropdown(false)}
                     className={(props) =>
                       cn(dropdownItemClassName(props), "mt-1")
                     }
@@ -505,20 +598,16 @@ export function AppShell() {
                     <Clock size={18} />
                     Pedidos
                   </NavLink>
-                  {activeOrg?.roles.some(
-                    (role) => role === "OWNER" || role === "ADMIN",
-                  ) && (
-                    <NavLink
-                      to="/admin"
-                      onClick={() => setShowOrgDropdown(false)}
-                      className={(props) =>
-                        cn(dropdownItemClassName(props), "mt-1")
-                      }
-                    >
-                      <Settings size={18} />
-                      Gestão
-                    </NavLink>
-                  )}
+                  <NavLink
+                    to="/organizations/join"
+                    onClick={() => setShowTeamDropdown(false)}
+                    className={(props) =>
+                      cn(dropdownItemClassName(props), "mt-1")
+                    }
+                  >
+                    <Search size={18} />
+                    Buscar Org
+                  </NavLink>
                 </motion.div>
               </>
             )}
