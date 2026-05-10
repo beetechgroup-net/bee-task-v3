@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import net.beetechgroup.beetask.entities.organization.UserOrganization;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
@@ -33,11 +34,19 @@ public class OrgDashboardUseCase {
     public OrgDashboardOutput execute(OrgDashboardInput input) {
         authorizer.execute(input.userEmail(), input.organizationId());
 
-        List<Task> workedTasks = taskRepository.findTasksWorkedByOrgInPeriod(
-            input.organizationId(), input.startDate(), input.endDate()
+        List<UserOrganization> members = userOrganizationRepository.findByOrganizationIdAndStatus(
+            input.organizationId(), UserOrganizationStatus.ACTIVE
         );
-        List<Task> finishedTasks = taskRepository.findTasksFinishedByOrgInPeriod(
-            input.organizationId(), input.startDate(), input.endDate()
+
+        List<String> memberEmails = members.stream()
+            .map(uo -> uo.getUser().getEmail())
+            .toList();
+
+        List<Task> workedTasks = taskRepository.findTasksWorkedByUserEmailsInPeriod(
+            memberEmails, input.startDate(), input.endDate()
+        );
+        List<Task> finishedTasks = taskRepository.findTasksFinishedByUserEmailsInPeriod(
+            memberEmails, input.startDate(), input.endDate()
         );
 
         Map<Long, OrgProjectStats> projectStatsMap = new HashMap<>();
@@ -46,15 +55,14 @@ public class OrgDashboardUseCase {
         for (Task task : workedTasks) {
             long minutes = calculateMinutesInPeriod(task, input.startDate(), input.endDate());
 
-            if (task.getProject() != null) {
-                Long projectId = task.getProject().getId();
-                OrgProjectStats existing = projectStatsMap.getOrDefault(projectId,
-                    new OrgProjectStats(projectId, task.getProject().getName(), 0L));
-                projectStatsMap.put(projectId, new OrgProjectStats(
-                    projectId, existing.projectName(), existing.totalMinutes() + minutes));
-            }
+            Long projectId = Objects.nonNull(task.getProject()) ? task.getProject().getId() : null;
+            String projectName = Objects.nonNull(task.getProject()) ? task.getProject().getName() : "Geral";
+            OrgProjectStats existing = projectStatsMap.getOrDefault(projectId,
+                new OrgProjectStats(projectId, projectName, 0L));
+            projectStatsMap.put(projectId, new OrgProjectStats(
+                projectId, existing.projectName(), existing.totalMinutes() + minutes));
 
-            if (task.getUser() != null) {
+            if (Objects.nonNull(task.getUser())) {
                 memberMinutesMap.merge(task.getUser().getEmail(), minutes, Long::sum);
             }
         }
@@ -62,7 +70,7 @@ public class OrgDashboardUseCase {
         List<OrgTopTask> topTasks = workedTasks.stream()
             .map(t -> {
                 long minutes = calculateMinutesInPeriod(t, input.startDate(), input.endDate());
-                String projectName = t.getProject() != null ? t.getProject().getName() : "-";
+                String projectName = Objects.nonNull(t.getProject()) ? t.getProject().getName() : "Geral";
                 return new OrgTopTask(t.getId(), t.getTitle(), projectName, minutes);
             })
             .sorted(Comparator.comparingLong(OrgTopTask::totalMinutes).reversed())
@@ -71,14 +79,10 @@ public class OrgDashboardUseCase {
 
         Map<String, Long> finishedByMember = new HashMap<>();
         for (Task task : finishedTasks) {
-            if (task.getUser() != null) {
+            if (Objects.nonNull(task.getUser())) {
                 finishedByMember.merge(task.getUser().getEmail(), 1L, Long::sum);
             }
         }
-
-        List<UserOrganization> members = userOrganizationRepository.findByOrganizationIdAndStatus(
-            input.organizationId(), UserOrganizationStatus.ACTIVE
-        );
 
         List<OrgMemberStats> memberStats = members.stream()
             .map(uo -> {
@@ -109,15 +113,15 @@ public class OrgDashboardUseCase {
     }
 
     private boolean isWithinPeriod(TaskHistoryItem item, LocalDateTime start, LocalDateTime end) {
-        if (item.getStartAt() == null) return false;
+        if (Objects.isNull(item.getStartAt())) return false;
         if (item.getStartAt().isAfter(end)) return false;
-        if (item.getEndAt() != null && item.getEndAt().isBefore(start)) return false;
+        if (Objects.nonNull(item.getEndAt()) && item.getEndAt().isBefore(start)) return false;
         return true;
     }
 
     private long calculateMinutesInRange(TaskHistoryItem item, LocalDateTime start, LocalDateTime end) {
         LocalDateTime effectiveStart = item.getStartAt().isBefore(start) ? start : item.getStartAt();
-        LocalDateTime effectiveEnd = item.getEndAt() == null || item.getEndAt().isAfter(end) ? end : item.getEndAt();
+        LocalDateTime effectiveEnd = Objects.isNull(item.getEndAt()) || item.getEndAt().isAfter(end) ? end : item.getEndAt();
         if (effectiveStart.isAfter(effectiveEnd)) return 0;
         return Duration.between(effectiveStart, effectiveEnd).toMinutes();
     }

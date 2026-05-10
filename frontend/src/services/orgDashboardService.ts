@@ -1,7 +1,7 @@
 import { apiFetch } from '../lib/api'
 
 export interface OrgProjectStats {
-  projectId: number
+  projectId: number | null
   projectName: string
   totalMinutes: number
 }
@@ -36,7 +36,7 @@ export interface PeriodStats {
 }
 
 export interface MemberProjectStats {
-  projectId: number
+  projectId: number | null
   projectName: string
   totalMinutes: number
 }

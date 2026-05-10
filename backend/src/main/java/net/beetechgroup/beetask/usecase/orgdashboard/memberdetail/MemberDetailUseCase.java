@@ -67,13 +67,12 @@ public class MemberDetailUseCase {
                     minutesPerMonth.merge(YearMonth.from(effectiveStart), minutes, Long::sum);
                 }
 
-                if (Objects.nonNull(task.getProject())) {
-                    Long projectId = task.getProject().getId();
-                    MemberDetailOutput.ProjectStats existing = projectStatsMap.getOrDefault(projectId,
-                            new MemberDetailOutput.ProjectStats(projectId, task.getProject().getName(), 0L));
-                    projectStatsMap.put(projectId, new MemberDetailOutput.ProjectStats(
-                            projectId, existing.projectName(), existing.totalMinutes() + minutes));
-                }
+                Long projectId = Objects.nonNull(task.getProject()) ? task.getProject().getId() : null;
+                String projectName = Objects.nonNull(task.getProject()) ? task.getProject().getName() : "Geral";
+                MemberDetailOutput.ProjectStats existing = projectStatsMap.getOrDefault(projectId,
+                        new MemberDetailOutput.ProjectStats(projectId, projectName, 0L));
+                projectStatsMap.put(projectId, new MemberDetailOutput.ProjectStats(
+                        projectId, existing.projectName(), existing.totalMinutes() + minutes));
             }
         }
 
