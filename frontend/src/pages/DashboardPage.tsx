@@ -10,7 +10,8 @@ import {
   Layout,
   FileText,
   Filter,
-  Download,
+  Copy,
+  Check,
   AlertCircle,
   Loader2,
   History,
@@ -30,6 +31,7 @@ export const DashboardPage: React.FC = () => {
   const [startDate, setStartDate] = useState(startOfMonth(new Date()));
   const [endDate, setEndDate] = useState(endOfMonth(new Date()));
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -55,6 +57,24 @@ export const DashboardPage: React.FC = () => {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return `${h}h ${m}m`;
+  };
+
+  const handleCopyReport = () => {
+    if (!data) return;
+    const header = "Tarefa\tProjeto\tConcluída em\tStatus";
+    const rows = data.finishedTasksInPeriod.map((task) =>
+      [
+        task.title,
+        task.project?.name ?? "-",
+        task.finishedAt
+          ? format(new Date(task.finishedAt), "dd/MM/yyyy HH:mm")
+          : "-",
+        "Finalizado",
+      ].join("\t"),
+    );
+    navigator.clipboard.writeText([header, ...rows].join("\n"));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -199,10 +219,6 @@ export const DashboardPage: React.FC = () => {
                       )
                     : "0h 0m"}
                 </div>
-                <button className="mt-6 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl transition-all">
-                  <Download size={14} />
-                  Exportar Relatório
-                </button>
               </div>
               <TrendingUp
                 size={160}
@@ -324,9 +340,12 @@ export const DashboardPage: React.FC = () => {
                   Relatório de Entregas
                 </h2>
               </div>
-              <button className="flex items-center gap-2 text-sm font-bold text-brand hover:underline bg-brand/5 px-4 py-2 rounded-xl transition-all">
-                <Download size={16} />
-                Baixar PDF
+              <button
+                onClick={handleCopyReport}
+                className="flex items-center gap-2 text-sm font-bold text-brand bg-brand/5 px-4 py-2 rounded-xl transition-all hover:bg-brand/10 active:scale-95"
+              >
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+                {copied ? "Copiado!" : "Copiar Relatório"}
               </button>
             </div>
 

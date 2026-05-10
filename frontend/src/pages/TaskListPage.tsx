@@ -4,7 +4,9 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  Columns,
   Filter,
+  List,
   Plus,
   RefreshCw,
   Search,
@@ -107,13 +109,29 @@ export function TaskListPage() {
             Visualize e organize suas atividades em tempo real.
           </p>
         </div>
-        <Link
-          to="/new"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-strong active:scale-95"
-        >
-          <Plus size={20} />
-          Criar Tarefa
-        </Link>
+        <div className="flex items-center gap-3">
+          {/* View toggle */}
+          <div className="flex items-center rounded-xl border border-border-soft bg-surface p-1 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-bold text-white">
+              <List size={14} />
+              Lista
+            </span>
+            <Link
+              to="/board"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-text-muted transition-all hover:bg-surface-muted hover:text-text-main"
+            >
+              <Columns size={14} />
+              Quadro
+            </Link>
+          </div>
+          <Link
+            to="/new"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-strong active:scale-95"
+          >
+            <Plus size={20} />
+            Criar Tarefa
+          </Link>
+        </div>
       </div>
 
 
