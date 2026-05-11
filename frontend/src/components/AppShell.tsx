@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { OnboardingModal } from "./OnboardingModal";
 
 import { cn } from "../lib/utils";
 import { motion } from "framer-motion";
@@ -43,7 +42,6 @@ const dropdownItemClassName = ({ isActive }: { isActive: boolean }) =>
 export function AppShell() {
   const { user, isAuthenticated, isLoading, logout, activeOrg, setActiveOrg } =
     useAuth();
-  const [showOrgModal, setShowOrgModal] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const [showTasksDropdown, setShowTasksDropdown] = useState(false);
   const [showTeamDropdown, setShowTeamDropdown] = useState(false);
@@ -51,12 +49,6 @@ export function AppShell() {
 
   const isAdmin =
     activeOrg?.roles.includes("OWNER") || activeOrg?.roles.includes("ADMIN");
-
-  React.useEffect(() => {
-    if (isAuthenticated && user && user.organizations.length === 0) {
-      setShowOrgModal(true);
-    }
-  }, [isAuthenticated, user]);
 
   if (isLoading) {
     return (
@@ -614,10 +606,6 @@ export function AppShell() {
           </div>
         </nav>
       </footer>
-      <OnboardingModal
-        isOpen={showOrgModal}
-        onClose={() => setShowOrgModal(false)}
-      />
     </div>
   );
 }

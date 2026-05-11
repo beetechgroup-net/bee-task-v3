@@ -6,9 +6,16 @@ import { useNavigate } from 'react-router-dom'
 interface OnboardingModalProps {
   isOpen: boolean
   onClose?: () => void
+  onCreateOrganization?: () => void
+  onJoinOrganization?: () => void
 }
 
-export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
+export const OnboardingModal: React.FC<OnboardingModalProps> = ({
+  isOpen,
+  onClose,
+  onCreateOrganization,
+  onJoinOrganization,
+}) => {
   const navigate = useNavigate()
 
   const handleClose = () => {
@@ -56,7 +63,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
             <button
               onClick={() => {
-                navigate('/organizations');
+                if (onCreateOrganization) {
+                  onCreateOrganization()
+                  return
+                }
+
                 onClose?.();
               }}
               className="group p-6 bg-surface-muted/30 border border-border-soft rounded-[2rem] text-left hover:border-brand hover:bg-brand/5 transition-all active:scale-[0.98]"
@@ -70,8 +81,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
             <button
               onClick={() => {
-                navigate('/organizations');
+                if (onJoinOrganization) {
+                  onJoinOrganization()
+                  return
+                }
+
                 onClose?.();
+                navigate('/organizations/join');
               }}
               className="group p-6 bg-surface-muted/30 border border-border-soft rounded-[2rem] text-left hover:border-accent hover:bg-accent/5 transition-all active:scale-[0.98]"
             >

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Building2,
@@ -13,20 +13,56 @@ import {
   Loader2,
   Layout as LayoutIcon,
   Globe,
-  Zap
+  Zap,
+  Send,
+  CheckCircle2,
+  Clock,
+  XCircle
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { cn } from '../lib/utils'
-import { organizationService } from '../services/organizationService'
+import { organizationService, type UserJoinRequest } from '../services/organizationService'
+import { OnboardingModal } from '../components/OnboardingModal'
+
+const requestStatusConfig: Record<UserJoinRequest['status'], {
+  label: string
+  icon: typeof Clock
+  className: string
+}> = {
+  PENDING: {
+    label: 'Pendente',
+    icon: Clock,
+    className: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  },
+  ACTIVE: {
+    label: 'Aprovado',
+    icon: CheckCircle2,
+    className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  },
+  REJECTED: {
+    label: 'Recusado',
+    icon: XCircle,
+    className: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+  },
+}
 
 export function OrganizationsPage() {
   const { user, activeOrg, setActiveOrg, refreshUser } = useAuth()
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showJoinModal, setShowJoinModal] = useState(false)
+  const [showRequestsModal, setShowRequestsModal] = useState(false)
   const [newOrgName, setNewOrgName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [joinQuery, setJoinQuery] = useState('')
+  const [joinResults, setJoinResults] = useState<Array<{ id: number; name: string }> | null>(null)
+  const [isSearchingOrganizations, setIsSearchingOrganizations] = useState(false)
+  const [requestedOrgId, setRequestedOrgId] = useState<number | null>(null)
+  const [requests, setRequests] = useState<UserJoinRequest[]>([])
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false)
 
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,6 +86,77 @@ export function OrganizationsPage() {
   const filteredOrgs = user?.organizations.filter(org => 
     org.name.toLowerCase().includes(searchQuery.toLowerCase())
   ) || []
+
+  useEffect(() => {
+    setShowOnboardingModal((user?.organizations.length ?? 0) === 0)
+  }, [user?.organizations.length])
+
+  const openCreateOrganizationModal = () => {
+    setShowOnboardingModal(false)
+    setShowJoinModal(false)
+    setShowCreateModal(true)
+  }
+
+  const openJoinOrganizationModal = () => {
+    setShowOnboardingModal(false)
+    setShowCreateModal(false)
+    setShowJoinModal(true)
+  }
+
+  const openRequestsModal = () => {
+    setShowOnboardingModal(false)
+    setShowCreateModal(false)
+    setShowJoinModal(false)
+    setShowRequestsModal(true)
+  }
+
+  const handleSearchOrganizations = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!joinQuery.trim()) return
+
+    setIsSearchingOrganizations(true)
+
+    try {
+      const data = await organizationService.search(joinQuery)
+      setJoinResults(data)
+    } catch (err) {
+      console.error('Search failed', err)
+      setJoinResults([])
+    } finally {
+      setIsSearchingOrganizations(false)
+    }
+  }
+
+  const handleJoinRequest = async (organizationId: number) => {
+    try {
+      await organizationService.requestJoin(organizationId)
+      setRequestedOrgId(organizationId)
+      alert('Solicitação enviada! Aguarde a aprovação do dono da organização.')
+    } catch (err) {
+      console.error('Join request failed', err)
+      alert(err instanceof Error ? err.message : 'Erro ao enviar solicitação.')
+    }
+  }
+
+  useEffect(() => {
+    if (!showRequestsModal) return
+
+    const fetchRequests = async () => {
+      setIsLoadingRequests(true)
+
+      try {
+        const data = await organizationService.getUserRequests()
+        setRequests(data)
+      } catch (err) {
+        console.error('Failed to fetch requests', err)
+        setRequests([])
+      } finally {
+        setIsLoadingRequests(false)
+      }
+    }
+
+    void fetchRequests()
+  }, [showRequestsModal])
 
   return (
     <div className="space-y-12 pb-20">
@@ -78,19 +185,26 @@ export function OrganizationsPage() {
               className="pl-10 pr-4 py-2.5 bg-surface border border-border-soft rounded-xl text-sm outline-none focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all w-48 font-medium"
             />
           </div>
-          <Link
-            to="/organizations/join"
+          <button
+            onClick={openJoinOrganizationModal}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-surface border border-border-soft px-6 py-3 text-sm font-bold text-text-main shadow-sm transition-all hover:bg-surface-muted active:scale-95"
           >
             <Search size={18} />
             Encontrar
-          </Link>
+          </button>
+          <button
+            onClick={openRequestsModal}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-surface border border-border-soft px-6 py-3 text-sm font-bold text-text-main shadow-sm transition-all hover:bg-surface-muted active:scale-95"
+          >
+            <UserPlus size={18} />
+            Minhas Solicitações
+          </button>
           <button
             onClick={() => setShowCreateModal(true)}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-dark active:scale-95"
           >
             <Plus size={18} />
-            Nova Org
+            Nova Organização
           </button>
         </div>
       </header>
@@ -210,14 +324,14 @@ export function OrganizationsPage() {
             Explore organizações públicas ou use um código de convite para se juntar aos seus colegas de trabalho.
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              to="/organizations/join"
+            <button
+              onClick={openJoinOrganizationModal}
               className="inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-4 text-sm font-black text-brand shadow-xl transition-all hover:scale-105 active:scale-95"
             >
               <Search size={20} />
               Buscar Organizações
               <ArrowRight size={18} />
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -320,6 +434,194 @@ export function OrganizationsPage() {
           </div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showJoinModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app-bg/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-2xl bg-surface border border-border-soft rounded-[2.5rem] shadow-panel p-10 relative"
+            >
+              <button
+                onClick={() => setShowJoinModal(false)}
+                className="absolute top-8 right-8 text-text-muted hover:text-brand transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="text-center mb-10">
+                <div className="w-16 h-16 bg-brand text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-brand/20 mx-auto">
+                  <Search size={32} />
+                </div>
+                <h2 className="text-3xl font-black text-text-main tracking-tight mb-3">Buscar Organização</h2>
+                <p className="text-text-muted font-medium">Encontre uma organização pelo nome e solicite entrada.</p>
+              </div>
+
+              <form onSubmit={handleSearchOrganizations} className="flex gap-3 mb-8">
+                <div className="relative flex-1 group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Building2 className="h-5 w-5 text-text-muted group-focus-within:text-brand transition-colors" />
+                  </div>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={joinQuery}
+                    onChange={(e) => setJoinQuery(e.target.value)}
+                    className="block w-full pl-12 pr-4 py-4 bg-surface-muted/50 border border-border-soft rounded-2xl text-text-main placeholder-text-muted/60 focus:outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand transition-all font-medium"
+                    placeholder="Nome da organização..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSearchingOrganizations}
+                  className="bg-brand hover:bg-brand-dark disabled:bg-brand/50 text-white font-black px-8 rounded-2xl transition-all shadow-lg shadow-brand/20 active:scale-[0.98] flex items-center gap-2"
+                >
+                  {isSearchingOrganizations ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    'Buscar'
+                  )}
+                </button>
+              </form>
+
+              <div className="space-y-3">
+                {joinResults && joinResults.length > 0 ? (
+                  joinResults.map((org) => (
+                    <div
+                      key={org.id}
+                      className="flex items-center justify-between p-5 bg-surface-muted/30 border border-border-soft rounded-2xl hover:border-brand/50 transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-brand/10 text-brand rounded-lg flex items-center justify-center">
+                          <Building2 size={20} />
+                        </div>
+                        <span className="font-bold text-text-main">{org.name}</span>
+                      </div>
+                      {requestedOrgId === org.id ? (
+                        <div className="flex items-center gap-2 text-success font-bold text-sm bg-success/10 px-4 py-2 rounded-xl">
+                          <CheckCircle2 size={16} />
+                          Solicitado
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => void handleJoinRequest(org.id)}
+                          className="flex items-center gap-2 text-brand font-bold text-sm hover:bg-brand hover:text-white px-4 py-2 rounded-xl border border-brand/20 transition-all"
+                        >
+                          <Send size={16} />
+                          Solicitar entrada
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : joinResults && joinResults.length === 0 ? (
+                  <p className="text-center text-text-muted py-10 font-medium">
+                    Nenhuma organização encontrada.
+                  </p>
+                ) : null}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showRequestsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app-bg/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-3xl bg-surface border border-border-soft rounded-[2.5rem] shadow-panel p-10 relative"
+            >
+              <button
+                onClick={() => setShowRequestsModal(false)}
+                className="absolute top-8 right-8 text-text-muted hover:text-brand transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="text-center mb-10">
+                <div className="w-16 h-16 bg-brand text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-brand/20 mx-auto">
+                  <UserPlus size={32} />
+                </div>
+                <h2 className="text-3xl font-black text-text-main tracking-tight mb-3">Minhas Solicitações</h2>
+                <p className="text-text-muted font-medium">Acompanhe o status dos seus pedidos para entrar em organizações.</p>
+              </div>
+
+              {isLoadingRequests ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="h-20 bg-surface-muted/50 rounded-2xl animate-pulse" />
+                  ))}
+                </div>
+              ) : requests.length === 0 ? (
+                <div className="bg-surface-muted/30 border border-dashed border-border-soft rounded-[2rem] p-12 text-center">
+                  <div className="w-16 h-16 bg-surface-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Building2 className="text-text-muted/50" size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-text-main mb-2">Nenhuma solicitação encontrada</h3>
+                  <p className="text-text-muted mb-8 max-w-xs mx-auto">
+                    Você ainda não solicitou participar de nenhuma organização.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowRequestsModal(false)
+                      openJoinOrganizationModal()
+                    }}
+                    className="bg-brand hover:bg-brand-dark text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-brand/20 transition-all active:scale-95"
+                  >
+                    Buscar Organizações
+                  </button>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {requests.map((request, index) => {
+                    const config = requestStatusConfig[request.status]
+                    const StatusIcon = config.icon
+
+                    return (
+                      <motion.div
+                        key={request.organizationId}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="group bg-surface-muted/30 hover:bg-surface-muted/50 border border-border-soft p-5 rounded-2xl flex items-center justify-between transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-border-soft flex items-center justify-center text-brand">
+                            <Building2 size={24} />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-text-main group-hover:text-brand transition-colors">
+                              {request.organizationName}
+                            </h3>
+                            <span className="text-xs text-text-muted font-semibold tracking-wider uppercase">
+                              ID: {request.organizationId}
+                            </span>
+                          </div>
+                        </div>
+                        <div className={cn('flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border', config.className)}>
+                          <StatusIcon size={14} />
+                          <span>{config.label}</span>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <OnboardingModal
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        onCreateOrganization={openCreateOrganizationModal}
+        onJoinOrganization={openJoinOrganizationModal}
+      />
     </div>
   )
 }

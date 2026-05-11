@@ -6,7 +6,6 @@ import { TaskListPage } from "./pages/TaskListPage";
 import { TaskBoardPage } from "./pages/TaskBoardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
-import { CreateOrganizationPage } from "./pages/CreateOrganizationPage";
 import { JoinOrganizationPage } from "./pages/JoinOrganizationPage";
 import { OrganizationAdminPage } from "./pages/OrganizationAdminPage";
 import { MyRequestsPage } from "./pages/MyRequestsPage";
@@ -24,10 +23,6 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     element: <RegisterPage />,
-  },
-  {
-    path: "/organizations/new",
-    element: <CreateOrganizationPage />,
   },
   {
     path: "/organizations/join",

@@ -4,6 +4,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  Columns,
+  List,
   MoreVertical,
   Plus,
   RefreshCw,
@@ -111,6 +113,19 @@ export function TaskBoardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center rounded-xl border border-border-soft bg-surface p-1 shadow-sm">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-text-muted transition-all hover:bg-surface-muted hover:text-text-main"
+            >
+              <List size={14} />
+              Lista
+            </Link>
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-bold text-white">
+              <Columns size={14} />
+              Quadro
+            </span>
+          </div>
           <button
             onClick={() => void loadTasks()}
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface border border-border-soft text-text-muted transition-all hover:bg-surface-muted hover:text-brand"
