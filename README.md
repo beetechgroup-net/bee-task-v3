@@ -105,3 +105,53 @@ Frontend:
 cd frontend
 npm run build
 ```
+
+## Deploy automatizado
+
+O repositório agora inclui um workflow em `.github/workflows/deploy-main.yml` para deploy automático quando houver push na branch `main`.
+
+Fluxo:
+
+- roda testes do backend
+- roda build do frontend
+- gera e publica imagens Docker no GHCR
+- copia `deploy/docker-compose.prod.yml` para o servidor
+- conecta via SSH na Hostinger e executa `docker compose pull && docker compose up -d`
+
+Arquivos de apoio:
+
+- `backend/Dockerfile`: imagem de produção do backend
+- `frontend/Dockerfile`: build do Vite + entrega por Nginx
+- `frontend/nginx.conf`: fallback SPA
+- `deploy/docker-compose.prod.yml`: stack de produção
+- `deploy/.env.production.example`: variáveis esperadas no servidor
+
+Secrets necessários no GitHub:
+
+- `HOSTINGER_HOST`: IP ou domínio do servidor
+- `HOSTINGER_PORT`: porta SSH, normalmente `22`
+- `HOSTINGER_USER`: usuário SSH
+- `HOSTINGER_SSH_KEY`: chave privada SSH usada no acesso ao servidor
+- `HOSTINGER_APP_PATH`: diretório remoto onde o deploy será mantido, por exemplo `/home/user/apps/beetask`
+- `GHCR_USERNAME`: usuário dono do pacote no GHCR
+- `GHCR_READ_TOKEN`: token com permissão de `read:packages` para o servidor fazer pull das imagens
+- `FRONTEND_VITE_API_URL`: URL que o frontend usará para a API, por exemplo `https://api.seudominio.com` ou `/api`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `DB_URL`: JDBC URL completa do banco, por exemplo `jdbc:postgresql://203.0.113.10:5432/beetask`
+- `MP_JWT_VERIFY_ISSUER`
+- `SMALLRYE_JWT_SIGN_KEY_LOCATION`
+- `MP_JWT_VERIFY_PUBLICKEY_LOCATION`
+
+Pré-requisitos no servidor:
+
+- Docker instalado
+- Docker Compose plugin disponível via `docker compose`
+- pasta definida em `HOSTINGER_APP_PATH` com permissão de escrita para o usuário SSH
+- caso as imagens GHCR sejam privadas, o `GHCR_READ_TOKEN` precisa conseguir fazer pull
+
+Observações:
+
+- o workflow usa a tag `latest` para o deploy em produção
+- a rota do frontend no container está exposta na porta `3000` do servidor e o backend na `8080`; normalmente você vai colocar Nginx, Caddy ou o proxy da Hostinger na frente dessas portas
+- se quiser servir frontend e backend em domínios diferentes, ajuste `FRONTEND_VITE_API_URL`
