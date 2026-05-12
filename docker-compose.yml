@@ -1,4 +1,21 @@
 services:
+  traefik:
+    image: traefik:v3.3
+    container_name: bee-task-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - frontend
+      - backend
+
   postgres:
     image: postgres:18.3
     container_name: bee-task-postgres
@@ -16,6 +33,44 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: bee-task-backend
+    restart: unless-stopped
+    environment:
+      DB_USER: beetask
+      DB_PASSWORD: beetask
+      DB_URL: jdbc:postgresql://postgres:5432/beetask
+      MP_JWT_VERIFY_ISSUER: https://beetech.net
+      SMALLRYE_JWT_SIGN_KEY_LOCATION: /app/privateKey.pem
+      MP_JWT_VERIFY_PUBLICKEY_LOCATION: /app/publicKey.pem
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/backend`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.middlewares.backend-strip.stripprefix.prefixes=/backend"
+      - "traefik.http.routers.backend.middlewares=backend-strip"
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /backend
+    container_name: bee-task-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 volumes:
   postgres_data:
