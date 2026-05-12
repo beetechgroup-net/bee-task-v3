@@ -24,7 +24,6 @@ function formatDuration(seconds: number) {
 }
 
 export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
-  const [now, setNow] = useState(new Date())
   const [isActionLoading, setIsActionLoading] = useState(false)
 
   const history = task.history ?? []
@@ -45,7 +44,7 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
   const [displaySeconds, setDisplaySeconds] = useState(0)
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
+    let interval: ReturnType<typeof setInterval> | null = null
 
     if (runningItem) {
       interval = setInterval(() => {

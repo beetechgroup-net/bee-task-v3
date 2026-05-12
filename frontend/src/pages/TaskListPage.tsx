@@ -18,8 +18,8 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { taskService } from '../services/taskService'
 import { cn } from '../lib/utils'
-import { TASK_STATUS_LABELS } from '../types/task'
-import type { TaskResponse } from '../types/task'
+import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from '../types/task'
+import type { TaskResponse, TaskStatus } from '../types/task'
 
 function getStatusConfig(status: TaskResponse['status']) {
   switch (status) {
@@ -55,10 +55,10 @@ import { TaskTimer } from '../components/TaskTimer'
 export function TaskListPage() {
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [_errorMessage, setErrorMessage] = useState<string | null>(null)
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string | 'ALL'>('ALL')
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'ALL'>('ALL')
 
   const loadTasks = async (silent = false) => {
     if (!silent) setIsLoading(true)
@@ -154,7 +154,7 @@ export function TaskListPage() {
 
         <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
           <Filter size={18} className="mr-2 text-text-muted shrink-0" />
-          {['ALL', 'NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELED'].map(
+          {(['ALL', ...TASK_STATUS_OPTIONS] as const).map(
             (status) => (
               <button
                 key={status}

@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { projectService, type Project } from "../services/projectService";
-import { cn } from "../lib/utils";
 
 export const ProjectsPage: React.FC = () => {
   const { activeOrg } = useAuth();
@@ -79,7 +78,8 @@ export const ProjectsPage: React.FC = () => {
             Workspace
           </div>
           <h1 className="text-4xl font-black tracking-tight text-text-main">
-            Projetos em <span className="text-brand">{activeOrg.name}</span>
+            Projetos em{" "}
+            <span className="text-brand">{activeOrg?.name ?? "..."}</span>
           </h1>
           <p className="mt-2 text-lg text-text-muted">
             Organize suas tarefas em fluxos de trabalho específicos.
@@ -87,7 +87,10 @@ export const ProjectsPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-3">
           <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+              size={16}
+            />
             <input
               type="text"
               placeholder="Buscar projetos..."
@@ -110,7 +113,9 @@ export const ProjectsPage: React.FC = () => {
       <section className="space-y-6">
         <div className="flex items-center gap-2 px-2">
           <Target size={20} className="text-brand" />
-          <h2 className="text-xl font-bold text-text-main">Todos os Projetos</h2>
+          <h2 className="text-xl font-bold text-text-main">
+            Todos os Projetos
+          </h2>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -145,8 +150,11 @@ export const ProjectsPage: React.FC = () => {
 
                   <div className="mt-8 flex items-center">
                     <div className="flex -space-x-2">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="h-8 w-8 rounded-full border-2 border-surface bg-surface-muted flex items-center justify-center text-[10px] font-bold text-text-muted">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-8 w-8 rounded-full border-2 border-surface bg-surface-muted flex items-center justify-center text-[10px] font-bold text-text-muted"
+                        >
                           U{i}
                         </div>
                       ))}
@@ -169,7 +177,9 @@ export const ProjectsPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-bold text-text-main">Novo Projeto</h3>
-                <p className="text-sm text-text-muted">Crie um novo espaço de trabalho.</p>
+                <p className="text-sm text-text-muted">
+                  Crie um novo espaço de trabalho.
+                </p>
               </div>
             </button>
           </AnimatePresence>
@@ -177,15 +187,15 @@ export const ProjectsPage: React.FC = () => {
 
         {filteredProjects.length === 0 && !isLoading && (
           <div className="text-center py-20 bg-surface/50 rounded-[3rem] border-2 border-dashed border-border-soft">
-             <div className="w-16 h-16 bg-surface-muted rounded-2xl flex items-center justify-center mx-auto mb-6 text-text-muted/30">
-                <FolderKanban size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-text-main mb-2">
-                Nenhum projeto encontrado
-              </h3>
-              <p className="text-text-muted max-w-xs mx-auto font-medium">
-                Sua organização ainda não possui projetos para exibir.
-              </p>
+            <div className="w-16 h-16 bg-surface-muted rounded-2xl flex items-center justify-center mx-auto mb-6 text-text-muted/30">
+              <FolderKanban size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-text-main mb-2">
+              Nenhum projeto encontrado
+            </h3>
+            <p className="text-text-muted max-w-xs mx-auto font-medium">
+              Sua organização ainda não possui projetos para exibir.
+            </p>
           </div>
         )}
       </section>
@@ -197,7 +207,9 @@ export const ProjectsPage: React.FC = () => {
             Acelere sua Produtividade
           </h2>
           <p className="mt-4 text-white/80 font-medium text-lg">
-            Projetos ajudam a categorizar tarefas e manter o foco no que realmente importa. Defina metas e acompanhe o progresso em tempo real.
+            Projetos ajudam a categorizar tarefas e manter o foco no que
+            realmente importa. Defina metas e acompanhe o progresso em tempo
+            real.
           </p>
           <div className="mt-10">
             <button
@@ -214,7 +226,10 @@ export const ProjectsPage: React.FC = () => {
         {/* Abstract shapes */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand/20 blur-3xl rounded-full -translate-x-1/2 translate-y-1/2" />
-        <FolderKanban size={200} className="absolute -right-20 -bottom-20 text-white/5 rotate-12" />
+        <FolderKanban
+          size={200}
+          className="absolute -right-20 -bottom-20 text-white/5 rotate-12"
+        />
       </section>
 
       {/* Info Section */}
@@ -223,9 +238,13 @@ export const ProjectsPage: React.FC = () => {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-soft text-brand mb-6">
             <Target size={24} />
           </div>
-          <h3 className="text-xl font-bold text-text-main">Foco em Objetivos</h3>
+          <h3 className="text-xl font-bold text-text-main">
+            Foco em Objetivos
+          </h3>
           <p className="mt-3 text-text-muted leading-relaxed font-medium">
-            Cada projeto pode ser encarado como um objetivo específico. Use-os para separar demandas de diferentes clientes ou departamentos da sua organização.
+            Cada projeto pode ser encarado como um objetivo específico. Use-os
+            para separar demandas de diferentes clientes ou departamentos da sua
+            organização.
           </p>
         </div>
 
@@ -233,9 +252,13 @@ export const ProjectsPage: React.FC = () => {
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft text-accent mb-6">
             <ShieldCheck size={24} />
           </div>
-          <h3 className="text-xl font-bold text-text-main">Colaboração Segura</h3>
+          <h3 className="text-xl font-bold text-text-main">
+            Colaboração Segura
+          </h3>
           <p className="mt-3 text-text-muted leading-relaxed font-medium">
-            Projetos herdam as permissões da organização. Apenas membros autorizados podem visualizar e interagir com as tarefas de cada projeto.
+            Projetos herdam as permissões da organização. Apenas membros
+            autorizados podem visualizar e interagir com as tarefas de cada
+            projeto.
           </p>
         </div>
       </div>
@@ -250,7 +273,7 @@ export const ProjectsPage: React.FC = () => {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="w-full max-w-lg bg-surface border border-border-soft rounded-[2.5rem] shadow-panel p-10 relative"
             >
-              <button 
+              <button
                 onClick={() => setShowCreateForm(false)}
                 className="absolute top-8 right-8 text-text-muted hover:text-brand transition-colors"
               >
@@ -261,13 +284,22 @@ export const ProjectsPage: React.FC = () => {
                 <div className="w-16 h-16 bg-brand text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-brand/20 mx-auto">
                   <Plus size={32} />
                 </div>
-                <h2 className="text-3xl font-black text-text-main tracking-tight mb-3">Novo Projeto</h2>
-                <p className="text-text-muted font-medium">Dê um nome ao seu novo espaço de trabalho em {activeOrg.name}.</p>
+                <h2 className="text-3xl font-black text-text-main tracking-tight mb-3">
+                  Novo Projeto
+                </h2>
+                {activeOrg && (
+                  <p className="text-text-muted font-medium">
+                    Dê um nome ao seu novo espaço de trabalho em{" "}
+                    {activeOrg.name}.
+                  </p>
+                )}
               </div>
 
               <form onSubmit={handleCreateProject} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-text-main ml-1">Nome do Projeto</label>
+                  <label className="text-sm font-bold text-text-main ml-1">
+                    Nome do Projeto
+                  </label>
                   <input
                     type="text"
                     autoFocus
