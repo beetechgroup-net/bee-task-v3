@@ -2,75 +2,91 @@ services:
   traefik:
     image: traefik:v3.3
     container_name: bee-task-traefik
+    restart: unless-stopped
+
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+
     ports:
       - "80:80"
       - "8080:8080"
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - frontend
-      - backend
+
+    networks:
+      - traefik-public
 
   postgres:
     image: postgres:16
     container_name: bee-task-postgres
+    restart: unless-stopped
+
     environment:
-      POSTGRES_USER: beetask
-      POSTGRES_PASSWORD: beetask
-      POSTGRES_DB: beetask
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-beetask}
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U beetask"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+    networks:
+      - traefik-public
+
   backend:
-    build:
-      context: ./backend
-    container_name: bee-task-backend
+    image: ${BACKEND_IMAGE}
     restart: unless-stopped
+
     environment:
-      DB_USER: beetask
-      DB_PASSWORD: beetask
-      DB_URL: jdbc:postgresql://postgres:5432/beetask
-      MP_JWT_VERIFY_ISSUER: https://beetech.net
-      SMALLRYE_JWT_SIGN_KEY_LOCATION: /app/privateKey.pem
-      MP_JWT_VERIFY_PUBLICKEY_LOCATION: /app/publicKey.pem
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_URL: ${DB_URL}
+
     depends_on:
       postgres:
         condition: service_healthy
+
     labels:
       - "traefik.enable=true"
+
       - "traefik.http.routers.backend.rule=PathPrefix(`/backend`)"
       - "traefik.http.routers.backend.entrypoints=web"
+
       - "traefik.http.middlewares.backend-strip.stripprefix.prefixes=/backend"
       - "traefik.http.routers.backend.middlewares=backend-strip"
+
       - "traefik.http.services.backend.loadbalancer.server.port=8081"
 
+    networks:
+      - traefik-public
+
   frontend:
-    build:
-      context: ./frontend
-      args:
-        VITE_API_URL: /backend
-    container_name: bee-task-frontend
+    image: ${FRONTEND_IMAGE}
     restart: unless-stopped
-    depends_on:
-      - backend
+
     labels:
       - "traefik.enable=true"
+
       - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
       - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+
+    networks:
+      - traefik-public
 
 volumes:
   postgres_data:
+
+networks:
+  traefik-public:
+    driver: bridge
