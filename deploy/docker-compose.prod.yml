@@ -1,9 +1,10 @@
 services:
   traefik:
-    image: traefik:v3.7.1
+    image: traefik:v3.6
     container_name: bee-task-traefik
     restart: unless-stopped
-
+    environment:
+      - DOCKER_API_VERSION=1.54
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -81,8 +82,11 @@ services:
     labels:
       - "traefik.enable=true"
 
-      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/frontend`)"
       - "traefik.http.routers.frontend.entrypoints=web"
+
+      - "traefik.http.middlewares.frontend-strip.stripprefix.prefixes=/frontend"
+      - "traefik.http.routers.frontend.middlewares=frontend-strip"
 
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
