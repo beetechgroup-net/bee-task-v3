@@ -114,8 +114,8 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DB_URL: ${{ secrets.DB_URL }}
           MP_JWT_VERIFY_ISSUER: ${{ secrets.MP_JWT_VERIFY_ISSUER }}
-          SMALLRYE_JWT_SIGN_KEY_LOCATION: ${{ secrets.SMALLRYE_JWT_SIGN_KEY_LOCATION }}
-          MP_JWT_VERIFY_PUBLICKEY_LOCATION: ${{ secrets.MP_JWT_VERIFY_PUBLICKEY_LOCATION }}
+          SMALLRYE_JWT_SIGN_KEY: ${{ secrets.SMALLRYE_JWT_SIGN_KEY }}
+          MP_JWT_VERIFY_PUBLICKEY: ${{ secrets.MP_JWT_VERIFY_PUBLICKEY }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
         with:
