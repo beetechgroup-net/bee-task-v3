@@ -130,16 +130,17 @@ jobs:
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            cat > .env.production <<EOF
-            POSTGRES_USER=${POSTGRES_USER}
-            POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-            DB_URL=${DB_URL}
-            FRONTEND_IMAGE=${FRONTEND_IMAGE}
-            BACKEND_IMAGE=${BACKEND_IMAGE}
-            MP_JWT_VERIFY_ISSUER=${MP_JWT_VERIFY_ISSUER}
-            SMALLRYE_JWT_SIGN_KEY=${SMALLRYE_JWT_SIGN_KEY}
-            MP_JWT_VERIFY_PUBLICKEY=${MP_JWT_VERIFY_PUBLICKEY}
-            EOF
+            {
+              echo "POSTGRES_USER=${POSTGRES_USER}"
+              echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+              echo "DB_URL=${DB_URL}"
+              echo "FRONTEND_IMAGE=${FRONTEND_IMAGE}"
+              echo "BACKEND_IMAGE=${BACKEND_IMAGE}"
+              echo "MP_JWT_VERIFY_ISSUER=${MP_JWT_VERIFY_ISSUER}"
+
+              printf 'SMALLRYE_JWT_SIGN_KEY="%s"\n' "$SMALLRYE_JWT_SIGN_KEY"
+              printf 'MP_JWT_VERIFY_PUBLICKEY="%s"\n' "$MP_JWT_VERIFY_PUBLICKEY"
+            } > .env.production
 
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME}" --password-stdin
             docker compose --env-file .env.production -f docker-compose.prod.yml pull
