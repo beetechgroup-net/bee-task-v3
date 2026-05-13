@@ -6,20 +6,25 @@ services:
     environment:
       - DOCKER_API_VERSION=1.54
     command:
-      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.httpClientTimeout=30"
       - "--entrypoints.web.address=:80"
-      - "--log.level=DEBUG"
-      - "--accesslog=true"
-
+      - "--entrypoints.websecure.address=:443"
+      # Força o redirecionamento de HTTP para HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # Configuração do Let's Encrypt para SSL automático
+      - "--certificatesresolvers.leresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.leresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.leresolver.acme.email=gabrielufmscc@gmail.com"
+      - "--certificatesresolvers.leresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
-      - "8080:8080"
-
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-
+      - traefik_certs:/letsencrypt
     networks:
       - traefik-public
 
