@@ -1,33 +1,4 @@
 services:
-  traefik:
-    image: traefik:v3
-    container_name: bee-task-traefik
-    restart: unless-stopped
-    environment:
-      - DOCKER_API_VERSION=1.54
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.httpClientTimeout=30"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      # Força o redirecionamento de HTTP para HTTPS
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      # Configuração do Let's Encrypt para SSL automático
-      - "--certificatesresolvers.leresolver.acme.httpchallenge=true"
-      - "--certificatesresolvers.leresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.leresolver.acme.email=gabrielufmscc@gmail.com"
-      - "--certificatesresolvers.leresolver.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik_certs:/letsencrypt
-    networks:
-      - traefik-public
-
   postgres:
     image: postgres:16
     container_name: bee-task-postgres
@@ -46,9 +17,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-    networks:
-      - traefik-public
 
   backend:
     image: ${BACKEND_IMAGE}
@@ -69,16 +37,14 @@ services:
     labels:
       - "traefik.enable=true"
 
+      # domínio
       - "traefik.http.routers.backend.rule=PathPrefix(`/backend`)"
-      - "traefik.http.routers.backend.entrypoints=web"
+      # HTTPS
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
 
-      - "traefik.http.middlewares.backend-strip.stripprefix.prefixes=/backend"
-      - "traefik.http.routers.backend.middlewares=backend-strip"
-
+      # porta interna container
       - "traefik.http.services.backend.loadbalancer.server.port=8081"
-
-    networks:
-      - traefik-public
 
   frontend:
     image: ${FRONTEND_IMAGE}
@@ -88,20 +54,11 @@ services:
       - "traefik.enable=true"
 
       - "traefik.http.routers.frontend.rule=PathPrefix(`/frontend`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
 
-      - "traefik.http.middlewares.frontend-strip.stripprefix.prefixes=/frontend"
-      - "traefik.http.routers.frontend.middlewares=frontend-strip"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
 
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
-    networks:
-      - traefik-public
-
 volumes:
   postgres_data:
-  traefik_certs:
-
-networks:
-  traefik-public:
-    driver: bridge
