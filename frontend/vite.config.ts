@@ -4,17 +4,9 @@ import { defineConfig } from 'vite'
 import pkg from './package.json'
 
 export default defineConfig({
+  base: '/frontend/',
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
   },
   plugins: [react(), tailwindcss()],
-  server: {
-    proxy: {
-      '/api': {
-        target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
-  },
 })

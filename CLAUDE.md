@@ -29,7 +29,7 @@ Backend (`cd backend`):
 - Build: `./mvnw package`
 
 Frontend (`cd frontend`):
-- Dev: `npm run dev` (port 5173, proxies `/api/*` → `http://localhost:8080`)
+- Dev: `npm run dev` (port 5173, calls backend directly at `http://localhost:8080` via `VITE_API_URL`)
 - Build: `npm run build` (runs `tsc -b` then `vite build`)
 - Lint: `npm run lint`
 
@@ -90,7 +90,7 @@ The authenticated email comes from `securityIdentity.getPrincipal().getName()` a
 
 - **React 19**, **Tailwind v4** (`@tailwindcss/vite`, no Tailwind config file required), **react-router-dom v7**.
 - Folder layout: `pages/`, `components/`, `services/`, `contexts/`, `types/`, `lib/`.
-- HTTP through `apiFetch` in `src/lib/api.ts` — it auto-injects the JWT from `localStorage.user.jwt` and prefixes `VITE_API_URL` (defaults to `/api`, proxied by Vite to the backend).
+- HTTP through `apiFetch` in `src/lib/api.ts` — it auto-injects the JWT from `localStorage.user.jwt` and prefixes `VITE_API_URL` (defaults to `http://localhost:8080` em dev; configurar para a URL real do backend em prod).
 - Each backend feature gets a service in `services/<feature>Service.ts` exporting an object of methods.
 - Class merging uses `cn(...inputs)` from `src/lib/utils.ts` (clsx + tailwind-merge).
 - Icons: `lucide-react`. Animations: `framer-motion`. DnD: `@hello-pangea/dnd`.

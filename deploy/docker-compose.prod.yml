@@ -54,11 +54,13 @@ services:
       - "traefik.enable=true"
 
       - "traefik.http.routers.frontend.rule=PathPrefix(`/frontend`)"
-
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.middlewares=frontend-strip"
 
-      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.frontend-strip.stripprefix.prefixes=/frontend"
+
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 volumes:
   postgres_data:

@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api'
+const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8080'
 
 function buildUrl(path: string) {
   return `${API_BASE_URL}${path}`
