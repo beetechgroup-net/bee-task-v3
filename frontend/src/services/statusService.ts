@@ -14,7 +14,7 @@ export type BackendHealthResponse = {
 };
 
 export async function getBackendStatus() {
-  return apiFetch<BackendHealthResponse>("/status", {
+  return apiFetch<BackendHealthResponse>("/q/status", {
     method: "GET",
   });
 }
