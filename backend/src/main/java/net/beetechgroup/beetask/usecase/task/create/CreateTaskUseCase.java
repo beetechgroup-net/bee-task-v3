@@ -1,8 +1,10 @@
 package net.beetechgroup.beetask.usecase.task.create;
 
+import java.util.List;
 import java.util.Objects;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.task.Task;
+import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
@@ -41,6 +43,16 @@ public class CreateTaskUseCase {
                     LOGGER.warnf("Task creation failed because user %s was not found", input.userEmail());
                     return new IllegalArgumentException("Usuário não encontrado: " + input.userEmail());
                 }));
+
+        if (Objects.nonNull(input.history())) {
+            List<TaskHistoryItem> historyItems = input.history().stream().map(h -> {
+                TaskHistoryItem item = new TaskHistoryItem();
+                item.setStartAt(h.startAt());
+                item.setEndAt(h.endAt());
+                return item;
+            }).toList();
+            task.getHistory().addAll(historyItems);
+        }
 
         CreateTaskOutput output = CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
         LOGGER.infof("Task %d created for user %s", output.id(), input.userEmail());

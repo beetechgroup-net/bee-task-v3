@@ -16,7 +16,10 @@ public class TaskControllerMapper {
                 request.description(),
                 request.status(),
                 request.projectId(),
-                userEmail
+                userEmail,
+                Objects.nonNull(request.history()) ? request.history().stream()
+                        .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
+                        .toList() : null
         );
     }
 
