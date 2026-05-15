@@ -5,11 +5,12 @@ import io.smallrye.jwt.auth.principal.ParseException;
 import io.smallrye.jwt.build.Jwt;
 import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.entities.organization.UserOrganization;
+import net.beetechgroup.beetask.usecase.auth.TokenConstants;
 import net.beetechgroup.beetask.usecase.auth.login.LoginOutput;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -58,13 +59,12 @@ public class RefreshTokenUseCase {
                     .upn(user.getEmail())
                     .groups(groups)
                     .claim("name", user.getName())
-                    .expiresIn(3600)
+                    .expiresIn(TokenConstants.ACCESS_TOKEN_EXPIRY_SECONDS)
                     .sign();
 
-            // Generate a new refresh token (also a JWT but with longer expiration)
             String newRefreshToken = Jwt.issuer(this.issuer)
                     .upn(user.getEmail())
-                    .expiresIn(86400) // 24 hours
+                    .expiresIn(TokenConstants.REFRESH_TOKEN_EXPIRY_SECONDS)
                     .sign();
 
             List<LoginOutput.OrganizationOutput> orgs = userOrganizations.stream()
@@ -87,8 +87,8 @@ public class RefreshTokenUseCase {
                     Objects.nonNull(user.getPhoto()) ? user.getPhoto() : "https://ui-avatars.com/api/?name=" + user.getName().replace(" ", "+") + "&background=random",
                     newToken,
                     newRefreshToken,
-                    3600L,
-                    LocalDateTime.now().toString(),
+                    TokenConstants.ACCESS_TOKEN_EXPIRY_SECONDS,
+                    Instant.now().toString(),
                     orgs
             );
         } catch (ParseException e) {

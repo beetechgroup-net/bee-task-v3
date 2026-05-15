@@ -3,9 +3,10 @@ package net.beetechgroup.beetask.usecase.auth.login;
 import io.smallrye.jwt.build.Jwt;
 import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.entities.organization.UserOrganization;
+import net.beetechgroup.beetask.usecase.auth.TokenConstants;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -51,7 +52,7 @@ public class LoginUseCase {
                 .upn(user.getEmail())
                 .groups(groups)
                 .claim("name", user.getName())
-                .expiresIn(3600)
+                .expiresIn(TokenConstants.ACCESS_TOKEN_EXPIRY_SECONDS)
                 .sign();
 
         List<LoginOutput.OrganizationOutput> orgs = userOrganizations.stream()
@@ -69,7 +70,7 @@ public class LoginUseCase {
 
         String refreshToken = Jwt.issuer(this.issuer)
                 .upn(user.getEmail())
-                .expiresIn(86400) // 24 hours
+                .expiresIn(TokenConstants.REFRESH_TOKEN_EXPIRY_SECONDS)
                 .sign();
 
         LOGGER.infof("Login completed for user %s with %d organizations", user.getEmail(), orgs.size());
@@ -79,8 +80,8 @@ public class LoginUseCase {
                 Objects.nonNull(user.getPhoto()) ? user.getPhoto() : "https://ui-avatars.com/api/?name=" + user.getName().replace(" ", "+") + "&background=random",
                 token,
                 refreshToken,
-                3600L,
-                LocalDateTime.now().toString(),
+                TokenConstants.ACCESS_TOKEN_EXPIRY_SECONDS,
+                Instant.now().toString(),
                 orgs
         );
     }

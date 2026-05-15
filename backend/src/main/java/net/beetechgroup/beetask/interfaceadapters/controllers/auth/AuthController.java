@@ -19,9 +19,6 @@ import net.beetechgroup.beetask.usecase.user.create.CreateUserInput;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserOutput;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserUseCase;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.ws.rs.GET;
