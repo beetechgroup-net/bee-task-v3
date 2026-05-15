@@ -16,5 +16,6 @@ export type BackendHealthResponse = {
 export async function getBackendStatus() {
   return apiFetch<BackendHealthResponse>("/q/status", {
     method: "GET",
+    skipAuth: true,
   });
 }
