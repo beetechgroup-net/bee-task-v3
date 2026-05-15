@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.frameworks.persistence.repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.time.LocalDateTime;
@@ -47,6 +48,35 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     public List<Task> findAllTasks() {
         List<Task> tasks = findAll().list().stream().map(TaskEntityMapper::toDomain).toList();
         LOGGER.infof("Loaded %d tasks from database", tasks.size());
+        return tasks;
+    }
+
+    @Override
+    public List<Task> findTasksByUserFiltered(String email, String text, Long projectId, TaskStatus status) {
+        StringBuilder query = new StringBuilder("user.email = ?1");
+        List<Object> params = new ArrayList<>();
+        params.add(email);
+
+        int idx = 2;
+        if (Objects.nonNull(text) && !text.isBlank()) {
+            query.append(" and (lower(title) like ?").append(idx).append(" or lower(description) like ?").append(idx + 1).append(")");
+            String pattern = "%" + text.toLowerCase() + "%";
+            params.add(pattern);
+            params.add(pattern);
+            idx += 2;
+        }
+        if (Objects.nonNull(projectId)) {
+            query.append(" and project.id = ?").append(idx);
+            params.add(projectId);
+            idx++;
+        }
+        if (Objects.nonNull(status)) {
+            query.append(" and status = ?").append(idx);
+            params.add(status);
+        }
+
+        List<Task> tasks = find(query.toString(), params.toArray()).list().stream().map(TaskEntityMapper::toDomain).toList();
+        LOGGER.infof("Loaded %d tasks for user %s with filters (text=%s, projectId=%s, status=%s)", tasks.size(), email, text, projectId, status);
         return tasks;
     }
 

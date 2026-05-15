@@ -5,21 +5,24 @@ import {
   CheckCircle2,
   Clock,
   Columns,
-  Filter,
   List,
   Plus,
-  RefreshCw,
   Search,
   Tag,
   XCircle,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { taskService } from '../services/taskService'
+import { projectService } from '../services/projectService'
+import type { Project } from '../services/projectService'
 import { cn } from '../lib/utils'
-import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from '../types/task'
-import type { TaskResponse, TaskStatus } from '../types/task'
+import type { TaskResponse } from '../types/task'
+import { TaskTimer } from '../components/TaskTimer'
+import { TaskFilterBar, DEFAULT_TASK_FILTERS } from '../components/TaskFilterBar'
+import type { TaskFilters } from '../components/TaskFilterBar'
+import { useAuth } from '../contexts/AuthContext'
 
 function getStatusConfig(status: TaskResponse['status']) {
   switch (status) {
@@ -50,56 +53,48 @@ function getStatusConfig(status: TaskResponse['status']) {
   }
 }
 
-import { TaskTimer } from '../components/TaskTimer'
-
 export function TaskListPage() {
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [_errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS)
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'ALL'>('ALL')
+  const { activeOrg } = useAuth()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const loadTasks = async (silent = false) => {
+  const loadTasks = async (currentFilters: TaskFilters, silent = false) => {
     if (!silent) setIsLoading(true)
-    setErrorMessage(null)
-
     try {
-      const response = await taskService.getMyTasks()
+      const response = await taskService.getMyTasks({
+        text: currentFilters.searchQuery || undefined,
+        projectId: currentFilters.projectId !== 'ALL' ? currentFilters.projectId : undefined,
+        status: currentFilters.statusFilter !== 'ALL' ? currentFilters.statusFilter : undefined,
+      })
       setTasks(response)
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível carregar as tarefas.',
-      )
+      console.error('Erro ao carregar tarefas', error)
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    void loadTasks()
+    void loadTasks(filters)
+    if (activeOrg) {
+      projectService.listByOrganization(activeOrg.id).then(setProjects).catch(() => {})
+    }
   }, [])
 
-  const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      const matchesSearch =
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.project?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-
-      const matchesStatus = statusFilter === 'ALL' || task.status === statusFilter
-
-      return matchesSearch && matchesStatus
-    })
-  }, [tasks, searchQuery, statusFilter])
-
-
+  const handleFiltersChange = (newFilters: TaskFilters) => {
+    setFilters(newFilters)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      void loadTasks(newFilters)
+    }, 300)
+  }
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Header & Action */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-text-main">
@@ -110,7 +105,6 @@ export function TaskListPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* View toggle */}
           <div className="flex items-center rounded-xl border border-border-soft bg-surface p-1 shadow-sm">
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-bold text-white">
               <List size={14} />
@@ -134,57 +128,17 @@ export function TaskListPage() {
         </div>
       </div>
 
+      <TaskFilterBar
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        projects={projects}
+        isLoading={isLoading}
+        onRefresh={() => void loadTasks(filters)}
+      />
 
-
-      {/* Toolbar */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-border-soft bg-surface p-4 shadow-sm lg:flex-row lg:items-center">
-        <div className="relative flex-1">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Buscar tarefas por título, projeto ou descrição..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-11 w-full rounded-xl border border-border-soft bg-app-bg pl-10 pr-4 text-sm outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/10"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
-          <Filter size={18} className="mr-2 text-text-muted shrink-0" />
-          {(['ALL', ...TASK_STATUS_OPTIONS] as const).map(
-            (status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={cn(
-                  'whitespace-nowrap rounded-lg px-4 py-2 text-xs font-bold transition-all',
-                  statusFilter === status
-                    ? 'bg-brand text-white'
-                    : 'bg-app-bg text-text-muted hover:bg-surface-muted hover:text-text-main',
-                )}
-              >
-                {status === 'ALL' ? 'Todos' : TASK_STATUS_LABELS[status]}
-              </button>
-            ),
-          )}
-        </div>
-
-        <button
-          onClick={() => void loadTasks()}
-          className="flex h-11 w-11 items-center justify-center rounded-xl bg-app-bg text-text-muted transition-all hover:bg-surface-muted hover:text-brand"
-          title="Recarregar"
-        >
-          <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-        </button>
-      </div>
-
-      {/* Task List */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <AnimatePresence mode="popLayout">
-          {filteredTasks.map((task, i) => {
+          {tasks.map((task, i) => {
             const config = getStatusConfig(task.status)
             const StatusIcon = config.icon
 
@@ -209,21 +163,21 @@ export function TaskListPage() {
                     <StatusIcon size={12} />
                     {config.label}
                   </div>
-                  <span className="font-mono text-[10px] font-bold text-text-muted group-hover:text-brand transition-colors">
+                  <span className="font-mono text-[10px] font-bold text-text-muted transition-colors group-hover:text-brand">
                     #{task.id}
                   </span>
                 </div>
 
-                <h3 className="mt-4 text-lg font-bold leading-tight text-text-main group-hover:text-brand transition-colors text-ellipsis overflow-hidden">
+                <h3 className="mt-4 overflow-hidden text-ellipsis text-lg font-bold leading-tight text-text-main transition-colors group-hover:text-brand">
                   {task.title}
                 </h3>
 
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-text-muted line-clamp-3">
+                <p className="mt-2 flex-1 line-clamp-3 text-sm leading-relaxed text-text-muted">
                   {task.description || 'Sem descrição informada.'}
                 </p>
 
                 <div className="mt-6 flex flex-col gap-4">
-                  <TaskTimer task={task} onUpdate={() => loadTasks(true)} />
+                  <TaskTimer task={task} onUpdate={() => loadTasks(filters, true)} />
 
                   <div className="flex flex-wrap items-center gap-3 border-t border-border-soft/50 pt-4">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-text-muted">
@@ -243,8 +197,7 @@ export function TaskListPage() {
         </AnimatePresence>
       </div>
 
-      {/* Empty States */}
-      {!isLoading && filteredTasks.length === 0 && (
+      {!isLoading && tasks.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -261,10 +214,7 @@ export function TaskListPage() {
             procura.
           </p>
           <button
-            onClick={() => {
-              setSearchQuery('')
-              setStatusFilter('ALL')
-            }}
+            onClick={() => handleFiltersChange(DEFAULT_TASK_FILTERS)}
             className="mt-6 text-sm font-bold text-brand hover:underline"
           >
             Limpar todos os filtros
@@ -272,7 +222,6 @@ export function TaskListPage() {
         </motion.div>
       )}
 
-      {/* Loading State */}
       {isLoading && tasks.length === 0 && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (

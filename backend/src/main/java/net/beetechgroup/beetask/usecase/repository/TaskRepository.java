@@ -4,6 +4,7 @@ import java.util.List;
 import java.time.LocalDateTime;
 
 import net.beetechgroup.beetask.entities.task.Task;
+import net.beetechgroup.beetask.entities.task.TaskStatus;
 
 public interface TaskRepository {
     Task saveTask(Task task);
@@ -12,6 +13,7 @@ public interface TaskRepository {
     List<Task> findTasksWorkedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksFinishedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksByUser(String email);
+    List<Task> findTasksByUserFiltered(String email, String text, Long projectId, TaskStatus status);
     List<Task> findTasksWorkedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksFinishedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksWorkedByUserIdInPeriod(Long userId, LocalDateTime start, LocalDateTime end);

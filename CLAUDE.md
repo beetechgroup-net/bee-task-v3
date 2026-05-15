@@ -56,6 +56,14 @@ A new use case `usecase/<feature>/<action>/` contains exactly:
 
 Then **wire it** via `@Produces` in the matching `frameworks/config/<Feature>UseCaseConfig.java`. Use cases are NOT annotated with CDI scopes themselves — the producer is what makes them injectable.
 
+### Query parameter DTOs
+
+When a controller endpoint receives **3 or more query/request parameters**, create a dedicated DTO class in the controller package and a mapping method in the `XxxControllerMapper`:
+
+- For **query parameters** (GET): use a plain Java class with public fields annotated with `@QueryParam`, and receive it via `@BeanParam XxxRequest` in the controller method.
+- For **request body** parameters (POST/PUT): use a `record XxxRequest(...)` as usual.
+- Add `toXxxInput(XxxRequest request, ...)` to `XxxControllerMapper` — never inline the mapping in the controller.
+
 ### Controller anatomy
 
 `interfaceadapters/controllers/<feature>/`:

@@ -16,9 +16,10 @@ public class ListMyTasksUseCase {
         this.taskRepository = taskRepository;
     }
 
-    public List<CreateTaskOutput> execute(String email) {
-        List<CreateTaskOutput> tasks = taskRepository.findTasksByUser(email).stream().map(CreateTaskMapper::toCreateTaskOutput).toList();
-        LOGGER.infof("Loaded %d tasks for user %s", tasks.size(), email);
+    public List<CreateTaskOutput> execute(ListMyTasksInput input) {
+        List<CreateTaskOutput> tasks = taskRepository.findTasksByUserFiltered(input.email(), input.text(), input.projectId(), input.status())
+                .stream().map(CreateTaskMapper::toCreateTaskOutput).toList();
+        LOGGER.infof("Loaded %d tasks for user %s", tasks.size(), input.email());
         return tasks;
     }
 }

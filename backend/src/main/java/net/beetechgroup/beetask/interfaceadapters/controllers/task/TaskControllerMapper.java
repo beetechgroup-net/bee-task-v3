@@ -3,12 +3,17 @@ package net.beetechgroup.beetask.interfaceadapters.controllers.task;
 import java.util.Objects;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
+import net.beetechgroup.beetask.usecase.task.listall.ListMyTasksInput;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskInput;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskInput;
 import net.beetechgroup.beetask.usecase.task.update.TaskHistoryItemInput;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskInput;
 
 public class TaskControllerMapper {
+
+    public static ListMyTasksInput toListMyTasksInput(ListMyTasksRequest request, String email) {
+        return new ListMyTasksInput(email, request.text, request.projectId, request.status);
+    }
 
     public static CreateTaskInput toCreateTaskInput(CreateTaskRequest request, String userEmail) {
         return new CreateTaskInput(

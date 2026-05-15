@@ -1,6 +1,7 @@
 package net.beetechgroup.beetask.interfaceadapters.controllers.task;
 
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -144,11 +145,12 @@ public class TaskController {
 
     @GET
     @Path("/mine")
-    @Operation(summary = "List my tasks", description = "Lists all tasks belonging to the authenticated user")
+    @Operation(summary = "List my tasks", description = "Lists all tasks belonging to the authenticated user, with optional filters")
     @APIResponse(responseCode = "200", description = "Tasks listed successfully")
-    public List<CreateTaskResponse> listMyTasks() {
+    public List<CreateTaskResponse> listMyTasks(@BeanParam ListMyTasksRequest request) {
         String email = securityIdentity.getPrincipal().getName();
-        List<CreateTaskResponse> tasks = listMyTasksUseCase.execute(email).stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
+        List<CreateTaskResponse> tasks = listMyTasksUseCase.execute(TaskControllerMapper.toListMyTasksInput(request, email))
+                .stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
         LOGGER.infof("Listed %d tasks for user %s", tasks.size(), email);
         return tasks;
     }

@@ -6,8 +6,13 @@ export const taskService = {
     return apiFetch<TaskResponse[]>('/tasks')
   },
   
-  async getMyTasks(): Promise<TaskResponse[]> {
-    return apiFetch<TaskResponse[]>('/tasks/mine')
+  async getMyTasks(filters?: { text?: string; projectId?: number; status?: TaskStatus }): Promise<TaskResponse[]> {
+    const params = new URLSearchParams()
+    if (filters?.text) params.set('text', filters.text)
+    if (filters?.projectId) params.set('projectId', String(filters.projectId))
+    if (filters?.status) params.set('status', filters.status)
+    const query = params.toString()
+    return apiFetch<TaskResponse[]>(`/tasks/mine${query ? `?${query}` : ''}`)
   },
 
   async createTask(task: { title: string; description?: string; projectId?: number | null; status?: TaskStatus }): Promise<TaskResponse> {
