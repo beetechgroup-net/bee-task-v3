@@ -6,16 +6,19 @@ function buildUrl(path: string) {
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: any
+  skipAuth?: boolean
 }
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
-  const { body, headers, ...rest } = options
+  const { body, headers, skipAuth, ...rest } = options
 
-  const storedUser = localStorage.getItem('user')
   let authHeader = {}
-  if (storedUser) {
-    const userData = JSON.parse(storedUser)
-    authHeader = { 'Authorization': `Bearer ${userData.jwt}` }
+  if (!skipAuth) {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      const userData = JSON.parse(storedUser)
+      authHeader = { 'Authorization': `Bearer ${userData.jwt}` }
+    }
   }
 
   const response = await fetch(buildUrl(path), {
