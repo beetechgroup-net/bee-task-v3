@@ -7,9 +7,18 @@ export interface ProjectStats {
   totalMinutes: number
 }
 
+export interface CategoryStats {
+  categoryId: number
+  categoryName: string
+  color: string
+  icon: string
+  totalMinutes: number
+}
+
 export interface DashboardData {
   totalMinutesWorked: number
   projectStats: ProjectStats[]
+  categoryStats: CategoryStats[]
   yesterdayTasks: TaskResponse[]
   finishedTasksInPeriod: TaskResponse[]
 }
@@ -19,7 +28,7 @@ export const dashboardService = {
     const params = new URLSearchParams()
     if (startDate) params.append('startDate', startDate)
     if (endDate) params.append('endDate', endDate)
-    
+
     return apiFetch<DashboardData>(`/dashboard?${params.toString()}`)
   }
 }

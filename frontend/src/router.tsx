@@ -11,6 +11,7 @@ import { JoinOrganizationPage } from "./pages/JoinOrganizationPage";
 import { OrganizationAdminPage } from "./pages/OrganizationAdminPage";
 import { MyRequestsPage } from "./pages/MyRequestsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
+import { CategoriesPage } from "./pages/CategoriesPage";
 import { OrganizationsPage } from "./pages/OrganizationsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { OrgDashboardPage } from "./pages/OrgDashboardPage";
@@ -70,6 +71,14 @@ export const router = createBrowserRouter([
         element: (
           <RoleGate allowedRoles={["OWNER", "ADMIN"]} message="Apenas administradores e proprietários podem gerenciar projetos.">
             <ProjectsPage />
+          </RoleGate>
+        ),
+      },
+      {
+        path: "categories",
+        element: (
+          <RoleGate allowedRoles={["OWNER", "ADMIN"]} message="Apenas administradores e proprietários podem gerenciar categorias.">
+            <CategoriesPage />
           </RoleGate>
         ),
       },

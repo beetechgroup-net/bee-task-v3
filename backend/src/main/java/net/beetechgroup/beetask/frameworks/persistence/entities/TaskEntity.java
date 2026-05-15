@@ -33,6 +33,9 @@ public class TaskEntity {
     @JoinColumn(name = "project_id")
     private ProjectEntity project;
     @ManyToOne
+    @JoinColumn(name = "category_id")
+    private CategoryEntity category;
+    @ManyToOne
     @JoinColumn(name = "user_id")
     private UserEntity user;
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -92,6 +95,14 @@ public class TaskEntity {
 
     public void setProject(ProjectEntity project) {
         this.project = project;
+    }
+
+    public CategoryEntity getCategory() {
+        return category;
+    }
+
+    public void setCategory(CategoryEntity category) {
+        this.category = category;
     }
 
     public UserEntity getUser() {

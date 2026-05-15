@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import net.beetechgroup.beetask.entities.Category;
 import net.beetechgroup.beetask.entities.organization.UserOrganization;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
 import net.beetechgroup.beetask.entities.task.Task;
@@ -54,6 +55,7 @@ public class OrgDashboardUseCase {
         );
 
         Map<Long, OrgProjectStats> projectStatsMap = new HashMap<>();
+        Map<Long, OrgCategoryStats> categoryStatsMap = new HashMap<>();
         Map<String, Long> memberMinutesMap = new HashMap<>();
 
         for (Task task : workedTasks) {
@@ -65,6 +67,15 @@ public class OrgDashboardUseCase {
                 new OrgProjectStats(projectId, projectName, 0L));
             projectStatsMap.put(projectId, new OrgProjectStats(
                 projectId, existing.projectName(), existing.totalMinutes() + minutes));
+
+            if (Objects.nonNull(task.getCategory())) {
+                Category cat = task.getCategory();
+                OrgCategoryStats existingCat = categoryStatsMap.getOrDefault(cat.getId(),
+                        new OrgCategoryStats(cat.getId(), cat.getName(), cat.getColor(), cat.getIcon(), 0L));
+                categoryStatsMap.put(cat.getId(), new OrgCategoryStats(
+                        cat.getId(), existingCat.categoryName(), existingCat.color(), existingCat.icon(),
+                        existingCat.totalMinutes() + minutes));
+            }
 
             if (Objects.nonNull(task.getUser())) {
                 memberMinutesMap.merge(task.getUser().getEmail(), minutes, Long::sum);
@@ -104,6 +115,7 @@ public class OrgDashboardUseCase {
 
         OrgDashboardOutput output = new OrgDashboardOutput(
             new ArrayList<>(projectStatsMap.values()),
+            new ArrayList<>(categoryStatsMap.values()),
             topTasks,
             memberStats
         );

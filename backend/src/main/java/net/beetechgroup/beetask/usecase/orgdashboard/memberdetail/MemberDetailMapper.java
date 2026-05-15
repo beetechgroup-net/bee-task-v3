@@ -9,7 +9,8 @@ public class MemberDetailMapper {
     public static MemberDetailOutput toOutput(UserOrganization member,
                                                String groupedBy,
                                                List<MemberDetailOutput.PeriodStats> periodStats,
-                                               List<MemberDetailOutput.ProjectStats> projectStats) {
+                                               List<MemberDetailOutput.ProjectStats> projectStats,
+                                               List<MemberDetailOutput.CategoryStats> categoryStats) {
         return new MemberDetailOutput(
                 member.getUser().getId(),
                 member.getUser().getName(),
@@ -17,7 +18,8 @@ public class MemberDetailMapper {
                 member.getUser().getPhoto(),
                 groupedBy,
                 periodStats,
-                projectStats
+                projectStats,
+                categoryStats
         );
     }
 }

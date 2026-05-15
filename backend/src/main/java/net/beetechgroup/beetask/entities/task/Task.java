@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import net.beetechgroup.beetask.entities.Category;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.User;
 
@@ -14,6 +15,7 @@ public class Task {
     private String description;
     private TaskStatus status;
     private Project project;
+    private Category category;
     private User user;
     private LocalDateTime finishedAt;
     private List<TaskHistoryItem> history = new ArrayList<>();
@@ -72,6 +74,14 @@ public class Task {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 
     public User getUser() {

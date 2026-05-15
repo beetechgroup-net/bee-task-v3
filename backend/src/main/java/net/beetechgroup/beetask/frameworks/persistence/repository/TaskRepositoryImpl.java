@@ -52,7 +52,8 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     }
 
     @Override
-    public List<Task> findTasksByUserFiltered(String email, String text, Long projectId, TaskStatus status) {
+    public List<Task> findTasksByUserFiltered(String email, String text, Long projectId,
+                                              List<TaskStatus> statuses, List<Long> categoryIds) {
         StringBuilder query = new StringBuilder("user.email = ?1");
         List<Object> params = new ArrayList<>();
         params.add(email);
@@ -70,13 +71,20 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
             params.add(projectId);
             idx++;
         }
-        if (Objects.nonNull(status)) {
-            query.append(" and status = ?").append(idx);
-            params.add(status);
+        if (Objects.nonNull(statuses) && !statuses.isEmpty()) {
+            query.append(" and status in ?").append(idx);
+            params.add(statuses);
+            idx++;
+        }
+        if (Objects.nonNull(categoryIds) && !categoryIds.isEmpty()) {
+            query.append(" and category.id in ?").append(idx);
+            params.add(categoryIds);
+            idx++;
         }
 
         List<Task> tasks = find(query.toString(), params.toArray()).list().stream().map(TaskEntityMapper::toDomain).toList();
-        LOGGER.infof("Loaded %d tasks for user %s with filters (text=%s, projectId=%s, status=%s)", tasks.size(), email, text, projectId, status);
+        LOGGER.infof("Loaded %d tasks for user %s with filters (text=%s, projectId=%s, statuses=%s, categoryIds=%s)",
+                tasks.size(), email, text, projectId, statuses, categoryIds);
         return tasks;
     }
 

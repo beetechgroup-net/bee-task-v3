@@ -17,7 +17,8 @@ public class ListMyTasksUseCase {
     }
 
     public List<CreateTaskOutput> execute(ListMyTasksInput input) {
-        List<CreateTaskOutput> tasks = taskRepository.findTasksByUserFiltered(input.email(), input.text(), input.projectId(), input.status())
+        List<CreateTaskOutput> tasks = taskRepository.findTasksByUserFiltered(
+                        input.email(), input.text(), input.projectId(), input.statuses(), input.categoryIds())
                 .stream().map(CreateTaskMapper::toCreateTaskOutput).toList();
         LOGGER.infof("Loaded %d tasks for user %s", tasks.size(), input.email());
         return tasks;

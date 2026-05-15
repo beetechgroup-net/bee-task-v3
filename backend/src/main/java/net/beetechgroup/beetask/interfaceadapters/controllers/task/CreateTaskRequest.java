@@ -9,5 +9,6 @@ public record CreateTaskRequest(
                 String description,
                 TaskStatus status,
                 Long projectId,
+                Long categoryId,
                 List<TaskHistoryItemResponse> history) {
 }

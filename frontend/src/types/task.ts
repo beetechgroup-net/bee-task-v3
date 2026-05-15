@@ -19,6 +19,7 @@ export type CreateTaskPayload = {
   description: string
   status: TaskStatus
   projectId: number | null
+  categoryId: number | null
 }
 
 export type TaskHistoryItem = {
@@ -32,12 +33,20 @@ export type TaskProject = {
   name: string
 }
 
+export type TaskCategory = {
+  id: number
+  name: string
+  color: string
+  icon: string
+}
+
 export type TaskResponse = {
   id: number
   title: string
   description: string
   status: TaskStatus
   project: TaskProject | null
+  category: TaskCategory | null
   finishedAt?: string
   history?: TaskHistoryItem[]
 }

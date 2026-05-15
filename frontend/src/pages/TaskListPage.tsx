@@ -17,11 +17,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { taskService } from '../services/taskService'
 import { projectService } from '../services/projectService'
 import type { Project } from '../services/projectService'
+import { categoryService } from '../services/categoryService'
+import type { Category } from '../types/category'
 import { cn } from '../lib/utils'
 import type { TaskResponse } from '../types/task'
 import { TaskTimer } from '../components/TaskTimer'
 import { TaskFilterBar, DEFAULT_TASK_FILTERS } from '../components/TaskFilterBar'
 import type { TaskFilters } from '../components/TaskFilterBar'
+import { CategoryBadge } from '../components/CategoryBadge'
 import { useAuth } from '../contexts/AuthContext'
 
 function getStatusConfig(status: TaskResponse['status']) {
@@ -57,6 +60,7 @@ export function TaskListPage() {
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [projects, setProjects] = useState<Project[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS)
   const navigate = useNavigate()
   const { activeOrg } = useAuth()
@@ -68,7 +72,8 @@ export function TaskListPage() {
       const response = await taskService.getMyTasks({
         text: currentFilters.searchQuery || undefined,
         projectId: currentFilters.projectId !== 'ALL' ? currentFilters.projectId : undefined,
-        status: currentFilters.statusFilter !== 'ALL' ? currentFilters.statusFilter : undefined,
+        statuses: currentFilters.statuses.length > 0 ? currentFilters.statuses : undefined,
+        categoryIds: currentFilters.categoryIds.length > 0 ? currentFilters.categoryIds : undefined,
       })
       setTasks(response)
     } catch (error) {
@@ -82,6 +87,7 @@ export function TaskListPage() {
     void loadTasks(filters)
     if (activeOrg) {
       projectService.listByOrganization(activeOrg.id).then(setProjects).catch(() => {})
+      categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {})
     }
   }, [])
 
@@ -132,6 +138,7 @@ export function TaskListPage() {
         filters={filters}
         onFiltersChange={handleFiltersChange}
         projects={projects}
+        categories={categories}
         isLoading={isLoading}
         onRefresh={() => void loadTasks(filters)}
       />
@@ -184,6 +191,12 @@ export function TaskListPage() {
                       <Tag size={14} className="text-brand" />
                       {task.project?.name || 'Geral'}
                     </div>
+                    {task.category && (
+                      <>
+                        <div className="h-4 w-px bg-border-soft" />
+                        <CategoryBadge category={task.category} />
+                      </>
+                    )}
                     <div className="h-4 w-px bg-border-soft" />
                     <div className="flex items-center gap-1.5 text-xs font-bold text-text-muted">
                       <Calendar size={14} className="text-accent" />

@@ -21,9 +21,13 @@ import type { CreateTaskPayload, TaskResponse, TaskHistoryItem } from "../types/
 import { useAuth } from "../contexts/AuthContext";
 import { useEffect } from "react";
 import { projectService, type Project } from "../services/projectService";
+import { categoryService } from "../services/categoryService";
+import type { Category } from "../types/category";
+import { CategoryIcon } from "../components/CategoryIcon";
 
-type FormState = Omit<CreateTaskPayload, 'projectId'> & { 
+type FormState = Omit<CreateTaskPayload, 'projectId' | 'categoryId'> & {
   projectId: string;
+  categoryId: string;
   history: TaskHistoryItem[];
 };
 
@@ -32,6 +36,7 @@ const initialFormState: FormState = {
   description: "",
   status: "NOT_STARTED",
   projectId: "",
+  categoryId: "",
   history: [],
 };
 
@@ -41,6 +46,7 @@ export function CreateTaskPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createdTask, setCreatedTask] = useState<TaskResponse | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const { activeOrg } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -56,6 +62,7 @@ export function CreateTaskPage() {
             description: data.description || "",
             status: data.status,
             projectId: data.project?.id?.toString() || "",
+            categoryId: data.category?.id?.toString() || "",
             history: data.history || [],
           });
         } catch (error) {
@@ -77,7 +84,17 @@ export function CreateTaskPage() {
         console.error("Erro ao carregar projetos:", error);
       }
     }
+    async function loadCategories() {
+      if (!activeOrg) return;
+      try {
+        const data = await categoryService.listByOrganization(activeOrg.id);
+        setCategories(data);
+      } catch (error) {
+        console.error("Erro ao carregar categorias:", error);
+      }
+    }
     loadProjects();
+    loadCategories();
   }, [activeOrg]);
 
   function updateField(
@@ -103,6 +120,7 @@ export function CreateTaskPage() {
         description: form.description.trim(),
         status: form.status,
         projectId: form.projectId ? Number(form.projectId) : null,
+        categoryId: form.categoryId ? Number(form.categoryId) : null,
         history: form.history,
       };
 
@@ -233,8 +251,8 @@ export function CreateTaskPage() {
               </label>
             </div>
 
-            {/* Project & Status Row */}
-            <div className="grid gap-6 md:grid-cols-2">
+            {/* Project, Category & Status Row */}
+            <div className="grid gap-6 md:grid-cols-3">
               <label className="group block">
                 <div className="mb-2 flex items-center gap-2 text-sm font-bold text-text-main group-focus-within:text-brand">
                   <Layout size={16} />
@@ -250,6 +268,37 @@ export function CreateTaskPage() {
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="group block">
+                <div className="mb-2 flex items-center gap-2 text-sm font-bold text-text-main group-focus-within:text-brand">
+                  {form.categoryId ? (
+                    (() => {
+                      const c = categories.find((cat) => cat.id === Number(form.categoryId));
+                      return c ? (
+                        <CategoryIcon iconName={c.icon} color={c.color} size={16} />
+                      ) : (
+                        <Layout size={16} />
+                      );
+                    })()
+                  ) : (
+                    <Layout size={16} />
+                  )}
+                  Categoria
+                </div>
+                <select
+                  name="categoryId"
+                  value={form.categoryId || ""}
+                  onChange={updateField}
+                  className="h-12 w-full appearance-none rounded-xl border border-border-soft bg-app-bg px-4 text-sm font-medium outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10"
+                >
+                  <option value="">Sem Categoria</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
                     </option>
                   ))}
                 </select>

@@ -10,8 +10,10 @@ public record CreateTaskOutput(
                 String description,
                 TaskStatus status,
                 ProjectOutput project,
+                CategoryOutput category,
                 LocalDateTime finishedAt,
                 List<TaskHistoryItemOutput> history) {
 
     public record ProjectOutput(Long id, String name) {}
+    public record CategoryOutput(Long id, String name, String color, String icon) {}
 }

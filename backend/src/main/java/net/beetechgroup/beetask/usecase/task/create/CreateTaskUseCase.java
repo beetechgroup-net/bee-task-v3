@@ -2,9 +2,11 @@ package net.beetechgroup.beetask.usecase.task.create;
 
 import java.util.List;
 import java.util.Objects;
+import net.beetechgroup.beetask.entities.Category;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
+import net.beetechgroup.beetask.usecase.repository.CategoryRepository;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
@@ -14,11 +16,14 @@ public class CreateTaskUseCase {
     private static final Logger LOGGER = Logger.getLogger(CreateTaskUseCase.class);
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
+    private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
 
-    public CreateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository, UserRepository userRepository) {
+    public CreateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
+                              CategoryRepository categoryRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.projectRepository = projectRepository;
+        this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
     }
 
@@ -36,6 +41,15 @@ public class CreateTaskUseCase {
                         return new IllegalArgumentException("Projeto não encontrado com ID: " + input.projectId());
                     });
             task.setProject(project);
+        }
+
+        if (Objects.nonNull(input.categoryId())) {
+            Category category = categoryRepository.findCategoryById(input.categoryId())
+                    .orElseThrow(() -> {
+                        LOGGER.warnf("Task creation failed because category %d was not found", input.categoryId());
+                        return new IllegalArgumentException("Categoria não encontrada com ID: " + input.categoryId());
+                    });
+            task.setCategory(category);
         }
 
         task.setUser(userRepository.findByEmail(input.userEmail())

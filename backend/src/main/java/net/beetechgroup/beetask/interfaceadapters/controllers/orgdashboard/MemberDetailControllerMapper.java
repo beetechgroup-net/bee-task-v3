@@ -18,6 +18,10 @@ public class MemberDetailControllerMapper {
                 output.projectStats().stream()
                         .map(p -> new MemberDetailResponse.ProjectStatsResponse(
                                 p.projectId(), p.projectName(), p.totalMinutes()))
+                        .toList(),
+                output.categoryStats().stream()
+                        .map(c -> new MemberDetailResponse.CategoryStatsResponse(
+                                c.categoryId(), c.categoryName(), c.color(), c.icon(), c.totalMinutes()))
                         .toList()
         );
     }

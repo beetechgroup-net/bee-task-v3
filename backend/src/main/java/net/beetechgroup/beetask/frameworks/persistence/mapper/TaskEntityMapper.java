@@ -17,6 +17,7 @@ public class TaskEntityMapper {
         entity.setStatus(task.getStatus());
         entity.setFinishedAt(task.getFinishedAt());
         entity.setProject(ProjectEntityMapper.toEntity(task.getProject()));
+        entity.setCategory(CategoryEntityMapper.toEntity(task.getCategory()));
         entity.setUser(UserEntityMapper.toEntity(task.getUser()));
         entity.setHistory(new ArrayList<>(task.getHistory().stream().map(h -> {
             TaskHistoryItemEntity he = TaskHistoryItemMapper.toEntity(h);
@@ -36,6 +37,7 @@ public class TaskEntityMapper {
         task.setStatus(entity.getStatus());
         task.setFinishedAt(entity.getFinishedAt());
         task.setProject(ProjectEntityMapper.toDomain(entity.getProject()));
+        task.setCategory(CategoryEntityMapper.toDomain(entity.getCategory()));
         task.setUser(UserEntityMapper.toDomain(entity.getUser()));
         task.setHistory(new ArrayList<>(entity.getHistory().stream().map(TaskHistoryItemMapper::toDomain).toList()));
 

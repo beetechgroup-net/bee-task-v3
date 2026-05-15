@@ -4,6 +4,7 @@ import java.util.List;
 
 public record OrgDashboardOutput(
     List<OrgProjectStats> projectStats,
+    List<OrgCategoryStats> categoryStats,
     List<OrgTopTask> topTasks,
     List<OrgMemberStats> memberStats
 ) {}

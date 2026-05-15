@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import net.beetechgroup.beetask.entities.Category;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
@@ -43,6 +44,7 @@ public class DashboardUseCase {
 
         long totalMinutes = 0;
         Map<Long, DashboardProjectStats> projectStatsMap = new HashMap<>();
+        Map<Long, DashboardCategoryStats> categoryStatsMap = new HashMap<>();
 
         for (Task task : workedTasks) {
             long taskMinutesInPeriod = task.getHistory().stream()
@@ -63,11 +65,21 @@ public class DashboardUseCase {
                     stats.totalMinutes() + taskMinutesInPeriod
                 ));
             }
+
+            if (Objects.nonNull(task.getCategory())) {
+                Category cat = task.getCategory();
+                DashboardCategoryStats existing = categoryStatsMap.getOrDefault(cat.getId(),
+                        new DashboardCategoryStats(cat.getId(), cat.getName(), cat.getColor(), cat.getIcon(), 0L));
+                categoryStatsMap.put(cat.getId(), new DashboardCategoryStats(
+                        cat.getId(), existing.categoryName(), existing.color(), existing.icon(),
+                        existing.totalMinutes() + taskMinutesInPeriod));
+            }
         }
 
         DashboardOutput output = new DashboardOutput(
             totalMinutes,
             new ArrayList<>(projectStatsMap.values()),
+            new ArrayList<>(categoryStatsMap.values()),
             yesterdayTasks.stream().map(CreateTaskMapper::toCreateTaskOutput).toList(),
             finishedTasks.stream().map(CreateTaskMapper::toCreateTaskOutput).toList()
         );

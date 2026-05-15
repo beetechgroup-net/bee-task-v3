@@ -7,7 +7,9 @@ import {
   type MemberDetailData,
   type PeriodStats,
   type MemberProjectStats,
+  type MemberCategoryStats,
 } from "../services/orgDashboardService";
+import { CategoryIcon } from "./CategoryIcon";
 
 const MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const CHART_COLORS = ["#7C3AED", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#EC4899"];
@@ -149,6 +151,69 @@ function BarChart({
             </g>
           );
         })}
+      </svg>
+      {tooltip && <ChartTooltip tooltip={tooltip} />}
+    </div>
+  );
+}
+
+function CategoryMiniPieChart({ data }: { data: MemberCategoryStats[] }) {
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const total = data.reduce((s, d) => s + d.totalMinutes, 0);
+  if (total === 0 || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full opacity-40 text-xs font-bold">
+        Sem dados
+      </div>
+    );
+  }
+
+  const cx = 50, cy = 50, r = 38, innerR = 22;
+  let startAngle = -Math.PI / 2;
+
+  const slices = data.map((d) => {
+    const fraction = d.totalMinutes / total;
+    const angle = fraction * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
+    const ix1 = cx + innerR * Math.cos(endAngle), iy1 = cy + innerR * Math.sin(endAngle);
+    const ix2 = cx + innerR * Math.cos(startAngle), iy2 = cy + innerR * Math.sin(startAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const path = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 ${largeArc} 0 ${ix2} ${iy2} Z`;
+    const pct = (fraction * 100).toFixed(0);
+    const result = { path, color: d.color, label: `${d.categoryName}: ${formatMinutes(d.totalMinutes)} (${pct}%)` };
+    startAngle = endAngle;
+    return result;
+  });
+
+  const handleMouseMove = (e: React.MouseEvent, content: string) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top, content });
+  };
+
+  return (
+    <div className="relative w-full h-full">
+      <svg
+        ref={svgRef}
+        viewBox="0 0 100 100"
+        className="w-full h-full"
+        onMouseLeave={() => setTooltip(null)}
+      >
+        {slices.map((s, i) => (
+          <path
+            key={i}
+            d={s.path}
+            fill={s.color}
+            stroke="var(--color-surface,#fff)"
+            strokeWidth="1.5"
+            className="cursor-pointer transition-opacity hover:opacity-90"
+            onMouseMove={(e) => handleMouseMove(e, s.label)}
+          />
+        ))}
       </svg>
       {tooltip && <ChartTooltip tooltip={tooltip} />}
     </div>
@@ -373,6 +438,43 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                       />
                     </div>
                   </div>
+
+                  {/* Pie chart — hours by category */}
+                  {data.categoryStats.length > 0 && (
+                    <div className="bg-app-bg border border-border-soft rounded-xl p-4">
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <span className="text-xs font-black text-text-main">Horas por Categoria</span>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="w-20 h-20 shrink-0">
+                          <CategoryMiniPieChart data={data.categoryStats} />
+                        </div>
+                        <div className="flex-1 space-y-1.5">
+                          {data.categoryStats
+                            .slice()
+                            .sort((a, b) => b.totalMinutes - a.totalMinutes)
+                            .map((c) => {
+                              const totalCat = data.categoryStats.reduce((s, x) => s + x.totalMinutes, 0);
+                              const pct = totalCat > 0 ? ((c.totalMinutes / totalCat) * 100).toFixed(0) : "0";
+                              return (
+                                <div key={c.categoryId} className="flex items-center gap-2">
+                                  <div
+                                    className="flex h-5 w-5 items-center justify-center rounded-md shrink-0"
+                                    style={{ background: `${c.color}1a`, color: c.color }}
+                                  >
+                                    <CategoryIcon iconName={c.icon} color={c.color} size={12} />
+                                  </div>
+                                  <span className="text-xs font-bold text-text-main truncate flex-1">{c.categoryName}</span>
+                                  <span className="text-xs font-black text-text-muted shrink-0">
+                                    {formatMinutes(c.totalMinutes)} ({pct}%)
+                                  </span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Pie chart — hours by project */}
                   {data.projectStats.length > 0 && (

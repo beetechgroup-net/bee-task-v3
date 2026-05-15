@@ -12,7 +12,7 @@ import net.beetechgroup.beetask.usecase.task.update.UpdateTaskInput;
 public class TaskControllerMapper {
 
     public static ListMyTasksInput toListMyTasksInput(ListMyTasksRequest request, String email) {
-        return new ListMyTasksInput(email, request.text, request.projectId, request.status);
+        return new ListMyTasksInput(email, request.text, request.projectId, request.statuses, request.categoryIds);
     }
 
     public static CreateTaskInput toCreateTaskInput(CreateTaskRequest request, String userEmail) {
@@ -21,6 +21,7 @@ public class TaskControllerMapper {
                 request.description(),
                 request.status(),
                 request.projectId(),
+                request.categoryId(),
                 userEmail,
                 Objects.nonNull(request.history()) ? request.history().stream()
                         .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
@@ -34,9 +35,19 @@ public class TaskControllerMapper {
                 output.title(),
                 output.description(),
                 output.status(),
-                Objects.nonNull(output.project()) ? new CreateTaskResponse.ProjectResponse(output.project().id(), output.project().name()) : null,
+                Objects.nonNull(output.project())
+                        ? new CreateTaskResponse.ProjectResponse(output.project().id(), output.project().name())
+                        : null,
+                Objects.nonNull(output.category())
+                        ? new CreateTaskResponse.CategoryResponse(
+                                output.category().id(),
+                                output.category().name(),
+                                output.category().color(),
+                                output.category().icon())
+                        : null,
                 output.finishedAt(),
-                output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt())).toList()
+                output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(
+                        taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt())).toList()
         );
     }
 
@@ -55,6 +66,7 @@ public class TaskControllerMapper {
                 request.description(),
                 request.status(),
                 request.projectId(),
+                request.categoryId(),
                 userEmail,
                 Objects.nonNull(request.history()) ? request.history().stream()
                         .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))

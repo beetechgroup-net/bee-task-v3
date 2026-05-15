@@ -11,10 +11,12 @@ public record CreateTaskResponse(
                 String description,
                 TaskStatus status,
                 ProjectResponse project,
+                CategoryResponse category,
                 LocalDateTime finishedAt,
                 List<TaskHistoryItemResponse> history) {
 
     public record ProjectResponse(Long id, String name) {}
+    public record CategoryResponse(Long id, String name, String color, String icon) {}
 }
 
 record TaskHistoryItemResponse(

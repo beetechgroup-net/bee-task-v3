@@ -10,6 +10,7 @@ import {
   Clock,
   ChevronDown,
   FolderKanban,
+  Tag,
   BarChart3,
   PieChart,
   Search,
@@ -264,6 +265,13 @@ export function AppShell() {
                 <NavLink to="/projects" className={navLinkClassName}>
                   <FolderKanban size={18} />
                   Projetos
+                </NavLink>
+              )}
+
+              {isAdmin && (
+                <NavLink to="/categories" className={navLinkClassName}>
+                  <Tag size={18} />
+                  Categorias
                 </NavLink>
               )}
 

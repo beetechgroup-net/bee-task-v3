@@ -23,6 +23,9 @@ import {
   type OrgProjectStats,
 } from "../services/orgDashboardService";
 import { cn } from "../lib/utils";
+import { PieChart as SharedPieChart } from "../components/PieChart";
+import { CategoryIcon } from "../components/CategoryIcon";
+import { Tag } from "lucide-react";
 
 const CHART_COLORS = [
   "#7C3AED",
@@ -371,6 +374,67 @@ export const OrgDashboardPage: React.FC = () => {
               </div>
             </section>
           </div>
+
+          {/* Category Pie */}
+          {data.categoryStats.length > 0 && (
+            <section className="bg-surface border border-border-soft rounded-[2.5rem] p-8 shadow-sm">
+              <div className="flex items-center gap-2 mb-8">
+                <Tag size={20} className="text-brand" />
+                <h2 className="text-xl font-black text-text-main">Tarefas por Categoria</h2>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-8">
+                <SharedPieChart
+                  size={200}
+                  centerLabel="categorias"
+                  centerValue={data.categoryStats.length}
+                  slices={data.categoryStats.map((c) => ({
+                    key: c.categoryId,
+                    label: c.categoryName,
+                    value: c.totalMinutes,
+                    color: c.color,
+                  }))}
+                  formatTooltip={(s, pct) => `${s.label}: ${formatMinutes(s.value)} (${pct.toFixed(1)}%)`}
+                />
+
+                <div className="flex-1 space-y-3 w-full">
+                  {data.categoryStats
+                    .slice()
+                    .sort((a, b) => b.totalMinutes - a.totalMinutes)
+                    .map((c) => {
+                      const totalCat = data.categoryStats.reduce((s, x) => s + x.totalMinutes, 0);
+                      const pct = totalCat > 0 ? ((c.totalMinutes / totalCat) * 100).toFixed(1) : "0";
+                      return (
+                        <div key={c.categoryId} className="flex items-center gap-3">
+                          <div
+                            className="flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
+                            style={{ background: `${c.color}1a`, color: c.color }}
+                          >
+                            <CategoryIcon iconName={c.icon} color={c.color} size={18} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-bold text-text-main truncate">{c.categoryName}</span>
+                              <span className="text-xs font-black text-text-muted ml-2 shrink-0">
+                                {formatMinutes(c.totalMinutes)} ({pct}%)
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full bg-surface-muted rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${pct}%` }}
+                                className="h-full rounded-full"
+                                style={{ background: c.color }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Members Section */}
           <section className="bg-surface border border-border-soft rounded-[2.5rem] p-8 shadow-sm">

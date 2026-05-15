@@ -6,6 +6,7 @@ import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 public record DashboardOutput(
     Long totalMinutesWorked,
     List<DashboardProjectStats> projectStats,
+    List<DashboardCategoryStats> categoryStats,
     List<CreateTaskOutput> yesterdayTasks,
     List<CreateTaskOutput> finishedTasksInPeriod
 ) {}

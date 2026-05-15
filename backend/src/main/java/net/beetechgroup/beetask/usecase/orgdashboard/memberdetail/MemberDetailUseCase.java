@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.usecase.orgdashboard.memberdetail;
 
+import net.beetechgroup.beetask.entities.Category;
 import net.beetechgroup.beetask.entities.organization.UserOrganization;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
@@ -57,6 +58,7 @@ public class MemberDetailUseCase {
         List<Task> finishedTasks = taskRepository.findTasksFinishedByUserIdInPeriod(input.memberId(), start, end);
 
         Map<Long, MemberDetailOutput.ProjectStats> projectStatsMap = new HashMap<>();
+        Map<Long, MemberDetailOutput.CategoryStats> categoryStatsMap = new HashMap<>();
         Map<LocalDate, Long> minutesPerDay = new HashMap<>();
         Map<YearMonth, Long> minutesPerMonth = new HashMap<>();
 
@@ -81,6 +83,15 @@ public class MemberDetailUseCase {
                         new MemberDetailOutput.ProjectStats(projectId, projectName, 0L));
                 projectStatsMap.put(projectId, new MemberDetailOutput.ProjectStats(
                         projectId, existing.projectName(), existing.totalMinutes() + minutes));
+
+                if (Objects.nonNull(task.getCategory())) {
+                    Category cat = task.getCategory();
+                    MemberDetailOutput.CategoryStats existingCat = categoryStatsMap.getOrDefault(cat.getId(),
+                            new MemberDetailOutput.CategoryStats(cat.getId(), cat.getName(), cat.getColor(), cat.getIcon(), 0L));
+                    categoryStatsMap.put(cat.getId(), new MemberDetailOutput.CategoryStats(
+                            cat.getId(), existingCat.categoryName(), existingCat.color(), existingCat.icon(),
+                            existingCat.totalMinutes() + minutes));
+                }
             }
         }
 
@@ -123,7 +134,8 @@ public class MemberDetailUseCase {
         }
 
         MemberDetailOutput output = MemberDetailMapper.toOutput(member, groupByDay ? "DAY" : "MONTH", periodStats,
-                new ArrayList<>(projectStatsMap.values()));
+                new ArrayList<>(projectStatsMap.values()),
+                new ArrayList<>(categoryStatsMap.values()));
         LOGGER.infof("Member detail calculated for member %d in organization %d with %d worked tasks and %d finished tasks",
                 input.memberId(), input.organizationId(), workedTasks.size(), finishedTasks.size());
         return output;

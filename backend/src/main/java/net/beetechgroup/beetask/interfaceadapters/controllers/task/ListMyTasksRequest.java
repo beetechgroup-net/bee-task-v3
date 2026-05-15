@@ -1,5 +1,7 @@
 package net.beetechgroup.beetask.interfaceadapters.controllers.task;
 
+import java.util.List;
+
 import jakarta.ws.rs.QueryParam;
 import net.beetechgroup.beetask.entities.task.TaskStatus;
 
@@ -12,5 +14,8 @@ public class ListMyTasksRequest {
     public Long projectId;
 
     @QueryParam("status")
-    public TaskStatus status;
+    public List<TaskStatus> statuses;
+
+    @QueryParam("categoryId")
+    public List<Long> categoryIds;
 }

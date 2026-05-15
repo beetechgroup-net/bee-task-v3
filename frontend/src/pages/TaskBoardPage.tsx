@@ -15,11 +15,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { taskService } from '../services/taskService'
 import { projectService } from '../services/projectService'
 import type { Project } from '../services/projectService'
+import { categoryService } from '../services/categoryService'
+import type { Category } from '../types/category'
 import { cn } from '../lib/utils'
 import type { TaskResponse, TaskStatus } from '../types/task'
 import { TaskTimer } from '../components/TaskTimer'
 import { TaskFilterBar, DEFAULT_TASK_FILTERS } from '../components/TaskFilterBar'
 import type { TaskFilters } from '../components/TaskFilterBar'
+import { CategoryBadge } from '../components/CategoryBadge'
 import { useAuth } from '../contexts/AuthContext'
 
 const COLUMNS: { id: TaskStatus; label: string; icon: any; color: string }[] = [
@@ -33,6 +36,7 @@ export function TaskBoardPage() {
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [projects, setProjects] = useState<Project[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS)
   const navigate = useNavigate()
   const { activeOrg } = useAuth()
@@ -44,7 +48,8 @@ export function TaskBoardPage() {
       const response = await taskService.getMyTasks({
         text: currentFilters.searchQuery || undefined,
         projectId: currentFilters.projectId !== 'ALL' ? currentFilters.projectId : undefined,
-        status: currentFilters.statusFilter !== 'ALL' ? currentFilters.statusFilter : undefined,
+        statuses: currentFilters.statuses.length > 0 ? currentFilters.statuses : undefined,
+        categoryIds: currentFilters.categoryIds.length > 0 ? currentFilters.categoryIds : undefined,
       })
       setTasks(response)
     } catch (error) {
@@ -58,6 +63,7 @@ export function TaskBoardPage() {
     void loadTasks(filters)
     if (activeOrg) {
       projectService.listByOrganization(activeOrg.id).then(setProjects).catch(() => {})
+      categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {})
     }
   }, [])
 
@@ -138,6 +144,7 @@ export function TaskBoardPage() {
         filters={filters}
         onFiltersChange={handleFiltersChange}
         projects={projects}
+        categories={categories}
         isLoading={isLoading}
         onRefresh={() => void loadTasks(filters)}
       />
@@ -207,9 +214,12 @@ export function TaskBoardPage() {
                               <TaskTimer task={task} onUpdate={() => loadTasks(filters, true)} />
 
                               <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-1 text-[10px] font-bold text-text-muted">
-                                  <AlertCircle size={12} className="text-brand" />
-                                  {task.project?.name || 'Geral'}
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 text-[10px] font-bold text-text-muted">
+                                    <AlertCircle size={12} className="text-brand" />
+                                    {task.project?.name || 'Geral'}
+                                  </div>
+                                  <CategoryBadge category={task.category} />
                                 </div>
                                 <span className="font-mono text-[10px] font-bold text-text-muted/50">
                                   #{task.id}

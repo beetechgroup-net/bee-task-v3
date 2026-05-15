@@ -2,9 +2,11 @@ package net.beetechgroup.beetask.usecase.task.update;
 
 import java.util.List;
 import java.util.Objects;
+import net.beetechgroup.beetask.entities.Category;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
+import net.beetechgroup.beetask.usecase.repository.CategoryRepository;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
@@ -16,11 +18,14 @@ public class UpdateTaskUseCase {
     private static final Logger LOGGER = Logger.getLogger(UpdateTaskUseCase.class);
     private final TaskRepository taskRepository;
     private final ProjectRepository projectRepository;
+    private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
 
-    public UpdateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository, UserRepository userRepository) {
+    public UpdateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
+                              CategoryRepository categoryRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.projectRepository = projectRepository;
+        this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
     }
 
@@ -49,6 +54,17 @@ public class UpdateTaskUseCase {
             task.setProject(project);
         } else {
             task.setProject(null);
+        }
+
+        if (Objects.nonNull(input.categoryId())) {
+            Category category = categoryRepository.findCategoryById(input.categoryId())
+                    .orElseThrow(() -> {
+                        LOGGER.warnf("Task update failed because category %d was not found", input.categoryId());
+                        return new IllegalArgumentException("Categoria não encontrada com ID: " + input.categoryId());
+                    });
+            task.setCategory(category);
+        } else {
+            task.setCategory(null);
         }
 
         if (Objects.nonNull(input.history())) {

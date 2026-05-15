@@ -9,6 +9,7 @@ public record CreateTaskInput(
         String description,
         TaskStatus status,
         Long projectId,
+        Long categoryId,
         String userEmail,
         List<TaskHistoryItemInput> history) {
 }

@@ -6,6 +6,14 @@ export interface OrgProjectStats {
   totalMinutes: number
 }
 
+export interface OrgCategoryStats {
+  categoryId: number
+  categoryName: string
+  color: string
+  icon: string
+  totalMinutes: number
+}
+
 export interface OrgTopTask {
   taskId: number
   title: string
@@ -23,6 +31,7 @@ export interface OrgMemberStats {
 
 export interface OrgDashboardData {
   projectStats: OrgProjectStats[]
+  categoryStats: OrgCategoryStats[]
   topTasks: OrgTopTask[]
   memberStats: OrgMemberStats[]
 }
@@ -41,6 +50,14 @@ export interface MemberProjectStats {
   totalMinutes: number
 }
 
+export interface MemberCategoryStats {
+  categoryId: number
+  categoryName: string
+  color: string
+  icon: string
+  totalMinutes: number
+}
+
 export interface MemberDetailData {
   userId: number
   userName: string
@@ -49,6 +66,7 @@ export interface MemberDetailData {
   groupedBy: 'DAY' | 'MONTH'
   periodStats: PeriodStats[]
   projectStats: MemberProjectStats[]
+  categoryStats: MemberCategoryStats[]
 }
 
 export const orgDashboardService = {
