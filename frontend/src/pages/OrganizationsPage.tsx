@@ -19,9 +19,13 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { cn } from '../lib/utils'
 import { organizationService } from '../services/organizationService'
+import { OnboardingModal } from '../components/OnboardingModal'
 
 export function OrganizationsPage() {
   const { user, activeOrg, setActiveOrg, refreshUser } = useAuth()
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => (user?.organizations.length ?? 0) === 0,
+  )
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newOrgName, setNewOrgName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
@@ -249,6 +253,11 @@ export function OrganizationsPage() {
           </p>
         </div>
       </div>
+
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+      />
 
       {/* Create Organization Modal */}
       <AnimatePresence>
