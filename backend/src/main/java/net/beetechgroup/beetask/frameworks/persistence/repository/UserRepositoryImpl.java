@@ -64,4 +64,9 @@ public class UserRepositoryImpl implements UserRepository, PanacheRepository<Use
         LOGGER.infof("Loaded %d active organizations for user %d", organizations.size(), userId);
         return organizations;
     }
+
+    @Override
+    public long countAll() {
+        return count();
+    }
 }

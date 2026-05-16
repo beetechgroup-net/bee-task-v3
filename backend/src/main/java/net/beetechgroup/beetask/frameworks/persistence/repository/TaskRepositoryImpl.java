@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.time.LocalDateTime;
+import java.time.Duration;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -171,5 +172,19 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
         return find("user.email in ?1 and status = ?2 and finishedAt >= ?3 and finishedAt <= ?4",
                 emails, TaskStatus.COMPLETED, start, end)
                 .list().stream().map(TaskEntityMapper::toDomain).toList();
+    }
+
+    @Override
+    public long countByStatus(TaskStatus status) {
+        return count("status", status);
+    }
+
+    @Override
+    public long sumAllCompletedTrackedMinutes() {
+        return findAllTasks().stream()
+                .flatMap(task -> task.getHistory().stream())
+                .filter(h -> Objects.nonNull(h.getEndAt()))
+                .mapToLong(h -> Duration.between(h.getStartAt(), h.getEndAt()).toMinutes())
+                .sum();
     }
 }

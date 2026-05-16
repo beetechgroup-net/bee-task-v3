@@ -10,4 +10,5 @@ public interface UserRepository {
     Optional<User> findByEmail(String email);
     Optional<User> findUserById(Long id);
     List<UserOrganization> findUserOrganizations(Long userId);
+    long countAll();
 }

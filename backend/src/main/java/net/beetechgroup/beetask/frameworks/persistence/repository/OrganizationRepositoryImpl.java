@@ -57,4 +57,9 @@ public class OrganizationRepositoryImpl implements OrganizationRepository, Panac
         }
         return organization;
     }
+
+    @Override
+    public long countAll() {
+        return count();
+    }
 }

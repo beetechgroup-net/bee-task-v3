@@ -21,4 +21,6 @@ public interface TaskRepository {
     List<Task> findTasksFinishedByUserIdInPeriod(Long userId, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksWorkedByUserEmailsInPeriod(List<String> emails, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksFinishedByUserEmailsInPeriod(List<String> emails, LocalDateTime start, LocalDateTime end);
+    long countByStatus(TaskStatus status);
+    long sumAllCompletedTrackedMinutes();
 }

@@ -9,4 +9,5 @@ public interface OrganizationRepository {
     Organization saveOrganization(Organization organization);
     List<Organization> search(String query);
     Optional<Organization> findOrganizationById(Long id);
+    long countAll();
 }

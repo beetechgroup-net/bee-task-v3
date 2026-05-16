@@ -16,8 +16,13 @@ import { OrganizationsPage } from "./pages/OrganizationsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { OrgDashboardPage } from "./pages/OrgDashboardPage";
 import { RoleGate } from "./components/RoleGate";
+import { LandingPage } from "./pages/LandingPage";
 
 export const router = createBrowserRouter([
+  {
+    path: "/landing",
+    element: <LandingPage />,
+  },
   {
     path: "/login",
     element: <LoginPage />,
