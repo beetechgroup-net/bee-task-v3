@@ -12,7 +12,7 @@ import net.beetechgroup.beetask.usecase.task.update.UpdateTaskInput;
 public class TaskControllerMapper {
 
     public static ListMyTasksInput toListMyTasksInput(ListMyTasksRequest request, String email) {
-        return new ListMyTasksInput(email, request.text, request.projectId, request.statuses, request.categoryIds);
+        return new ListMyTasksInput(email, request.text, request.projectIds, request.statuses, request.categoryIds);
     }
 
     public static CreateTaskInput toCreateTaskInput(CreateTaskRequest request, String userEmail) {

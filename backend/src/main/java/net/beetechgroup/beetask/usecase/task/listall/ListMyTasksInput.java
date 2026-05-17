@@ -4,5 +4,5 @@ import java.util.List;
 
 import net.beetechgroup.beetask.entities.task.TaskStatus;
 
-public record ListMyTasksInput(String email, String text, Long projectId,
+public record ListMyTasksInput(String email, String text, List<Long> projectIds,
                                 List<TaskStatus> statuses, List<Long> categoryIds) {}

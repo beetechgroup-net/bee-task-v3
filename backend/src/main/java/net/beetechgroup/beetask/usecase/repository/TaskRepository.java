@@ -13,7 +13,7 @@ public interface TaskRepository {
     List<Task> findTasksWorkedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksFinishedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksByUser(String email);
-    List<Task> findTasksByUserFiltered(String email, String text, Long projectId,
+    List<Task> findTasksByUserFiltered(String email, String text, List<Long> projectIds,
                                        List<TaskStatus> statuses, List<Long> categoryIds);
     List<Task> findTasksWorkedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksFinishedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end);

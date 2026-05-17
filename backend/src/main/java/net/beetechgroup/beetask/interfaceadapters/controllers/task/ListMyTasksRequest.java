@@ -11,7 +11,7 @@ public class ListMyTasksRequest {
     public String text;
 
     @QueryParam("projectId")
-    public Long projectId;
+    public List<Long> projectIds;
 
     @QueryParam("status")
     public List<TaskStatus> statuses;

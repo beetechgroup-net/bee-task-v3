@@ -3,7 +3,7 @@ import type { TaskResponse, TaskStatus } from '../types/task'
 
 export interface GetMyTasksFilters {
   text?: string
-  projectId?: number
+  projectIds?: number[]
   statuses?: TaskStatus[]
   categoryIds?: number[]
 }
@@ -16,7 +16,7 @@ export const taskService = {
   async getMyTasks(filters?: GetMyTasksFilters): Promise<TaskResponse[]> {
     const params = new URLSearchParams()
     if (filters?.text) params.set('text', filters.text)
-    if (filters?.projectId) params.set('projectId', String(filters.projectId))
+    filters?.projectIds?.forEach((id) => params.append('projectId', String(id)))
     filters?.statuses?.forEach((s) => params.append('status', s))
     filters?.categoryIds?.forEach((id) => params.append('categoryId', String(id)))
     const query = params.toString()

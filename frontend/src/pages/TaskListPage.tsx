@@ -22,8 +22,8 @@ import type { Category } from '../types/category'
 import { cn } from '../lib/utils'
 import type { TaskResponse } from '../types/task'
 import { TaskTimer } from '../components/TaskTimer'
-import { TaskFilterBar, DEFAULT_TASK_FILTERS } from '../components/TaskFilterBar'
-import type { TaskFilters } from '../components/TaskFilterBar'
+import { TaskFilterBar } from '../components/TaskFilterBar'
+import { DEFAULT_TASK_FILTERS, type TaskFilters } from '../components/taskFilters'
 import { CategoryBadge } from '../components/CategoryBadge'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -71,7 +71,7 @@ export function TaskListPage() {
     try {
       const response = await taskService.getMyTasks({
         text: currentFilters.searchQuery || undefined,
-        projectId: currentFilters.projectId !== 'ALL' ? currentFilters.projectId : undefined,
+        projectIds: currentFilters.projectIds.length > 0 ? currentFilters.projectIds : undefined,
         statuses: currentFilters.statuses.length > 0 ? currentFilters.statuses : undefined,
         categoryIds: currentFilters.categoryIds.length > 0 ? currentFilters.categoryIds : undefined,
       })

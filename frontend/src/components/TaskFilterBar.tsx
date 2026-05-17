@@ -1,24 +1,11 @@
 import { Filter, RefreshCw, Search } from 'lucide-react'
-import type { TaskStatus } from '../types/task'
 import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from '../types/task'
 import type { Project } from '../services/projectService'
 import type { Category } from '../types/category'
 import { MultiSelectChips } from './MultiSelectChips'
 import { CategoryIcon } from './CategoryIcon'
-
-export interface TaskFilters {
-  searchQuery: string
-  statuses: TaskStatus[]
-  categoryIds: number[]
-  projectId: number | 'ALL'
-}
-
-export const DEFAULT_TASK_FILTERS: TaskFilters = {
-  searchQuery: '',
-  statuses: [],
-  categoryIds: [],
-  projectId: 'ALL',
-}
+import { MultiSelectDropdown } from './MultiSelectDropdown'
+import type { TaskFilters } from './taskFilters'
 
 interface TaskFilterBarProps {
   filters: TaskFilters
@@ -57,25 +44,6 @@ export function TaskFilterBar({
           />
         </div>
 
-        {projects.length > 0 && (
-          <select
-            value={filters.projectId}
-            onChange={(e) =>
-              update({
-                projectId: e.target.value === 'ALL' ? 'ALL' : Number(e.target.value),
-              })
-            }
-            className="h-11 rounded-xl border border-border-soft bg-app-bg px-3 text-sm text-text-main outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/10"
-          >
-            <option value="ALL">Todos os projetos</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        )}
-
         {onRefresh && (
           <button
             onClick={onRefresh}
@@ -87,11 +55,27 @@ export function TaskFilterBar({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Filter size={16} className="shrink-0 text-text-muted" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">Status</span>
-        <MultiSelectChips
-          options={TASK_STATUS_OPTIONS.map((s) => ({ value: s, label: TASK_STATUS_LABELS[s] }))}
+      <div className="grid gap-3 md:grid-cols-2">
+        {projects.length > 0 && (
+          <MultiSelectDropdown
+            label="Projetos"
+            allLabel="Todos os projetos"
+            options={projects.map((project) => ({
+              value: project.id,
+              label: project.name,
+            }))}
+            selected={filters.projectIds}
+            onChange={(projectIds) => update({ projectIds })}
+          />
+        )}
+
+        <MultiSelectDropdown
+          label="Status"
+          allLabel="Todos os status"
+          options={TASK_STATUS_OPTIONS.map((status) => ({
+            value: status,
+            label: TASK_STATUS_LABELS[status],
+          }))}
           selected={filters.statuses}
           onChange={(statuses) => update({ statuses })}
         />
