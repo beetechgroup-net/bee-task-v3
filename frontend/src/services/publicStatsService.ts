@@ -9,9 +9,8 @@ export interface PublicStats {
 
 export const publicStatsService = {
   getStats: async (): Promise<PublicStats> => {
-    const response = await apiFetch("/public/stats", {
+    return apiFetch<PublicStats>("/public/stats", {
       method: "GET",
-    }) as Response;
-    return response.json();
+    });
   },
 };
