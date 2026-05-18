@@ -6,12 +6,15 @@ import { MultiSelectChips } from './MultiSelectChips'
 import { CategoryIcon } from './CategoryIcon'
 import { MultiSelectDropdown } from './MultiSelectDropdown'
 import type { TaskFilters } from './taskFilters'
+import type { TaskAssignee } from '../types/task'
+import { UserAvatar } from './UserAvatar'
 
 interface TaskFilterBarProps {
   filters: TaskFilters
   onFiltersChange: (filters: TaskFilters) => void
   projects: Project[]
   categories: Category[]
+  assignees: TaskAssignee[]
   isLoading?: boolean
   onRefresh?: () => void
 }
@@ -21,6 +24,7 @@ export function TaskFilterBar({
   onFiltersChange,
   projects,
   categories,
+  assignees,
   isLoading,
   onRefresh,
 }: TaskFilterBarProps) {
@@ -80,6 +84,22 @@ export function TaskFilterBar({
           onChange={(statuses) => update({ statuses })}
         />
       </div>
+
+      {assignees.length > 0 && (
+        <div className="grid gap-3">
+          <MultiSelectDropdown
+            label="Funcionario"
+            allLabel="Todos os funcionarios"
+            options={assignees.map((assignee) => ({
+              value: assignee.id,
+              label: assignee.name,
+              icon: <UserAvatar name={assignee.name} photo={assignee.photo} size="sm" />,
+            }))}
+            selected={filters.userIds}
+            onChange={(userIds) => update({ userIds })}
+          />
+        </div>
+      )}
 
       {categories.length > 0 && (
         <div className="flex items-center gap-2">

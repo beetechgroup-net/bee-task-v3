@@ -117,8 +117,9 @@ public class TaskController {
     @Operation(summary = "Stop a task", description = "Stops a task in the system")
     @APIResponse(responseCode = "200", description = "Task stopped successfully")
     public CreateTaskResponse stopTask(@PathParam("id") Long id) {
-        LOGGER.infof("Stop requested for task %d", id);
-        CreateTaskOutput output = stopTaskUseCase.execute(TaskControllerMapper.toStopTaskInput(id));
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("User %s requested stop for task %d", email, id);
+        CreateTaskOutput output = stopTaskUseCase.execute(TaskControllerMapper.toStopTaskInput(id, email));
         LOGGER.infof("Task %d stopped successfully", id);
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
@@ -137,9 +138,11 @@ public class TaskController {
     @GET
     @Operation(summary = "List all tasks", description = "Lists all tasks in the system")
     @APIResponse(responseCode = "200", description = "Tasks listed successfully")
-    public List<CreateTaskResponse> listTasks() {
-        List<CreateTaskResponse> tasks = listAllTasksUseCase.execute().stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
-        LOGGER.infof("Listed %d tasks", tasks.size());
+    public List<CreateTaskResponse> listTasks(@BeanParam ListTasksRequest request) {
+        String email = securityIdentity.getPrincipal().getName();
+        List<CreateTaskResponse> tasks = listAllTasksUseCase.execute(TaskControllerMapper.toListTasksInput(request, email))
+                .stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
+        LOGGER.infof("Listed %d accessible tasks for user %s", tasks.size(), email);
         return tasks;
     }
 

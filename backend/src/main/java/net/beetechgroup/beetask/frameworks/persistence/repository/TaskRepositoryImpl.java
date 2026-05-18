@@ -53,6 +53,51 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     }
 
     @Override
+    public List<Task> findAccessibleTasksFiltered(String email, Long organizationId, String text, List<Long> projectIds,
+                                                  List<TaskStatus> statuses, List<Long> categoryIds, List<Long> userIds) {
+        StringBuilder query = new StringBuilder(
+                "select distinct t from TaskEntity t join t.project p left join p.users pu left join t.user tu " +
+                        "where p.organization.id = ?1 and (pu.email = ?2 or tu.email = ?2)"
+        );
+        List<Object> params = new ArrayList<>();
+        params.add(organizationId);
+        params.add(email);
+
+        int idx = 3;
+        if (Objects.nonNull(text) && !text.isBlank()) {
+            query.append(" and (lower(t.title) like ?").append(idx).append(" or lower(t.description) like ?").append(idx + 1).append(")");
+            String pattern = "%" + text.toLowerCase() + "%";
+            params.add(pattern);
+            params.add(pattern);
+            idx += 2;
+        }
+        if (Objects.nonNull(projectIds) && !projectIds.isEmpty()) {
+            query.append(" and p.id in ?").append(idx);
+            params.add(projectIds);
+            idx++;
+        }
+        if (Objects.nonNull(statuses) && !statuses.isEmpty()) {
+            query.append(" and t.status in ?").append(idx);
+            params.add(statuses);
+            idx++;
+        }
+        if (Objects.nonNull(categoryIds) && !categoryIds.isEmpty()) {
+            query.append(" and t.category.id in ?").append(idx);
+            params.add(categoryIds);
+            idx++;
+        }
+        if (Objects.nonNull(userIds) && !userIds.isEmpty()) {
+            query.append(" and tu.id in ?").append(idx);
+            params.add(userIds);
+        }
+
+        List<Task> tasks = find(query.toString(), params.toArray()).list().stream().map(TaskEntityMapper::toDomain).toList();
+        LOGGER.infof("Loaded %d accessible tasks for user %s in organization %d with filters (text=%s, projectIds=%s, statuses=%s, categoryIds=%s, userIds=%s)",
+                tasks.size(), email, organizationId, text, projectIds, statuses, categoryIds, userIds);
+        return tasks;
+    }
+
+    @Override
     public List<Task> findTasksByUserFiltered(String email, String text, List<Long> projectIds,
                                               List<TaskStatus> statuses, List<Long> categoryIds) {
         StringBuilder query = new StringBuilder("user.email = ?1");

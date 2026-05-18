@@ -35,8 +35,8 @@ public class TaskUseCaseConfig {
     }
 
     @Produces
-    public ListAllTasksUseCase listAllTasksUseCase(TaskRepository taskRepository) {
-        return new ListAllTasksUseCase(taskRepository);
+    public ListAllTasksUseCase listAllTasksUseCase(TaskRepository taskRepository, UserRepository userRepository) {
+        return new ListAllTasksUseCase(taskRepository, userRepository);
     }
 
     @Produces

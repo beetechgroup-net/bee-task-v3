@@ -5,6 +5,7 @@ export interface TaskFilters {
   statuses: TaskStatus[]
   categoryIds: number[]
   projectIds: number[]
+  userIds: number[]
 }
 
 export const DEFAULT_TASK_FILTERS: TaskFilters = {
@@ -12,4 +13,5 @@ export const DEFAULT_TASK_FILTERS: TaskFilters = {
   statuses: [],
   categoryIds: [],
   projectIds: [],
+  userIds: [],
 }

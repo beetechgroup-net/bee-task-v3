@@ -10,6 +10,8 @@ public interface TaskRepository {
     Task saveTask(Task task);
     Task findTaskById(Long id);
     List<Task> findAllTasks();
+    List<Task> findAccessibleTasksFiltered(String email, Long organizationId, String text, List<Long> projectIds,
+                                           List<TaskStatus> statuses, List<Long> categoryIds, List<Long> userIds);
     List<Task> findTasksWorkedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksFinishedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end);
     List<Task> findTasksByUser(String email);

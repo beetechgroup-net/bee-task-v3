@@ -9,6 +9,7 @@ import type { TaskResponse } from '../types/task'
 interface TaskTimerProps {
   task: TaskResponse
   onUpdate: () => void
+  canControl?: boolean
 }
 
 function formatDuration(seconds: number) {
@@ -23,7 +24,7 @@ function formatDuration(seconds: number) {
   ].join(':')
 }
 
-export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
+export function TaskTimer({ task, onUpdate, canControl = true }: TaskTimerProps) {
   const [isActionLoading, setIsActionLoading] = useState(false)
 
   const history = task.history ?? []
@@ -127,8 +128,9 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
         </span>
       </div>
 
-      <div className="ml-auto pr-1">
-        {runningItem ? (
+      {canControl && (
+        <div className="ml-auto pr-1">
+          {runningItem ? (
           <button
             onClick={handleStop}
             disabled={isActionLoading}
@@ -137,7 +139,7 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
           >
             <Square size={16} fill="currentColor" />
           </button>
-        ) : (
+          ) : (
           <button
             onClick={handleStart}
             disabled={isActionLoading}
@@ -146,8 +148,9 @@ export function TaskTimer({ task, onUpdate }: TaskTimerProps) {
           >
             <Play size={16} fill="currentColor" className="ml-0.5" />
           </button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

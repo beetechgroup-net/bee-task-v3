@@ -16,8 +16,15 @@ public class StopTaskUseCase {
     }
 
     public CreateTaskOutput execute(StopTaskInput input) {
-        LOGGER.infof("Stopping task %d", input.id());
+        LOGGER.infof("Stopping task %d for user %s", input.id(), input.userEmail());
         Task task = taskRepository.findTaskById(input.id());
+
+        if (task.getUser() != null && !task.getUser().getEmail().equals(input.userEmail())) {
+            LOGGER.warnf("User %s attempted to stop task %d owned by %s",
+                    input.userEmail(), input.id(), task.getUser().getEmail());
+            throw new SecurityException("Você não tem permissão para parar esta tarefa.");
+        }
+
         task.stop();
         CreateTaskOutput output = CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
         LOGGER.infof("Task %d stopped successfully", input.id());

@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Clock,
   List,
+  type LucideIcon,
   MoreVertical,
   Plus,
   XCircle,
@@ -13,45 +14,78 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { taskService } from '../services/taskService'
-import { projectService } from '../services/projectService'
 import type { Project } from '../services/projectService'
 import { categoryService } from '../services/categoryService'
 import type { Category } from '../types/category'
 import { cn } from '../lib/utils'
-import type { TaskResponse, TaskStatus } from '../types/task'
+import type { TaskAssignee, TaskResponse, TaskStatus } from '../types/task'
 import { TaskTimer } from '../components/TaskTimer'
 import { TaskFilterBar } from '../components/TaskFilterBar'
 import { DEFAULT_TASK_FILTERS, type TaskFilters } from '../components/taskFilters'
 import { CategoryBadge } from '../components/CategoryBadge'
 import { useAuth } from '../contexts/AuthContext'
 
-const COLUMNS: { id: TaskStatus; label: string; icon: any; color: string }[] = [
+const COLUMNS: { id: TaskStatus; label: string; icon: LucideIcon; color: string }[] = [
   { id: 'NOT_STARTED', label: 'Pendente', icon: AlertCircle, color: 'text-text-muted' },
   { id: 'IN_PROGRESS', label: 'Em Andamento', icon: Clock, color: 'text-warning' },
   { id: 'COMPLETED', label: 'Concluída', icon: CheckCircle2, color: 'text-success' },
   { id: 'CANCELED', label: 'Cancelada', icon: XCircle, color: 'text-danger' },
 ]
 
+function mergeProjects(existing: Project[], tasks: TaskResponse[]) {
+  const byId = new Map(existing.map((project) => [project.id, project]))
+
+  tasks.forEach((task) => {
+    if (task.project) {
+      byId.set(task.project.id, { id: task.project.id, name: task.project.name })
+    }
+  })
+
+  return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function extractAssignees(tasks: TaskResponse[]) {
+  const byId = new Map<number, TaskAssignee>()
+
+  tasks.forEach((task) => {
+    if (task.user) {
+      byId.set(task.user.id, task.user)
+    }
+  })
+
+  return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
+}
+
 export function TaskBoardPage() {
   const [tasks, setTasks] = useState<TaskResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [projects, setProjects] = useState<Project[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [assignees, setAssignees] = useState<TaskAssignee[]>([])
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS)
   const navigate = useNavigate()
-  const { activeOrg } = useAuth()
+  const { activeOrg, user } = useAuth()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const loadTasks = async (currentFilters: TaskFilters, silent = false) => {
+    if (!activeOrg) return
     if (!silent) setIsLoading(true)
     try {
-      const response = await taskService.getMyTasks({
+      const response = await taskService.getTasks({
+        organizationId: activeOrg.id,
         text: currentFilters.searchQuery || undefined,
         projectIds: currentFilters.projectIds.length > 0 ? currentFilters.projectIds : undefined,
         statuses: currentFilters.statuses.length > 0 ? currentFilters.statuses : undefined,
         categoryIds: currentFilters.categoryIds.length > 0 ? currentFilters.categoryIds : undefined,
+        userIds: currentFilters.userIds.length > 0 ? currentFilters.userIds : undefined,
       })
       setTasks(response)
+      setProjects((current) => mergeProjects(current, response))
+      setAssignees((current) => {
+        const byId = new Map(current.map((assignee) => [assignee.id, assignee]))
+        extractAssignees(response).forEach((assignee) => byId.set(assignee.id, assignee))
+        return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
+      })
     } catch (error) {
       console.error('Erro ao carregar tarefas', error)
     } finally {
@@ -60,12 +94,14 @@ export function TaskBoardPage() {
   }
 
   useEffect(() => {
-    void loadTasks(filters)
-    if (activeOrg) {
-      projectService.listByOrganization(activeOrg.id).then(setProjects).catch(() => {})
-      categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {})
-    }
-  }, [])
+    if (!activeOrg) return
+    setFilters(DEFAULT_TASK_FILTERS)
+    setProjects([])
+    setAssignees([])
+    setCategories([])
+    void loadTasks(DEFAULT_TASK_FILTERS)
+    categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {})
+  }, [activeOrg])
 
   const handleFiltersChange = (newFilters: TaskFilters) => {
     setFilters(newFilters)
@@ -145,6 +181,7 @@ export function TaskBoardPage() {
         onFiltersChange={handleFiltersChange}
         projects={projects}
         categories={categories}
+        assignees={assignees}
         isLoading={isLoading}
         onRefresh={() => void loadTasks(filters)}
       />
@@ -180,13 +217,16 @@ export function TaskBoardPage() {
                         : 'bg-surface/50',
                     )}
                   >
-                    {tasksByStatus(column.id).map((task, index) => (
-                      <Draggable
-                        key={task.id}
-                        draggableId={task.id.toString()}
-                        index={index}
-                      >
-                        {(provided, snapshot) => (
+                    {tasksByStatus(column.id).map((task, index) => {
+                      const canControlTimer = Boolean(user?.email && task.user?.email === user.email)
+
+                      return (
+                        <Draggable
+                          key={task.id}
+                          draggableId={task.id.toString()}
+                          index={index}
+                        >
+                          {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
@@ -211,7 +251,11 @@ export function TaskBoardPage() {
                             )}
 
                             <div className="mt-4 space-y-4">
-                              <TaskTimer task={task} onUpdate={() => loadTasks(filters, true)} />
+                              <TaskTimer
+                                task={task}
+                                canControl={canControlTimer}
+                                onUpdate={() => loadTasks(filters, true)}
+                              />
 
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
@@ -227,9 +271,10 @@ export function TaskBoardPage() {
                               </div>
                             </div>
                           </div>
-                        )}
-                      </Draggable>
-                    ))}
+                          )}
+                        </Draggable>
+                      )
+                    })}
                     {provided.placeholder}
                   </div>
                 )}

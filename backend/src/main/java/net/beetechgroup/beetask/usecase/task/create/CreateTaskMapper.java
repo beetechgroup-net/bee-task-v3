@@ -21,8 +21,22 @@ public class CreateTaskMapper {
                                 task.getCategory().getColor(),
                                 task.getCategory().getIcon())
                         : null,
+                Objects.nonNull(task.getUser())
+                        ? new CreateTaskOutput.UserOutput(
+                                task.getUser().getId(),
+                                task.getUser().getName(),
+                                task.getUser().getEmail(),
+                                getPhotoUrl(task.getUser().getName(), task.getUser().getPhoto()))
+                        : null,
                 task.getFinishedAt(),
                 task.getHistory().stream().map(CreateTaskMapper::toTaskHistoryItemOutput).toList());
+    }
+
+    private static String getPhotoUrl(String name, String photo) {
+        if (Objects.nonNull(photo) && !photo.isBlank()) {
+            return photo;
+        }
+        return "https://ui-avatars.com/api/?name=" + name.replace(" ", "+") + "&background=random";
     }
 
     private static TaskHistoryItemOutput toTaskHistoryItemOutput(TaskHistoryItem taskHistoryItem) {

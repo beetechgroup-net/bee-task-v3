@@ -1,26 +1,26 @@
 import { apiFetch } from '../lib/api'
 import type { TaskResponse, TaskStatus } from '../types/task'
 
-export interface GetMyTasksFilters {
+export interface GetTasksFilters {
+  organizationId: number
   text?: string
   projectIds?: number[]
   statuses?: TaskStatus[]
   categoryIds?: number[]
+  userIds?: number[]
 }
 
 export const taskService = {
-  async getTasks(): Promise<TaskResponse[]> {
-    return apiFetch<TaskResponse[]>('/tasks')
-  },
-
-  async getMyTasks(filters?: GetMyTasksFilters): Promise<TaskResponse[]> {
+  async getTasks(filters: GetTasksFilters): Promise<TaskResponse[]> {
     const params = new URLSearchParams()
+    params.set('organizationId', String(filters.organizationId))
     if (filters?.text) params.set('text', filters.text)
     filters?.projectIds?.forEach((id) => params.append('projectId', String(id)))
     filters?.statuses?.forEach((s) => params.append('status', s))
     filters?.categoryIds?.forEach((id) => params.append('categoryId', String(id)))
+    filters?.userIds?.forEach((id) => params.append('userId', String(id)))
     const query = params.toString()
-    return apiFetch<TaskResponse[]>(`/tasks/mine${query ? `?${query}` : ''}`)
+    return apiFetch<TaskResponse[]>(`/tasks${query ? `?${query}` : ''}`)
   },
 
   async createTask(task: {

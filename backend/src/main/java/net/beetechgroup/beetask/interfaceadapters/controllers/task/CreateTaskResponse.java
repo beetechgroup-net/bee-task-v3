@@ -12,11 +12,13 @@ public record CreateTaskResponse(
                 TaskStatus status,
                 ProjectResponse project,
                 CategoryResponse category,
+                UserResponse user,
                 LocalDateTime finishedAt,
                 List<TaskHistoryItemResponse> history) {
 
     public record ProjectResponse(Long id, String name) {}
     public record CategoryResponse(Long id, String name, String color, String icon) {}
+    public record UserResponse(Long id, String name, String email, String photo) {}
 }
 
 record TaskHistoryItemResponse(

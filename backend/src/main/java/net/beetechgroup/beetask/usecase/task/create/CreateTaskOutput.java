@@ -11,9 +11,11 @@ public record CreateTaskOutput(
                 TaskStatus status,
                 ProjectOutput project,
                 CategoryOutput category,
+                UserOutput user,
                 LocalDateTime finishedAt,
                 List<TaskHistoryItemOutput> history) {
 
     public record ProjectOutput(Long id, String name) {}
     public record CategoryOutput(Long id, String name, String color, String icon) {}
+    public record UserOutput(Long id, String name, String email, String photo) {}
 }
