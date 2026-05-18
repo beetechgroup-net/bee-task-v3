@@ -1,4 +1,4 @@
-import { differenceInSeconds, parseISO } from 'date-fns'
+import { differenceInSeconds } from 'date-fns'
 import { Clock, Play, Square } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -26,6 +26,7 @@ function formatDuration(seconds: number) {
 
 export function TaskTimer({ task, onUpdate, canControl = true }: TaskTimerProps) {
   const [isActionLoading, setIsActionLoading] = useState(false)
+  const [responseTimestamp, setResponseTimestamp] = useState<Date | null>(null)
 
   const history = task.history ?? []
   const runningItem = useMemo(
@@ -36,7 +37,7 @@ export function TaskTimer({ task, onUpdate, canControl = true }: TaskTimerProps)
   const accumulatedSeconds = useMemo(() => {
     return history.reduce((acc, item) => {
       if (item.endAt) {
-        return acc + differenceInSeconds(parseISO(item.endAt), parseISO(item.startAt))
+        return acc + (item.elapsedSeconds ?? 0)
       }
       return acc
     }, 0)
@@ -45,11 +46,16 @@ export function TaskTimer({ task, onUpdate, canControl = true }: TaskTimerProps)
   const [displaySeconds, setDisplaySeconds] = useState(0)
 
   useEffect(() => {
+    setResponseTimestamp(new Date())
+  }, [runningItem])
+
+  useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null
 
-    if (runningItem) {
+    if (runningItem && responseTimestamp) {
       interval = setInterval(() => {
-        const runningSeconds = Math.max(0, differenceInSeconds(new Date(), parseISO(runningItem.startAt)))
+        const elapsedSinceResponse = Math.max(0, differenceInSeconds(new Date(), responseTimestamp))
+        const runningSeconds = (runningItem.elapsedSeconds ?? 0) + elapsedSinceResponse
         setDisplaySeconds(accumulatedSeconds + runningSeconds)
       }, 1000)
     } else {
@@ -59,17 +65,18 @@ export function TaskTimer({ task, onUpdate, canControl = true }: TaskTimerProps)
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [runningItem, accumulatedSeconds])
+  }, [runningItem, accumulatedSeconds, responseTimestamp])
 
   // Initial calculation
   useEffect(() => {
-    if (runningItem) {
-      const runningSeconds = Math.max(0, differenceInSeconds(new Date(), parseISO(runningItem.startAt)))
+    if (runningItem && responseTimestamp) {
+      const elapsedSinceResponse = Math.max(0, differenceInSeconds(new Date(), responseTimestamp))
+      const runningSeconds = (runningItem.elapsedSeconds ?? 0) + elapsedSinceResponse
       setDisplaySeconds(accumulatedSeconds + runningSeconds)
     } else {
       setDisplaySeconds(accumulatedSeconds)
     }
-  }, [runningItem, accumulatedSeconds])
+  }, [runningItem, accumulatedSeconds, responseTimestamp])
 
   async function handleStart(e: React.MouseEvent) {
     e.stopPropagation()

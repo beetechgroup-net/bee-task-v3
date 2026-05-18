@@ -28,6 +28,7 @@ export type TaskHistoryItem = {
   id?: number
   startAt: string
   endAt: string | null
+  elapsedSeconds?: number
 }
 
 export type TaskProject = {

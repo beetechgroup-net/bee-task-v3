@@ -43,6 +43,7 @@ public class CreateTaskMapper {
         return new TaskHistoryItemOutput(
                 taskHistoryItem.getId(),
                 taskHistoryItem.getStartAt(),
-                taskHistoryItem.getEndAt());
+                taskHistoryItem.getEndAt(),
+                taskHistoryItem.getElapsedSeconds());
     }
 }

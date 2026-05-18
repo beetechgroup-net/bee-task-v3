@@ -24,5 +24,6 @@ public record CreateTaskResponse(
 record TaskHistoryItemResponse(
                 Long id,
                 LocalDateTime startAt,
-                LocalDateTime endAt) {
+                LocalDateTime endAt,
+                Long elapsedSeconds) {
 }

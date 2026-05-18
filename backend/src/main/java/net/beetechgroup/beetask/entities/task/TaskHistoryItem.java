@@ -1,6 +1,7 @@
 package net.beetechgroup.beetask.entities.task;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.Objects;
 
 public class TaskHistoryItem {
@@ -34,5 +35,11 @@ public class TaskHistoryItem {
 
     public boolean isRunning() {
         return Objects.isNull(endAt);
+    }
+
+    public long getElapsedSeconds() {
+        if (Objects.isNull(startAt)) return 0;
+        LocalDateTime endTime = Objects.nonNull(endAt) ? endAt : LocalDateTime.now();
+        return Duration.between(startAt, endTime).toSeconds();
     }
 }

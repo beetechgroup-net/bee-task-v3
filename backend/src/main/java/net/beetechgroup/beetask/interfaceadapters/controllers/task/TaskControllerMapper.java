@@ -69,7 +69,7 @@ public class TaskControllerMapper {
                         : null,
                 output.finishedAt(),
                 output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(
-                        taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt())).toList()
+                        taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt(), taskHistoryItemOutput.elapsedSeconds())).toList()
         );
     }
 

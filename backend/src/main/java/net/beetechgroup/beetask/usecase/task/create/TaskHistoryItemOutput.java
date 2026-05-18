@@ -5,5 +5,6 @@ import java.time.LocalDateTime;
 public record TaskHistoryItemOutput(
         Long id,
         LocalDateTime startAt,
-        LocalDateTime endAt) {
+        LocalDateTime endAt,
+        Long elapsedSeconds) {
 }
