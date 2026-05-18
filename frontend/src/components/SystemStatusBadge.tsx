@@ -2,12 +2,17 @@ import { Activity, WifiOff } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { cn } from "../lib/utils";
-import { getBackendStatus, type BackendHealthResponse } from "../services/statusService";
+import {
+  getBackendStatus,
+  type BackendHealthResponse,
+} from "../services/statusService";
 
 type LoadState = "loading" | "online" | "offline";
 
 function extractBackendVersion(payload: BackendHealthResponse | null) {
-  const versionCheck = payload?.checks?.find((check) => check.name === "backend-version");
+  const versionCheck = payload?.checks?.find(
+    (check) => check.name === "backend-version",
+  );
   const version = versionCheck?.data?.version;
 
   return typeof version === "string" ? version : "unknown";
@@ -40,7 +45,7 @@ export function SystemStatusBadge() {
     void loadStatus();
     const intervalId = window.setInterval(() => {
       void loadStatus();
-    }, 30000);
+    }, 60000);
 
     return () => {
       active = false;
@@ -70,7 +75,9 @@ export function SystemStatusBadge() {
           onClick={() => setIsPinnedOpen((current) => !current)}
           className={cn(
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 hover:scale-105",
-            isOnline ? "bg-success-soft text-success" : "bg-danger-soft text-danger",
+            isOnline
+              ? "bg-success-soft text-success"
+              : "bg-danger-soft text-danger",
           )}
         >
           {isOnline ? <Activity size={16} /> : <WifiOff size={16} />}
@@ -79,7 +86,9 @@ export function SystemStatusBadge() {
         <div
           className={cn(
             "grid transition-all duration-300",
-            isExpanded ? "ml-3 grid-cols-[1fr] opacity-100" : "ml-0 grid-cols-[0fr] opacity-0",
+            isExpanded
+              ? "ml-3 grid-cols-[1fr] opacity-100"
+              : "ml-0 grid-cols-[0fr] opacity-0",
           )}
         >
           <div className="min-w-0 overflow-hidden">
@@ -95,7 +104,11 @@ export function SystemStatusBadge() {
                   backendStatus === "offline" && "bg-danger-soft text-danger",
                 )}
               >
-                {backendStatus === "loading" ? "Verificando" : isOnline ? "Online" : "Offline"}
+                {backendStatus === "loading"
+                  ? "Verificando"
+                  : isOnline
+                    ? "Online"
+                    : "Offline"}
               </span>
             </div>
 
