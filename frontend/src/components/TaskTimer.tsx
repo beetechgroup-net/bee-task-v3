@@ -49,7 +49,7 @@ export function TaskTimer({ task, onUpdate, canControl = true }: TaskTimerProps)
 
     if (runningItem) {
       interval = setInterval(() => {
-        const runningSeconds = differenceInSeconds(new Date(), parseISO(runningItem.startAt))
+        const runningSeconds = Math.max(0, differenceInSeconds(new Date(), parseISO(runningItem.startAt)))
         setDisplaySeconds(accumulatedSeconds + runningSeconds)
       }, 1000)
     } else {
@@ -64,7 +64,7 @@ export function TaskTimer({ task, onUpdate, canControl = true }: TaskTimerProps)
   // Initial calculation
   useEffect(() => {
     if (runningItem) {
-      const runningSeconds = differenceInSeconds(new Date(), parseISO(runningItem.startAt))
+      const runningSeconds = Math.max(0, differenceInSeconds(new Date(), parseISO(runningItem.startAt)))
       setDisplaySeconds(accumulatedSeconds + runningSeconds)
     } else {
       setDisplaySeconds(accumulatedSeconds)
