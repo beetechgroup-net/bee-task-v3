@@ -9,6 +9,7 @@ import net.beetechgroup.beetask.usecase.organization.requests.ListPendingRequest
 import net.beetechgroup.beetask.usecase.organization.requests.ListUserJoinRequestsUseCase;
 import net.beetechgroup.beetask.usecase.organization.requests.HandleJoinRequestUseCase;
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationAdminUseCase;
+import net.beetechgroup.beetask.usecase.organization.members.ListOrganizationMembersUseCase;
 import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
@@ -57,5 +58,11 @@ public class OrganizationUseCaseConfig {
     public ListUserJoinRequestsUseCase listUserJoinRequestsUseCase(UserOrganizationRepository userOrganizationRepository,
                                                                  UserRepository userRepository) {
         return new ListUserJoinRequestsUseCase(userOrganizationRepository, userRepository);
+    }
+
+    @Produces
+    public ListOrganizationMembersUseCase listOrganizationMembersUseCase(UserRepository userRepository,
+                                                                         UserOrganizationRepository userOrganizationRepository) {
+        return new ListOrganizationMembersUseCase(userRepository, userOrganizationRepository);
     }
 }

@@ -8,7 +8,9 @@ public record CreateTaskRequest(
                 String title,
                 String description,
                 TaskStatus status,
+                Long organizationId,
                 Long projectId,
                 Long categoryId,
+                Long assigneeUserId,
                 List<TaskHistoryItemResponse> history) {
 }

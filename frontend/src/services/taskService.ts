@@ -26,8 +26,10 @@ export const taskService = {
   async createTask(task: {
     title: string
     description?: string
+    organizationId: number
     projectId?: number | null
     categoryId?: number | null
+    assigneeUserId?: number | null
     status?: TaskStatus
   }): Promise<TaskResponse> {
     return apiFetch<TaskResponse>('/tasks', {
@@ -59,7 +61,12 @@ export const taskService = {
     return apiFetch<TaskResponse>(`/tasks/${id}`)
   },
 
-  async updateTask(id: number, task: Partial<TaskResponse> & { projectId?: number | null; categoryId?: number | null }): Promise<TaskResponse> {
+  async updateTask(id: number, task: Partial<TaskResponse> & {
+    organizationId: number
+    projectId?: number | null
+    categoryId?: number | null
+    assigneeUserId?: number | null
+  }): Promise<TaskResponse> {
     return apiFetch<TaskResponse>(`/tasks/${id}`, {
       method: 'PUT',
       body: task,

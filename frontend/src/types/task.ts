@@ -18,8 +18,10 @@ export type CreateTaskPayload = {
   title: string
   description: string
   status: TaskStatus
+  organizationId: number
   projectId: number | null
   categoryId: number | null
+  assigneeUserId: number | null
 }
 
 export type TaskHistoryItem = {

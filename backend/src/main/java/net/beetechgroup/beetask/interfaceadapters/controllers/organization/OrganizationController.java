@@ -21,6 +21,8 @@ import net.beetechgroup.beetask.usecase.organization.requests.ListUserJoinReques
 import net.beetechgroup.beetask.usecase.organization.requests.UserJoinRequestOutput;
 import net.beetechgroup.beetask.usecase.organization.requests.JoinRequestOutput;
 import net.beetechgroup.beetask.usecase.organization.requests.HandleJoinRequestUseCase;
+import net.beetechgroup.beetask.usecase.organization.members.ListOrganizationMembersUseCase;
+import net.beetechgroup.beetask.usecase.organization.members.OrganizationMemberOutput;
 import org.jboss.logging.Logger;
 
 import java.util.List;
@@ -46,6 +48,9 @@ public class OrganizationController {
 
     @Inject
     HandleJoinRequestUseCase handleJoinRequestUseCase;
+
+    @Inject
+    ListOrganizationMembersUseCase listOrganizationMembersUseCase;
 
     @Inject
     SecurityIdentity securityIdentity;
@@ -114,6 +119,17 @@ public class OrganizationController {
         LOGGER.infof("User %s requested rejection for user %d in organization %d", userEmail, userId, organizationId);
         handleJoinRequestUseCase.execute(userEmail, organizationId, new HandleJoinRequestUseCase.Input(userId, false));
         LOGGER.infof("Join request rejected for user %d in organization %d by %s", userId, organizationId, userEmail);
+    }
+
+    @GET
+    @Path("/{id}/members")
+    @Authenticated
+    @Operation(summary = "List organization members", description = "List all active members of an organization")
+    public List<OrganizationMemberOutput> listMembers(@PathParam("id") Long organizationId) {
+        String userEmail = securityIdentity.getPrincipal().getName();
+        List<OrganizationMemberOutput> members = listOrganizationMembersUseCase.execute(userEmail, organizationId);
+        LOGGER.infof("User %s listed %d active members for organization %d", userEmail, members.size(), organizationId);
+        return members;
     }
 
     @GET

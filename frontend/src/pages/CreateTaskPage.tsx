@@ -7,6 +7,7 @@ import {
   Layout,
   PlusCircle,
   Send,
+  Users,
   XCircle,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -22,12 +23,18 @@ import { useAuth } from "../contexts/AuthContext";
 import { useEffect } from "react";
 import { projectService, type Project } from "../services/projectService";
 import { categoryService } from "../services/categoryService";
+import {
+  organizationService,
+  type OrganizationMember,
+} from "../services/organizationService";
 import type { Category } from "../types/category";
 import { CategoryIcon } from "../components/CategoryIcon";
+import { UserAvatar } from "../components/UserAvatar";
 
-type FormState = Omit<CreateTaskPayload, 'projectId' | 'categoryId'> & {
+type FormState = Omit<CreateTaskPayload, 'organizationId' | 'projectId' | 'categoryId' | 'assigneeUserId'> & {
   projectId: string;
   categoryId: string;
+  assigneeUserId: string;
   history: TaskHistoryItem[];
 };
 
@@ -37,6 +44,7 @@ const initialFormState: FormState = {
   status: "NOT_STARTED",
   projectId: "",
   categoryId: "",
+  assigneeUserId: "",
   history: [],
 };
 
@@ -47,7 +55,9 @@ export function CreateTaskPage() {
   const [createdTask, setCreatedTask] = useState<TaskResponse | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const { activeOrg } = useAuth();
+  const [members, setMembers] = useState<OrganizationMember[]>([]);
+  const [assignToLoggedUser, setAssignToLoggedUser] = useState(false);
+  const { activeOrg, user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = !!id;
@@ -63,8 +73,10 @@ export function CreateTaskPage() {
             status: data.status,
             projectId: data.project?.id?.toString() || "",
             categoryId: data.category?.id?.toString() || "",
+            assigneeUserId: data.user?.id?.toString() || "",
             history: data.history || [],
           });
+          setAssignToLoggedUser(Boolean(user?.email && data.user?.email === user.email));
         } catch (error) {
           console.error("Erro ao carregar tarefa:", error);
           setErrorMessage("Não foi possível carregar os dados da tarefa.");
@@ -72,7 +84,7 @@ export function CreateTaskPage() {
       }
       loadTask();
     }
-  }, [id, isEdit]);
+  }, [id, isEdit, user?.email]);
 
   useEffect(() => {
     async function loadProjects() {
@@ -93,9 +105,29 @@ export function CreateTaskPage() {
         console.error("Erro ao carregar categorias:", error);
       }
     }
+    async function loadMembers() {
+      if (!activeOrg) return;
+      try {
+        const data = await organizationService.listMembers(activeOrg.id);
+        setMembers(data);
+      } catch (error) {
+        console.error("Erro ao carregar membros:", error);
+      }
+    }
     loadProjects();
     loadCategories();
+    loadMembers();
   }, [activeOrg]);
+
+  useEffect(() => {
+    if (!activeOrg) return;
+    if (assignToLoggedUser && user) {
+      const currentMember = members.find((member) => member.userEmail === user.email);
+      if (currentMember) {
+        setForm((current) => ({ ...current, assigneeUserId: currentMember.userId.toString() }));
+      }
+    }
+  }, [assignToLoggedUser, user, members, activeOrg]);
 
   function updateField(
     event: ChangeEvent<
@@ -115,12 +147,18 @@ export function CreateTaskPage() {
     setIsSubmitting(true);
 
     try {
+      if (!activeOrg) {
+        throw new Error("Nenhuma organização ativa selecionada.");
+      }
+
       const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
         status: form.status,
+        organizationId: activeOrg.id,
         projectId: form.projectId ? Number(form.projectId) : null,
         categoryId: form.categoryId ? Number(form.categoryId) : null,
+        assigneeUserId: form.assigneeUserId ? Number(form.assigneeUserId) : null,
         history: form.history,
       };
 
@@ -131,6 +169,7 @@ export function CreateTaskPage() {
         const response = await taskService.createTask(payload);
         setCreatedTask(response);
         setForm(initialFormState);
+        setAssignToLoggedUser(false);
       }
     } catch (error) {
       setErrorMessage(
@@ -197,6 +236,10 @@ export function CreateTaskPage() {
       </div>
     );
   }
+
+  const selectedAssignee = members.find(
+    (member) => member.userId === Number(form.assigneeUserId),
+  );
 
   return (
     <div className="mx-auto max-w-3xl pb-20">
@@ -322,6 +365,69 @@ export function CreateTaskPage() {
                   ))}
                 </select>
               </label>
+            </div>
+
+            <div className="space-y-4 rounded-[2rem] border border-border-soft bg-app-bg/40 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <label className="group block flex-1">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-bold text-text-main group-focus-within:text-brand">
+                    <Users size={16} />
+                    Funcionário Responsável
+                  </div>
+                  <select
+                    name="assigneeUserId"
+                    value={form.assigneeUserId}
+                    onChange={updateField}
+                    disabled={assignToLoggedUser}
+                    className="h-12 w-full appearance-none rounded-xl border border-border-soft bg-app-bg px-4 text-sm font-medium outline-none transition-all disabled:cursor-not-allowed disabled:opacity-60 focus:border-brand focus:ring-4 focus:ring-brand/10"
+                  >
+                    <option value="">Sem responsável</option>
+                    {members.map((member) => (
+                      <option key={member.userId} value={member.userId}>
+                        {member.userName} - {member.userEmail}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex items-center gap-3 rounded-xl border border-border-soft bg-surface px-4 py-3 text-sm font-bold text-text-main">
+                  <input
+                    type="checkbox"
+                    checked={assignToLoggedUser}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setAssignToLoggedUser(checked);
+                      if (!checked && user?.email && selectedAssignee?.userEmail === user.email) {
+                        setForm((current) => ({ ...current, assigneeUserId: current.assigneeUserId }));
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-border-soft text-brand focus:ring-brand"
+                  />
+                  Associar ao usuário logado
+                </label>
+              </div>
+
+              {selectedAssignee ? (
+                <div className="flex items-center gap-3 rounded-2xl border border-border-soft bg-surface p-4">
+                  <UserAvatar
+                    name={selectedAssignee.userName}
+                    photo={selectedAssignee.userPhoto}
+                    size="md"
+                  />
+                  <div>
+                    <p className="text-sm font-black text-text-main">
+                      {selectedAssignee.userName}
+                    </p>
+                    <p className="text-xs font-medium text-text-muted">
+                      {selectedAssignee.userEmail}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs font-medium text-text-muted">
+                  Esta tarefa pode ficar sem responsável.
+                </p>
+              )}
             </div>
 
             {/* Description Section */}

@@ -5,6 +5,7 @@ import jakarta.enterprise.inject.Produces;
 import net.beetechgroup.beetask.usecase.repository.CategoryRepository;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
@@ -20,8 +21,9 @@ public class TaskUseCaseConfig {
 
     @Produces
     public CreateTaskUseCase createTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
-                                                CategoryRepository categoryRepository, UserRepository userRepository) {
-        return new CreateTaskUseCase(taskRepository, projectRepository, categoryRepository, userRepository);
+                                                CategoryRepository categoryRepository, UserRepository userRepository,
+                                                UserOrganizationRepository userOrganizationRepository) {
+        return new CreateTaskUseCase(taskRepository, projectRepository, categoryRepository, userRepository, userOrganizationRepository);
     }
 
     @Produces
@@ -51,8 +53,9 @@ public class TaskUseCaseConfig {
 
     @Produces
     public UpdateTaskUseCase updateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
-                                                CategoryRepository categoryRepository, UserRepository userRepository) {
-        return new UpdateTaskUseCase(taskRepository, projectRepository, categoryRepository, userRepository);
+                                                CategoryRepository categoryRepository, UserRepository userRepository,
+                                                UserOrganizationRepository userOrganizationRepository) {
+        return new UpdateTaskUseCase(taskRepository, projectRepository, categoryRepository, userRepository, userOrganizationRepository);
     }
 
     @Produces

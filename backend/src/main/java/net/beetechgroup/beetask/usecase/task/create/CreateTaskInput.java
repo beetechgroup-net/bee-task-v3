@@ -8,8 +8,10 @@ public record CreateTaskInput(
         String title,
         String description,
         TaskStatus status,
+        Long organizationId,
         Long projectId,
         Long categoryId,
+        Long assigneeUserId,
         String userEmail,
         List<TaskHistoryItemInput> history) {
 }

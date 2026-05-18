@@ -18,6 +18,13 @@ export interface UserJoinRequest {
   status: 'PENDING' | 'ACTIVE' | 'REJECTED'
 }
 
+export interface OrganizationMember {
+  userId: number
+  userName: string
+  userEmail: string
+  userPhoto?: string | null
+}
+
 export const organizationService = {
   create: async (name: string): Promise<Organization> => {
     return apiFetch('/organizations', {
@@ -44,6 +51,10 @@ export const organizationService = {
 
   rejectRequest: async (organizationId: number, userId: number): Promise<void> => {
     return apiFetch(`/organizations/${organizationId}/requests/${userId}/reject`, { method: 'PATCH' })
+  },
+
+  listMembers: async (organizationId: number): Promise<OrganizationMember[]> => {
+    return apiFetch<OrganizationMember[]>(`/organizations/${organizationId}/members`)
   },
 
   getUserRequests: async (): Promise<UserJoinRequest[]> => {

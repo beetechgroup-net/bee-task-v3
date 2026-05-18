@@ -33,8 +33,10 @@ public class TaskControllerMapper {
                 request.title(),
                 request.description(),
                 request.status(),
+                request.organizationId(),
                 request.projectId(),
                 request.categoryId(),
+                request.assigneeUserId(),
                 userEmail,
                 Objects.nonNull(request.history()) ? request.history().stream()
                         .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
@@ -85,8 +87,10 @@ public class TaskControllerMapper {
                 request.title(),
                 request.description(),
                 request.status(),
+                request.organizationId(),
                 request.projectId(),
                 request.categoryId(),
+                request.assigneeUserId(),
                 userEmail,
                 Objects.nonNull(request.history()) ? request.history().stream()
                         .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
