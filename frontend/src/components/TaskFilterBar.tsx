@@ -1,5 +1,5 @@
 import { Filter, RefreshCw, Search } from 'lucide-react'
-import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS } from '../types/task'
+import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS, type TaskStatus } from '../types/task'
 import type { Project } from '../services/projectService'
 import type { Category } from '../types/category'
 import { MultiSelectChips } from './MultiSelectChips'
@@ -8,6 +8,13 @@ import { MultiSelectDropdown } from './MultiSelectDropdown'
 import type { TaskFilters } from './taskFilters'
 import type { TaskAssignee } from '../types/task'
 import { UserAvatar } from './UserAvatar'
+
+const STATUS_CHIP_COLORS: Record<TaskStatus, string> = {
+  NOT_STARTED: '#94a3b8',
+  IN_PROGRESS: '#f59e0b',
+  COMPLETED: '#10b981',
+  CANCELED: '#ef4444',
+}
 
 interface TaskFilterBarProps {
   filters: TaskFilters
@@ -59,26 +66,31 @@ export function TaskFilterBar({
         )}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {projects.length > 0 && (
-          <MultiSelectDropdown
-            label="Projetos"
-            allLabel="Todos os projetos"
-            options={projects.map((project) => ({
-              value: project.id,
-              label: project.name,
+      {projects.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Filter size={16} className="shrink-0 text-text-muted" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">Projetos</span>
+          <MultiSelectChips
+            options={projects.map((p) => ({
+              value: p.id,
+              label: p.name,
+              color: p.color ?? undefined,
+              icon: p.icon ? <CategoryIcon iconName={p.icon} size={14} /> : undefined,
             }))}
             selected={filters.projectIds}
             onChange={(projectIds) => update({ projectIds })}
           />
-        )}
+        </div>
+      )}
 
-        <MultiSelectDropdown
-          label="Status"
-          allLabel="Todos os status"
-          options={TASK_STATUS_OPTIONS.map((status) => ({
-            value: status,
-            label: TASK_STATUS_LABELS[status],
+      <div className="flex items-center gap-2">
+        <Filter size={16} className="shrink-0 text-text-muted" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">Status</span>
+        <MultiSelectChips
+          options={TASK_STATUS_OPTIONS.map((s) => ({
+            value: s,
+            label: TASK_STATUS_LABELS[s],
+            color: STATUS_CHIP_COLORS[s],
           }))}
           selected={filters.statuses}
           onChange={(statuses) => update({ statuses })}

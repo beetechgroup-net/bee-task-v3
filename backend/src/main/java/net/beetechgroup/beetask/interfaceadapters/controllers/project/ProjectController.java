@@ -32,7 +32,7 @@ public class ProjectController {
     @Authenticated
     public List<ProjectResponse> listProjects(@PathParam("orgId") Long orgId) {
         List<ProjectResponse> projects = listProjectsUseCase.execute(orgId).stream()
-                .map(p -> new ProjectResponse(p.getId(), p.getName()))
+                .map(p -> new ProjectResponse(p.getId(), p.getName(), p.getColor(), p.getIcon()))
                 .toList();
         LOGGER.infof("Listed %d projects for organization %d", projects.size(), orgId);
         return projects;
@@ -42,14 +42,14 @@ public class ProjectController {
     @Authenticated
     public ProjectResponse createProject(@PathParam("orgId") Long orgId, CreateProjectRequest request) {
         LOGGER.infof("Project creation requested for organization %d with name '%s'", orgId, request.name());
-        Project project = createProjectUseCase.execute(orgId, request.name());
+        Project project = createProjectUseCase.execute(orgId, request.name(), request.color(), request.icon());
         LOGGER.infof("Project %d created successfully for organization %d", project.getId(), orgId);
-        return new ProjectResponse(project.getId(), project.getName());
+        return new ProjectResponse(project.getId(), project.getName(), project.getColor(), project.getIcon());
     }
 
     // TODO must be a independent file
-    public record CreateProjectRequest(String name) {}
+    public record CreateProjectRequest(String name, String color, String icon) {}
 
     // TODO must be a independent file
-    public record ProjectResponse(Long id, String name) {}
+    public record ProjectResponse(Long id, String name, String color, String icon) {}
 }

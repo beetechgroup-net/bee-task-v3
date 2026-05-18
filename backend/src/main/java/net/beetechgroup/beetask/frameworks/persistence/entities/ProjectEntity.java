@@ -19,6 +19,8 @@ public class ProjectEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    private String color;
+    private String icon;
     @ManyToOne
     @JoinColumn(name = "organization_id")
     private OrganizationEntity organization;
@@ -43,6 +45,21 @@ public class ProjectEntity {
         this.name = name;
     }
 
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public String getIcon() {
+        return icon;
+    }
+
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
 
     public OrganizationEntity getOrganization() {
         return organization;

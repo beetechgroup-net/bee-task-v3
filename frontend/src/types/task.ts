@@ -33,6 +33,8 @@ export type TaskHistoryItem = {
 export type TaskProject = {
   id: number
   name: string
+  color?: string | null
+  icon?: string | null
 }
 
 export type TaskCategory = {
@@ -46,7 +48,7 @@ export type TaskAssignee = {
   id: number
   name: string
   email: string
-  photo: string
+  photo: string | null
 }
 
 export type TaskResponse = {

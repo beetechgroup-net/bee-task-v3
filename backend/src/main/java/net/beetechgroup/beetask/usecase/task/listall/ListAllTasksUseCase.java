@@ -35,7 +35,6 @@ public class ListAllTasksUseCase {
         }
 
         List<CreateTaskOutput> tasks = taskRepository.findAccessibleTasksFiltered(
-                        input.userEmail(),
                         input.organizationId(),
                         input.text(),
                         input.projectIds(),

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { projectService, type Project } from "../services/projectService";
+import { IconPicker } from "../components/IconPicker";
 
 export const ProjectsPage: React.FC = () => {
   const { activeOrg } = useAuth();
@@ -21,6 +22,8 @@ export const ProjectsPage: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectColor, setNewProjectColor] = useState("#6366f1");
+  const [newProjectIcon, setNewProjectIcon] = useState("Folder");
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -49,12 +52,15 @@ export const ProjectsPage: React.FC = () => {
     setIsCreating(true);
     setError(null);
     try {
-      const newProject = await projectService.create(
-        activeOrg.id,
-        newProjectName,
-      );
+      const newProject = await projectService.create(activeOrg.id, {
+        name: newProjectName,
+        color: newProjectColor,
+        icon: newProjectIcon,
+      });
       setProjects((prev) => [...prev, newProject]);
       setNewProjectName("");
+      setNewProjectColor("#6366f1");
+      setNewProjectIcon("Folder");
       setShowCreateForm(false);
     } catch (err) {
       console.error("Failed to create project", err);
@@ -311,6 +317,34 @@ export const ProjectsPage: React.FC = () => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-text-main ml-1">
+                    Cor
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={newProjectColor}
+                      onChange={(e) => setNewProjectColor(e.target.value)}
+                      className="h-14 w-14 cursor-pointer rounded-xl border border-border-soft"
+                    />
+                    <input
+                      type="text"
+                      value={newProjectColor}
+                      onChange={(e) => setNewProjectColor(e.target.value)}
+                      className="flex-1 px-4 py-3 bg-surface-muted/50 border border-border-soft rounded-xl text-text-main font-mono text-sm focus:outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand transition-all"
+                      placeholder="#6366f1"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-text-main ml-1">
+                    Ícone
+                  </label>
+                  <IconPicker value={newProjectIcon} onChange={setNewProjectIcon} />
+                </div>
+
                 {error && (
                   <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold flex items-center gap-3">
                     <X size={16} />
@@ -320,7 +354,7 @@ export const ProjectsPage: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={isCreating || !newProjectName.trim()}
+                  disabled={isCreating || !newProjectName.trim() || !newProjectColor || !newProjectIcon}
                   className="w-full flex items-center justify-center gap-3 bg-brand hover:bg-brand-dark disabled:bg-brand/50 disabled:cursor-not-allowed text-white font-black py-4 px-6 rounded-2xl transition-all shadow-lg shadow-brand/20 active:scale-[0.98]"
                 >
                   {isCreating ? (

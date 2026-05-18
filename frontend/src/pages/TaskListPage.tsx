@@ -16,7 +16,9 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { taskService } from '../services/taskService'
 import type { Project } from '../services/projectService'
+import { projectService } from '../services/projectService'
 import { categoryService } from '../services/categoryService'
+import { organizationService } from '../services/organizationService'
 import type { Category } from '../types/category'
 import { cn } from '../lib/utils'
 import type { TaskAssignee, TaskResponse } from '../types/task'
@@ -61,7 +63,12 @@ function mergeProjects(existing: Project[], tasks: TaskResponse[]) {
 
   tasks.forEach((task) => {
     if (task.project) {
-      byId.set(task.project.id, { id: task.project.id, name: task.project.name })
+      byId.set(task.project.id, {
+        id: task.project.id,
+        name: task.project.name,
+        color: task.project.color,
+        icon: task.project.icon,
+      })
     }
   })
 
@@ -120,11 +127,21 @@ export function TaskListPage() {
   useEffect(() => {
     if (!activeOrg) return
     setFilters(DEFAULT_TASK_FILTERS)
-    setProjects([])
-    setAssignees([])
     setCategories([])
     void loadTasks(DEFAULT_TASK_FILTERS)
+
     categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {})
+
+    projectService.listByOrganization(activeOrg.id).then(setProjects).catch(() => {})
+
+    organizationService.listMembers(activeOrg.id).then((members) => {
+      setAssignees(members.map((m) => ({
+        id: m.userId,
+        name: m.userName,
+        email: m.userEmail,
+        photo: m.userPhoto ?? null,
+      })))
+    }).catch(() => {})
   }, [activeOrg])
 
   const handleFiltersChange = (newFilters: TaskFilters) => {

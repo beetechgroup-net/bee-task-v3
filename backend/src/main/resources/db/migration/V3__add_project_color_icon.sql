@@ -1,0 +1,2 @@
+ALTER TABLE projects ADD COLUMN color VARCHAR(9);
+ALTER TABLE projects ADD COLUMN icon VARCHAR(64);

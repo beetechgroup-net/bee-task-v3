@@ -16,7 +16,7 @@ public class CreateProjectUseCase {
         this.organizationRepository = organizationRepository;
     }
 
-    public Project execute(Long organizationId, String projectName) {
+    public Project execute(Long organizationId, String projectName, String color, String icon) {
         Organization organization = organizationRepository.findOrganizationById(organizationId)
                 .orElseThrow(() -> {
                     LOGGER.warnf("Project creation failed because organization %d was not found", organizationId);
@@ -26,6 +26,8 @@ public class CreateProjectUseCase {
         LOGGER.infof("Creating project '%s' in organization %d", projectName, organizationId);
         Project project = new Project();
         project.setName(projectName);
+        project.setColor(color);
+        project.setIcon(icon);
         project.setOrganization(organization);
 
         Project savedProject = projectRepository.saveProject(project);

@@ -11,6 +11,8 @@ public class ProjectEntityMapper {
         ProjectEntity entity = new ProjectEntity();
         entity.setId(project.getId());
         entity.setName(project.getName());
+        entity.setColor(project.getColor());
+        entity.setIcon(project.getIcon());
         entity.setOrganization(OrganizationEntityMapper.toEntity(project.getOrganization()));
         return entity;
     }
@@ -21,6 +23,8 @@ public class ProjectEntityMapper {
         Project project = new Project();
         project.setId(entity.getId());
         project.setName(entity.getName());
+        project.setColor(entity.getColor());
+        project.setIcon(entity.getIcon());
         project.setOrganization(OrganizationEntityMapper.toDomain(entity.getOrganization()));
         return project;
     }
