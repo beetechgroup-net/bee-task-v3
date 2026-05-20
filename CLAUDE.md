@@ -115,6 +115,16 @@ The authenticated email comes from `securityIdentity.getPrincipal().getName()` a
 - Don't create files outside the conventional folders.
 - Vertical slices first; refactor when a pattern repeats. The backlog is in `backlog.md`.
 
+## Git Workflow
+
+**Never commit directly to `main`.** Always:
+1. Create a feature branch: `git checkout -b feature/short-description`
+2. Make commits to the branch
+3. Create a pull request (GitHub) for review
+4. Merge via PR after approval
+
+This ensures code review, clear history, and traceability.
+
 ## Skills
 
 Skills do projeto em `.claude/skills/`:
