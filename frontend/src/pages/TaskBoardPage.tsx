@@ -16,6 +16,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { taskService } from '../services/taskService'
 import type { Project } from '../services/projectService'
 import { categoryService } from '../services/categoryService'
+import { organizationService } from '../services/organizationService'
 import type { Category } from '../types/category'
 import { cn } from '../lib/utils'
 import type { TaskAssignee, TaskResponse, TaskStatus } from '../types/task'
@@ -63,6 +64,7 @@ export function TaskBoardPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [assignees, setAssignees] = useState<TaskAssignee[]>([])
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS)
+  const [currentUserAssigneeId, setCurrentUserAssigneeId] = useState<number | null>(null)
   const navigate = useNavigate()
   const { activeOrg, user } = useAuth()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -95,12 +97,38 @@ export function TaskBoardPage() {
 
   useEffect(() => {
     if (!activeOrg) return
-    setFilters(DEFAULT_TASK_FILTERS)
-    setProjects([])
-    setAssignees([])
-    setCategories([])
-    void loadTasks(DEFAULT_TASK_FILTERS)
-    categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {})
+
+    const init = async () => {
+      setFilters(DEFAULT_TASK_FILTERS)
+      setProjects([])
+      setAssignees([])
+      setCategories([])
+
+      const [members] = await Promise.all([
+        organizationService.listMembers(activeOrg.id),
+        categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {}),
+      ])
+
+      const assigneesData = members.map((m) => ({
+        id: m.userId,
+        name: m.userName,
+        email: m.userEmail,
+        photo: m.userPhoto ?? null,
+      }))
+      setAssignees(assigneesData)
+
+      const currentMember = members.find((m) => m.userEmail === user?.email)
+      const userId = currentMember?.userId ?? null
+      setCurrentUserAssigneeId(userId)
+
+      const initialFilters = userId
+        ? { ...DEFAULT_TASK_FILTERS, userIds: [userId] }
+        : DEFAULT_TASK_FILTERS
+      setFilters(initialFilters)
+      void loadTasks(initialFilters)
+    }
+
+    void init()
   }, [activeOrg])
 
   const handleFiltersChange = (newFilters: TaskFilters) => {
@@ -182,6 +210,7 @@ export function TaskBoardPage() {
         projects={projects}
         categories={categories}
         assignees={assignees}
+        currentUserId={currentUserAssigneeId ?? undefined}
         isLoading={isLoading}
         onRefresh={() => void loadTasks(filters)}
       />
