@@ -27,8 +27,8 @@ services:
     command: server /data --console-address ":9001"
 
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-beetask123}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-beetaskpassword}
 
     ports:
       - "9000:9000"
@@ -42,10 +42,13 @@ services:
     depends_on:
       - minio
     restart: on-failure
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-beetask123}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-beetaskpassword}
     entrypoint: >
       /bin/sh -c "
       sleep 3 &&
-      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
       mc mb --ignore-existing local/avatars &&
       mc anonymous set download local/avatars
       "
