@@ -22,12 +22,12 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
   }
 
   const isFormData = body instanceof FormData
-  const contentTypeHeader = isFormData ? {} : { 'Content-Type': 'application/json' }
+  const defaultHeaders: Record<string, string> = isFormData ? {} : { 'Content-Type': 'application/json' }
 
   const response = await fetch(buildUrl(path), {
     ...rest,
     headers: {
-      ...contentTypeHeader,
+      ...defaultHeaders,
       ...authHeader,
       ...headers,
     },
