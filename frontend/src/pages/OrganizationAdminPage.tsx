@@ -6,6 +6,7 @@ import {
   type JoinRequest,
 } from "../services/organizationService";
 import { useAuth } from "../contexts/AuthContext";
+import { UserAvatar } from "../components/UserAvatar";
 
 export const OrganizationAdminPage: React.FC = () => {
   const { activeOrg } = useAuth();
@@ -95,13 +96,11 @@ export const OrganizationAdminPage: React.FC = () => {
                 className="p-6 flex flex-col sm:flex-row items-center justify-between gap-6 hover:bg-surface-muted/20 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <img
-                    src={
-                      request.photo ||
-                      `https://ui-avatars.com/api/?name=${request.name}&background=random`
-                    }
-                    alt={request.name}
-                    className="w-12 h-12 rounded-full border border-border-soft object-cover"
+                  <UserAvatar
+                    name={request.name}
+                    photo={request.photo}
+                    size="md"
+                    className="border border-border-soft"
                   />
                   <div>
                     <h3 className="font-bold text-text-main text-lg">

@@ -47,7 +47,7 @@ public class GetUserProfileUseCase {
         return new UserProfileOutput(
                 user.getName(),
                 user.getEmail(),
-                Objects.nonNull(user.getPhoto()) ? user.getPhoto() : "https://ui-avatars.com/api/?name=" + user.getName().replace(" ", "+") + "&background=random",
+                user.getPhoto(),
                 orgs
         );
     }

@@ -7,6 +7,11 @@ import net.beetechgroup.beetask.usecase.user.create.CreateUserInput;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserOutput;
 import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileInput;
 import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileOutput;
+import net.beetechgroup.beetask.usecase.user.uploadphoto.UploadUserPhotoInput;
+import net.beetechgroup.beetask.usecase.user.uploadphoto.UploadUserPhotoOutput;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.stream.Collectors;
 
 public class AuthControllerMapper {
@@ -48,5 +53,18 @@ public class AuthControllerMapper {
 
     public static UpdateProfileResponse toUpdateProfileResponse(UpdateUserProfileOutput output) {
         return new UpdateProfileResponse(output.name(), output.email(), output.photo());
+    }
+
+    public static UploadUserPhotoInput toUploadUserPhotoInput(PhotoUploadRequest request, String email) {
+        try {
+            InputStream data = Files.newInputStream(request.photo.uploadedFile());
+            return new UploadUserPhotoInput(email, data, request.photo.contentType(), request.photo.size());
+        } catch (IOException e) {
+            throw new RuntimeException("Falha ao ler o arquivo de foto", e);
+        }
+    }
+
+    public static PhotoUploadResponse toPhotoUploadResponse(UploadUserPhotoOutput output) {
+        return new PhotoUploadResponse(output.photoUrl());
     }
 }
