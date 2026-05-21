@@ -21,16 +21,17 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}) {
     }
   }
 
+  const isFormData = body instanceof FormData
+  const contentTypeHeader = isFormData ? {} : { 'Content-Type': 'application/json' }
+
   const response = await fetch(buildUrl(path), {
     ...rest,
     headers: {
-      'Content-Type': 'application/json',
+      ...contentTypeHeader,
       ...authHeader,
       ...headers,
     },
-    body: body !== undefined && body !== null && !(body instanceof FormData)
-      ? JSON.stringify(body)
-      : body,
+    body: isFormData ? body : (body !== undefined && body !== null ? JSON.stringify(body) : undefined),
   })
 
   const text = await response.text()

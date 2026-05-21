@@ -125,6 +125,19 @@ The authenticated email comes from `securityIdentity.getPrincipal().getName()` a
 
 This ensures code review, clear history, and traceability.
 
+### PR Size Limits
+
+To keep PRs focused and reviewable, enforce these limits **per PR**:
+- **Maximum 5 files changed**
+- **Maximum 30 lines changed** (added, modified, or deleted combined)
+
+**If exceeding these limits:** Split into multiple PRs. **Prefer splitting by layer:**
+- One PR for backend changes (`backend/`)
+- One PR for frontend changes (`frontend/`)
+- One PR for config/infra (`docker-compose.yml`, `.env`, etc.)
+
+This keeps code review focused, reduces merge conflicts, and makes history easier to bisect.
+
 ## Skills
 
 Skills do projeto em `.claude/skills/`:
