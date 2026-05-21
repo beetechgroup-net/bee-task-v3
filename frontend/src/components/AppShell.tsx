@@ -422,6 +422,14 @@ export function AppShell() {
                         {user?.email}
                       </p>
                     </div>
+                    <Link
+                      to="/profile"
+                      onClick={() => setShowAvatarDropdown(false)}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-text-muted hover:bg-surface-muted hover:text-text-main transition-all"
+                    >
+                      <User size={16} />
+                      Meu Perfil
+                    </Link>
                     <button
                       onClick={() => {
                         setShowAvatarDropdown(false);
