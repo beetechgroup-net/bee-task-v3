@@ -10,21 +10,16 @@ import {
   Plus,
   XCircle,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { taskService } from '../services/taskService'
-import type { Project } from '../services/projectService'
-import { categoryService } from '../services/categoryService'
-import { organizationService } from '../services/organizationService'
-import type { Category } from '../types/category'
+import type { TaskStatus } from '../types/task'
 import { cn } from '../lib/utils'
-import type { TaskAssignee, TaskResponse, TaskStatus } from '../types/task'
 import { TaskTimer } from '../components/TaskTimer'
 import { TaskFilterBar } from '../components/TaskFilterBar'
-import { DEFAULT_TASK_FILTERS, type TaskFilters } from '../components/taskFilters'
 import { CategoryBadge } from '../components/CategoryBadge'
 import { useAuth } from '../contexts/AuthContext'
+import { useTaskPage } from '../hooks/useTaskPage'
 
 const COLUMNS: { id: TaskStatus; label: string; icon: LucideIcon; color: string }[] = [
   { id: 'NOT_STARTED', label: 'Pendente', icon: AlertCircle, color: 'text-text-muted' },
@@ -33,111 +28,21 @@ const COLUMNS: { id: TaskStatus; label: string; icon: LucideIcon; color: string 
   { id: 'CANCELED', label: 'Cancelada', icon: XCircle, color: 'text-danger' },
 ]
 
-function mergeProjects(existing: Project[], tasks: TaskResponse[]) {
-  const byId = new Map(existing.map((project) => [project.id, project]))
-
-  tasks.forEach((task) => {
-    if (task.project) {
-      byId.set(task.project.id, { id: task.project.id, name: task.project.name })
-    }
-  })
-
-  return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
-}
-
-function extractAssignees(tasks: TaskResponse[]) {
-  const byId = new Map<number, TaskAssignee>()
-
-  tasks.forEach((task) => {
-    if (task.user) {
-      byId.set(task.user.id, task.user)
-    }
-  })
-
-  return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
-}
 
 export function TaskBoardPage() {
-  const [tasks, setTasks] = useState<TaskResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [projects, setProjects] = useState<Project[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [assignees, setAssignees] = useState<TaskAssignee[]>([])
-  const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS)
-  const [currentUserAssigneeId, setCurrentUserAssigneeId] = useState<number | null>(null)
   const navigate = useNavigate()
-  const { activeOrg, user } = useAuth()
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const loadTasks = async (currentFilters: TaskFilters, silent = false) => {
-    if (!activeOrg) return
-    if (!silent) setIsLoading(true)
-    try {
-      const response = await taskService.getTasks({
-        organizationId: activeOrg.id,
-        text: currentFilters.searchQuery || undefined,
-        projectIds: currentFilters.projectIds.length > 0 ? currentFilters.projectIds : undefined,
-        statuses: currentFilters.statuses.length > 0 ? currentFilters.statuses : undefined,
-        categoryIds: currentFilters.categoryIds.length > 0 ? currentFilters.categoryIds : undefined,
-        userIds: currentFilters.userIds.length > 0 ? currentFilters.userIds : undefined,
-      })
-      setTasks(response)
-      setProjects((current) => mergeProjects(current, response))
-      setAssignees((current) => {
-        const byId = new Map(current.map((assignee) => [assignee.id, assignee]))
-        extractAssignees(response).forEach((assignee) => byId.set(assignee.id, assignee))
-        return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
-      })
-    } catch (error) {
-      console.error('Erro ao carregar tarefas', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!activeOrg) return
-
-    const init = async () => {
-      setFilters(DEFAULT_TASK_FILTERS)
-      setProjects([])
-      setAssignees([])
-      setCategories([])
-
-      const [members] = await Promise.all([
-        organizationService.listMembers(activeOrg.id),
-        categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {}),
-      ])
-
-      const assigneesData = members.map((m) => ({
-        id: m.userId,
-        name: m.userName,
-        email: m.userEmail,
-        photo: m.userPhoto ?? null,
-      }))
-      setAssignees(assigneesData)
-
-      const currentMember = members.find((m) => m.userEmail === user?.email)
-      const userId = currentMember?.userId ?? null
-      setCurrentUserAssigneeId(userId)
-
-      const initialFilters = userId
-        ? { ...DEFAULT_TASK_FILTERS, userIds: [userId] }
-        : DEFAULT_TASK_FILTERS
-      setFilters(initialFilters)
-      void loadTasks(initialFilters)
-    }
-
-    void init()
-  }, [activeOrg])
-
-  const handleFiltersChange = (newFilters: TaskFilters) => {
-    setFilters(newFilters)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      void loadTasks(newFilters)
-    }, 300)
-  }
+  const { user } = useAuth()
+  const {
+    tasks,
+    isLoading,
+    projects,
+    categories,
+    assignees,
+    filters,
+    currentUserAssigneeId,
+    loadTasks,
+    handleFiltersChange,
+  } = useTaskPage()
 
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result
@@ -153,13 +58,9 @@ export function TaskBoardPage() {
     const taskId = Number.parseInt(draggableId)
     const newStatus = destination.droppableId as TaskStatus
 
-    const updatedTasks = tasks.map((t) =>
-      t.id === taskId ? { ...t, status: newStatus } : t,
-    )
-    setTasks(updatedTasks)
-
     try {
       await taskService.updateTaskStatus(taskId, newStatus)
+      await loadTasks(filters, true)
     } catch (error) {
       console.error('Erro ao atualizar status da tarefa', error)
       void loadTasks(filters, true)
