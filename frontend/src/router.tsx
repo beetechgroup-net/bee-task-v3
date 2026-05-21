@@ -17,6 +17,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { OrgDashboardPage } from "./pages/OrgDashboardPage";
 import { RoleGate } from "./components/RoleGate";
 import { LandingPage } from "./pages/LandingPage";
+import { ProfilePage } from "./pages/ProfilePage";
 
 export const router = createBrowserRouter([
   {
@@ -102,6 +103,10 @@ export const router = createBrowserRouter([
             <OrgDashboardPage />
           </RoleGate>
         ),
+      },
+      {
+        path: "profile",
+        element: <ProfilePage />,
       },
     ],
   },

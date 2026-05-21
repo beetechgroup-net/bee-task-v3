@@ -2,6 +2,7 @@ package net.beetechgroup.beetask.interfaceadapters.controllers.auth;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -18,6 +19,9 @@ import net.beetechgroup.beetask.usecase.auth.refresh.RefreshTokenUseCase;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserInput;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserOutput;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserUseCase;
+import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileInput;
+import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileOutput;
+import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileUseCase;
 
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -46,6 +50,9 @@ public class AuthController {
     GetUserProfileUseCase getUserProfileUseCase;
 
     @Inject
+    UpdateUserProfileUseCase updateUserProfileUseCase;
+
+    @Inject
     SecurityIdentity securityIdentity;
 
     @Path("/me")
@@ -56,6 +63,19 @@ public class AuthController {
         String email = securityIdentity.getPrincipal().getName();
         LOGGER.infof("Profile requested for authenticated user %s", email);
         return getUserProfileUseCase.execute(email);
+    }
+
+    @Path("/profile")
+    @PUT
+    @Authenticated
+    @Operation(summary = "Update profile", description = "Updates the name and email of the logged in user")
+    public UpdateProfileResponse updateProfile(UpdateProfileRequest request) {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Profile update requested for user %s", email);
+        UpdateUserProfileInput input = AuthControllerMapper.toUpdateUserProfileInput(request, email);
+        UpdateUserProfileOutput output = updateUserProfileUseCase.execute(input);
+        LOGGER.infof("Profile updated successfully for user, new email: %s", output.email());
+        return AuthControllerMapper.toUpdateProfileResponse(output);
     }
 
     @Path("/register")

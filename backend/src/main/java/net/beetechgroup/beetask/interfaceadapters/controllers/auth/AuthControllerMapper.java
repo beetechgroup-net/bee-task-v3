@@ -5,6 +5,8 @@ import net.beetechgroup.beetask.usecase.auth.login.LoginOutput;
 import net.beetechgroup.beetask.usecase.auth.refresh.RefreshTokenInput;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserInput;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserOutput;
+import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileInput;
+import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileOutput;
 import java.util.stream.Collectors;
 
 public class AuthControllerMapper {
@@ -38,5 +40,13 @@ public class AuthControllerMapper {
                 .map(org -> new LoginResponse.Organization(org.id(), org.name(), org.roles()))
                 .collect(Collectors.toList())
         );
+    }
+
+    public static UpdateUserProfileInput toUpdateUserProfileInput(UpdateProfileRequest request, String currentEmail) {
+        return new UpdateUserProfileInput(currentEmail, request.name(), request.email());
+    }
+
+    public static UpdateProfileResponse toUpdateProfileResponse(UpdateUserProfileOutput output) {
+        return new UpdateProfileResponse(output.name(), output.email(), output.photo());
     }
 }
