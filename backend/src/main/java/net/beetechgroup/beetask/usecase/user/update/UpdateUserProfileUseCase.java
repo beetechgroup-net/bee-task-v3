@@ -4,8 +4,6 @@ import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import org.jboss.logging.Logger;
 
-import java.util.Objects;
-import java.util.Optional;
 
 public class UpdateUserProfileUseCase {
     private static final Logger LOGGER = Logger.getLogger(UpdateUserProfileUseCase.class);
@@ -37,10 +35,6 @@ public class UpdateUserProfileUseCase {
 
         LOGGER.infof("Profile updated for user %d: name=%s, email=%s", saved.getId(), saved.getName(), saved.getEmail());
 
-        String photo = Objects.nonNull(saved.getPhoto())
-                ? saved.getPhoto()
-                : "https://ui-avatars.com/api/?name=" + saved.getName().replace(" ", "+") + "&background=random";
-
-        return new UpdateUserProfileOutput(saved.getName(), saved.getEmail(), photo);
+        return new UpdateUserProfileOutput(saved.getName(), saved.getEmail(), saved.getPhoto());
     }
 }

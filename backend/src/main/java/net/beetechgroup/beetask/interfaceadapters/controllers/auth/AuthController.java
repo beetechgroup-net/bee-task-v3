@@ -22,6 +22,10 @@ import net.beetechgroup.beetask.usecase.user.create.CreateUserUseCase;
 import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileInput;
 import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileOutput;
 import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileUseCase;
+import net.beetechgroup.beetask.usecase.user.uploadphoto.UploadUserPhotoInput;
+import net.beetechgroup.beetask.usecase.user.uploadphoto.UploadUserPhotoOutput;
+import net.beetechgroup.beetask.usecase.user.uploadphoto.UploadUserPhotoUseCase;
+import org.jboss.resteasy.reactive.MultipartForm;
 
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -53,6 +57,9 @@ public class AuthController {
     UpdateUserProfileUseCase updateUserProfileUseCase;
 
     @Inject
+    UploadUserPhotoUseCase uploadUserPhotoUseCase;
+
+    @Inject
     SecurityIdentity securityIdentity;
 
     @Path("/me")
@@ -63,6 +70,20 @@ public class AuthController {
         String email = securityIdentity.getPrincipal().getName();
         LOGGER.infof("Profile requested for authenticated user %s", email);
         return getUserProfileUseCase.execute(email);
+    }
+
+    @Path("/profile/photo")
+    @POST
+    @Authenticated
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Operation(summary = "Upload profile photo", description = "Uploads a profile photo (max 5 MB) to MinIO")
+    public PhotoUploadResponse uploadPhoto(@MultipartForm PhotoUploadRequest request) {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Photo upload requested for user %s", email);
+        UploadUserPhotoInput input = AuthControllerMapper.toUploadUserPhotoInput(request, email);
+        UploadUserPhotoOutput output = uploadUserPhotoUseCase.execute(input);
+        LOGGER.infof("Photo uploaded successfully for user %s", email);
+        return AuthControllerMapper.toPhotoUploadResponse(output);
     }
 
     @Path("/profile")

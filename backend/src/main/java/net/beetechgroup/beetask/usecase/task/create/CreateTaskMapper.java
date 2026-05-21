@@ -33,10 +33,7 @@ public class CreateTaskMapper {
     }
 
     private static String getPhotoUrl(String name, String photo) {
-        if (Objects.nonNull(photo) && !photo.isBlank()) {
-            return photo;
-        }
-        return "https://ui-avatars.com/api/?name=" + name.replace(" ", "+") + "&background=random";
+        return (Objects.nonNull(photo) && !photo.isBlank()) ? photo : null;
     }
 
     private static TaskHistoryItemOutput toTaskHistoryItemOutput(TaskHistoryItem taskHistoryItem) {

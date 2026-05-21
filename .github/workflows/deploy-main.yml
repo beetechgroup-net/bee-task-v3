@@ -118,12 +118,17 @@ jobs:
           MP_JWT_VERIFY_PUBLICKEY: ${{ secrets.MP_JWT_VERIFY_PUBLICKEY }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+          MINIO_PUBLIC_URL: ${{ secrets.MINIO_PUBLIC_URL }}
+          MINIO_BUCKET: ${{ secrets.MINIO_BUCKET }}
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: ${{ secrets.HOSTINGER_PORT || 22 }}
-          envs: FRONTEND_IMAGE,BACKEND_IMAGE,POSTGRES_USER,POSTGRES_PASSWORD,DB_URL,MP_JWT_VERIFY_ISSUER,SMALLRYE_JWT_SIGN_KEY,MP_JWT_VERIFY_PUBLICKEY,GHCR_USERNAME,GHCR_TOKEN
+          envs: FRONTEND_IMAGE,BACKEND_IMAGE,POSTGRES_USER,POSTGRES_PASSWORD,DB_URL,MP_JWT_VERIFY_ISSUER,SMALLRYE_JWT_SIGN_KEY,MP_JWT_VERIFY_PUBLICKEY,GHCR_USERNAME,GHCR_TOKEN,MINIO_ROOT_USER,MINIO_ROOT_PASSWORD,MINIO_ENDPOINT,MINIO_PUBLIC_URL,MINIO_BUCKET
           script: |
             set -eu
             APP_DIR="${{ secrets.HOSTINGER_APP_PATH }}"
@@ -137,6 +142,11 @@ jobs:
               echo "FRONTEND_IMAGE=${FRONTEND_IMAGE}"
               echo "BACKEND_IMAGE=${BACKEND_IMAGE}"
               echo "MP_JWT_VERIFY_ISSUER=${MP_JWT_VERIFY_ISSUER}"
+              echo "MINIO_ROOT_USER=${MINIO_ROOT_USER}"
+              echo "MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}"
+              echo "MINIO_ENDPOINT=${MINIO_ENDPOINT}"
+              echo "MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL}"
+              echo "MINIO_BUCKET=${MINIO_BUCKET}"
 
               printf 'SMALLRYE_JWT_SIGN_KEY="%s"\n' "$SMALLRYE_JWT_SIGN_KEY"
               printf 'MP_JWT_VERIFY_PUBLICKEY="%s"\n' "$MP_JWT_VERIFY_PUBLICKEY"

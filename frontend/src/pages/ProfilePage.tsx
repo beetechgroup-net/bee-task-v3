@@ -1,32 +1,59 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Save, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Save, CheckCircle, AlertCircle, Loader2, Camera, User } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { userService } from "../services/userService";
 import { cn } from "../lib/utils";
+
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
 
 export const ProfilePage: React.FC = () => {
   const { user, refreshUser } = useAuth();
 
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setName(user?.name ?? "");
     setEmail(user?.email ?? "");
   }, [user]);
 
-  const initials = (name || user?.name || "?")
+  const currentPhoto = photoPreview ?? user?.photo ?? null;
+  const displayInitials = (name || user?.name || "?")
     .split(" ")
     .slice(0, 2)
     .map((w) => w[0])
     .join("")
     .toUpperCase();
 
-  const hasChanges = name !== user?.name || email !== user?.email;
+  const hasChanges =
+    name !== user?.name || email !== user?.email || pendingPhoto !== null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_PHOTO_SIZE) {
+      setErrorMsg("A foto deve ter no máximo 5 MB.");
+      e.target.value = "";
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Selecione um arquivo de imagem.");
+      e.target.value = "";
+      return;
+    }
+
+    setErrorMsg(null);
+    setPendingPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,8 +64,13 @@ export const ProfilePage: React.FC = () => {
     setErrorMsg(null);
 
     try {
+      if (pendingPhoto) {
+        await userService.uploadPhoto(pendingPhoto);
+      }
       await userService.updateProfile({ name: name.trim(), email: email.trim() });
       await refreshUser();
+      setPendingPhoto(null);
+      setPhotoPreview(null);
       setSuccessMsg("Perfil atualizado com sucesso!");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao atualizar perfil.";
@@ -63,14 +95,44 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       <div className="rounded-2xl border border-border-soft bg-surface p-8 shadow-sm">
-        {/* Avatar */}
+        {/* Avatar com upload */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand/10 text-2xl font-black text-brand ring-4 ring-brand/10">
-            {initials}
-          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="group relative h-20 w-20 cursor-pointer"
+            title="Alterar foto"
+          >
+            {currentPhoto ? (
+              <img
+                src={currentPhoto}
+                alt={name || user?.name}
+                className="h-20 w-20 rounded-full object-cover ring-4 ring-brand/10"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand/10 text-2xl font-black text-brand ring-4 ring-brand/10">
+                {displayInitials}
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <Camera size={20} className="text-white" />
+            </div>
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+
           <div className="text-center">
             <p className="font-bold text-text-main">{user?.name}</p>
             <p className="text-sm text-text-muted">{user?.email}</p>
+            <p className="mt-1 text-xs text-text-muted">
+              Clique na foto para alterar · máx. 5 MB
+            </p>
           </div>
         </div>
 

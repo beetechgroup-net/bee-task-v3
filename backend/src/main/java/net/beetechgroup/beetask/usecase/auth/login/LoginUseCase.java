@@ -77,7 +77,7 @@ public class LoginUseCase {
         return new LoginOutput(
                 user.getName(),
                 user.getEmail(),
-                Objects.nonNull(user.getPhoto()) ? user.getPhoto() : "https://ui-avatars.com/api/?name=" + user.getName().replace(" ", "+") + "&background=random",
+                user.getPhoto(),
                 token,
                 refreshToken,
                 TokenConstants.ACCESS_TOKEN_EXPIRY_SECONDS,

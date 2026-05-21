@@ -8,6 +8,8 @@ import net.beetechgroup.beetask.usecase.auth.refresh.RefreshTokenUseCase;
 import net.beetechgroup.beetask.usecase.user.create.CreateUserUseCase;
 import net.beetechgroup.beetask.usecase.user.profile.GetUserProfileUseCase;
 import net.beetechgroup.beetask.usecase.user.update.UpdateUserProfileUseCase;
+import net.beetechgroup.beetask.usecase.user.uploadphoto.UploadUserPhotoUseCase;
+import net.beetechgroup.beetask.usecase.repository.StorageRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import io.smallrye.jwt.auth.principal.JWTParser;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -45,5 +47,10 @@ public class UserUseCaseConfig {
     @Produces
     public UpdateUserProfileUseCase updateUserProfileUseCase(UserRepository userRepository) {
         return new UpdateUserProfileUseCase(userRepository);
+    }
+
+    @Produces
+    public UploadUserPhotoUseCase uploadUserPhotoUseCase(UserRepository userRepository, StorageRepository storageRepository) {
+        return new UploadUserPhotoUseCase(userRepository, storageRepository);
     }
 }
