@@ -11,23 +11,17 @@ import {
   Tag,
   XCircle,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { taskService } from '../services/taskService'
-import type { Project } from '../services/projectService'
-import { projectService } from '../services/projectService'
-import { categoryService } from '../services/categoryService'
-import { organizationService } from '../services/organizationService'
-import type { Category } from '../types/category'
+import type { TaskResponse } from '../types/task'
 import { cn } from '../lib/utils'
-import type { TaskAssignee, TaskResponse } from '../types/task'
 import { TaskTimer } from '../components/TaskTimer'
 import { TaskFilterBar } from '../components/TaskFilterBar'
-import { DEFAULT_TASK_FILTERS, type TaskFilters } from '../components/taskFilters'
+import { DEFAULT_TASK_FILTERS } from '../components/taskFilters'
 import { CategoryBadge } from '../components/CategoryBadge'
 import { UserAvatar } from '../components/UserAvatar'
 import { useAuth } from '../contexts/AuthContext'
+import { useTaskPage } from '../hooks/useTaskPage'
 
 function getStatusConfig(status: TaskResponse['status']) {
   switch (status) {
@@ -58,99 +52,20 @@ function getStatusConfig(status: TaskResponse['status']) {
   }
 }
 
-function mergeProjects(existing: Project[], tasks: TaskResponse[]) {
-  const byId = new Map(existing.map((project) => [project.id, project]))
-
-  tasks.forEach((task) => {
-    if (task.project) {
-      byId.set(task.project.id, {
-        id: task.project.id,
-        name: task.project.name,
-        color: task.project.color,
-        icon: task.project.icon,
-      })
-    }
-  })
-
-  return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
-}
-
-function extractAssignees(tasks: TaskResponse[]) {
-  const byId = new Map<number, TaskAssignee>()
-
-  tasks.forEach((task) => {
-    if (task.user) {
-      byId.set(task.user.id, task.user)
-    }
-  })
-
-  return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
-}
-
 export function TaskListPage() {
-  const [tasks, setTasks] = useState<TaskResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [projects, setProjects] = useState<Project[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [assignees, setAssignees] = useState<TaskAssignee[]>([])
-  const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS)
   const navigate = useNavigate()
-  const { activeOrg, user } = useAuth()
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const loadTasks = async (currentFilters: TaskFilters, silent = false) => {
-    if (!activeOrg) return
-    if (!silent) setIsLoading(true)
-    try {
-      const response = await taskService.getTasks({
-        organizationId: activeOrg.id,
-        text: currentFilters.searchQuery || undefined,
-        projectIds: currentFilters.projectIds.length > 0 ? currentFilters.projectIds : undefined,
-        statuses: currentFilters.statuses.length > 0 ? currentFilters.statuses : undefined,
-        categoryIds: currentFilters.categoryIds.length > 0 ? currentFilters.categoryIds : undefined,
-        userIds: currentFilters.userIds.length > 0 ? currentFilters.userIds : undefined,
-      })
-      setTasks(response)
-      setProjects((current) => mergeProjects(current, response))
-      setAssignees((current) => {
-        const byId = new Map(current.map((assignee) => [assignee.id, assignee]))
-        extractAssignees(response).forEach((assignee) => byId.set(assignee.id, assignee))
-        return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name))
-      })
-    } catch (error) {
-      console.error('Erro ao carregar tarefas', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!activeOrg) return
-    setFilters(DEFAULT_TASK_FILTERS)
-    setCategories([])
-    void loadTasks(DEFAULT_TASK_FILTERS)
-
-    categoryService.listByOrganization(activeOrg.id).then(setCategories).catch(() => {})
-
-    projectService.listByOrganization(activeOrg.id).then(setProjects).catch(() => {})
-
-    organizationService.listMembers(activeOrg.id).then((members) => {
-      setAssignees(members.map((m) => ({
-        id: m.userId,
-        name: m.userName,
-        email: m.userEmail,
-        photo: m.userPhoto ?? null,
-      })))
-    }).catch(() => {})
-  }, [activeOrg])
-
-  const handleFiltersChange = (newFilters: TaskFilters) => {
-    setFilters(newFilters)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      void loadTasks(newFilters)
-    }, 300)
-  }
+  const { user } = useAuth()
+  const {
+    tasks,
+    isLoading,
+    projects,
+    categories,
+    assignees,
+    filters,
+    currentUserAssigneeId,
+    loadTasks,
+    handleFiltersChange,
+  } = useTaskPage({ fetchProjects: true })
 
   return (
     <div className="space-y-8 pb-12">
@@ -193,6 +108,7 @@ export function TaskListPage() {
         projects={projects}
         categories={categories}
         assignees={assignees}
+        currentUserId={currentUserAssigneeId ?? undefined}
         isLoading={isLoading}
         onRefresh={() => void loadTasks(filters)}
       />

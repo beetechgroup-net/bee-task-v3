@@ -22,6 +22,7 @@ interface TaskFilterBarProps {
   projects: Project[]
   categories: Category[]
   assignees: TaskAssignee[]
+  currentUserId?: number
   isLoading?: boolean
   onRefresh?: () => void
 }
@@ -32,6 +33,7 @@ export function TaskFilterBar({
   projects,
   categories,
   assignees,
+  currentUserId,
   isLoading,
   onRefresh,
 }: TaskFilterBarProps) {
@@ -98,7 +100,22 @@ export function TaskFilterBar({
       </div>
 
       {assignees.length > 0 && (
-        <div className="grid gap-3">
+        <div className="grid gap-2">
+          {currentUserId !== undefined && (
+            <label className="flex cursor-pointer items-center gap-2 self-start">
+              <input
+                type="checkbox"
+                checked={filters.userIds.length === 1 && filters.userIds[0] === currentUserId}
+                onChange={(e) =>
+                  update({ userIds: e.target.checked ? [currentUserId] : [] })
+                }
+                className="h-4 w-4 accent-brand"
+              />
+              <span className="text-xs font-semibold text-text-muted">
+                Mostrar apenas as minhas
+              </span>
+            </label>
+          )}
           <MultiSelectDropdown
             label="Funcionario"
             allLabel="Todos os funcionarios"
