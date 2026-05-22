@@ -24,7 +24,8 @@ import {
 import { cn } from "../lib/utils";
 import { PieChart } from "../components/PieChart";
 import { CategoryIcon } from "../components/CategoryIcon";
-import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { BarChart, ProjectMiniPieChart, CHART_COLORS, chartFormatMinutes } from "../components/DashboardCharts";
+import { format, subDays, startOfMonth, endOfMonth, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export const DashboardPage: React.FC = () => {
@@ -207,19 +208,13 @@ export const DashboardPage: React.FC = () => {
             >
               <div className="relative z-10">
                 <div className="w-12 h-12 bg-white/20 text-white rounded-xl flex items-center justify-center mb-6">
-                  <FileText size={24} />
+                  <TrendingUp size={24} />
                 </div>
                 <div className="text-sm font-bold text-white/70 uppercase tracking-wider">
-                  Média por Projeto
+                  Média por Dia
                 </div>
                 <div className="mt-2 text-4xl font-black">
-                  {data.projectStats.length > 0
-                    ? formatMinutes(
-                        Math.round(
-                          data.totalMinutesWorked / data.projectStats.length,
-                        ),
-                      )
-                    : "0h 0m"}
+                  {formatMinutes(Math.round(data.totalMinutesWorked / Math.max(differenceInDays(endDate, startDate), 1)))}
                 </div>
               </div>
               <TrendingUp
@@ -228,6 +223,75 @@ export const DashboardPage: React.FC = () => {
               />
             </motion.div>
           </div>
+
+          {/* Period Charts */}
+          {data.periodStats.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <section className="bg-surface border border-border-soft rounded-[2.5rem] p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <CheckCircle2 size={16} className="text-[#7C3AED]" />
+                  <h2 className="text-sm font-black text-text-main">
+                    Tarefas Concluídas {data.groupedBy === "DAY" ? "por Dia" : "por Mês"}
+                  </h2>
+                </div>
+                <BarChart
+                  data={data.periodStats}
+                  valueKey="finishedTasksCount"
+                  color="#7C3AED"
+                  groupedBy={data.groupedBy}
+                  formatValue={(v) => `${v} tarefa${v !== 1 ? "s" : ""}`}
+                />
+              </section>
+
+              <section className="bg-surface border border-border-soft rounded-[2.5rem] p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock size={16} className="text-[#06B6D4]" />
+                  <h2 className="text-sm font-black text-text-main">
+                    Tempo Trabalhado {data.groupedBy === "DAY" ? "por Dia" : "por Mês"}
+                  </h2>
+                </div>
+                <BarChart
+                  data={data.periodStats}
+                  valueKey="totalMinutesWorked"
+                  color="#06B6D4"
+                  groupedBy={data.groupedBy}
+                  formatValue={chartFormatMinutes}
+                />
+              </section>
+
+              <section className="bg-surface border border-border-soft rounded-[2.5rem] p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Briefcase size={16} className="text-brand" />
+                  <h2 className="text-sm font-black text-text-main">Horas por Projeto</h2>
+                </div>
+                {data.projectStats.length > 0 ? (
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 shrink-0">
+                      <ProjectMiniPieChart data={data.projectStats} />
+                    </div>
+                    <div className="flex-1 space-y-1.5 min-w-0">
+                      {data.projectStats
+                        .slice()
+                        .sort((a, b) => b.totalMinutes - a.totalMinutes)
+                        .map((p, i) => {
+                          const total = data.projectStats.reduce((s, x) => s + x.totalMinutes, 0);
+                          const pct = total > 0 ? ((p.totalMinutes / total) * 100).toFixed(0) : "0";
+                          return (
+                            <div key={p.projectId} className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full shrink-0" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                              <span className="text-xs font-bold text-text-main truncate flex-1">{p.projectName}</span>
+                              <span className="text-xs font-black text-text-muted shrink-0">{pct}%</span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 opacity-50 font-bold text-sm">Nenhum projeto.</div>
+                )}
+              </section>
+            </div>
+          )}
 
           {/* Category Pie */}
           {data.categoryStats.length > 0 && (
