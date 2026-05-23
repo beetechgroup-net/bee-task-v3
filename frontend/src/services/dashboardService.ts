@@ -1,5 +1,6 @@
 import { apiFetch } from '../lib/api'
 import type { TaskResponse } from '../types/task'
+import type { BarDataPoint } from '../components/DashboardCharts'
 
 export interface ProjectStats {
   projectId: number
@@ -21,6 +22,8 @@ export interface DashboardData {
   categoryStats: CategoryStats[]
   yesterdayTasks: TaskResponse[]
   finishedTasksInPeriod: TaskResponse[]
+  periodStats: BarDataPoint[]
+  groupedBy: 'DAY' | 'MONTH'
 }
 
 export const dashboardService = {
