@@ -1,13 +1,17 @@
 package net.beetechgroup.beetask.usecase.dashboard;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import net.beetechgroup.beetask.entities.Category;
 import net.beetechgroup.beetask.entities.task.Task;
@@ -45,28 +49,36 @@ public class DashboardUseCase {
         long totalMinutes = 0;
         Map<Long, DashboardProjectStats> projectStatsMap = new HashMap<>();
         Map<Long, DashboardCategoryStats> categoryStatsMap = new HashMap<>();
+        // [0] = totalMinutesWorked, [1] = finishedTasksCount grouped by day key
+        Map<LocalDate, long[]> periodMap = new TreeMap<>();
 
         for (Task task : workedTasks) {
-            long taskMinutesInPeriod = task.getHistory().stream()
-                .filter(h -> isWithinPeriod(h, input.startDate(), input.endDate()))
-                .mapToLong(h -> calculateMinutesInRange(h, input.startDate(), input.endDate()))
-                .sum();
-
-            totalMinutes += taskMinutesInPeriod;
+            for (TaskHistoryItem h : task.getHistory()) {
+                if (!isWithinPeriod(h, input.startDate(), input.endDate())) continue;
+                long minutes = calculateMinutesInRange(h, input.startDate(), input.endDate());
+                totalMinutes += minutes;
+                LocalDate day = h.getStartAt().toLocalDate();
+                long[] bucket = periodMap.computeIfAbsent(day, k -> new long[]{0L, 0L});
+                bucket[0] += minutes;
+            }
 
             if (Objects.nonNull(task.getProject())) {
+                long taskMinutesInPeriod = task.getHistory().stream()
+                    .filter(h -> isWithinPeriod(h, input.startDate(), input.endDate()))
+                    .mapToLong(h -> calculateMinutesInRange(h, input.startDate(), input.endDate()))
+                    .sum();
                 Long projectId = task.getProject().getId();
                 DashboardProjectStats stats = projectStatsMap.getOrDefault(projectId,
                     new DashboardProjectStats(projectId, task.getProject().getName(), 0L));
-
                 projectStatsMap.put(projectId, new DashboardProjectStats(
-                    projectId,
-                    stats.projectName(),
-                    stats.totalMinutes() + taskMinutesInPeriod
-                ));
+                    projectId, stats.projectName(), stats.totalMinutes() + taskMinutesInPeriod));
             }
 
             if (Objects.nonNull(task.getCategory())) {
+                long taskMinutesInPeriod = task.getHistory().stream()
+                    .filter(h -> isWithinPeriod(h, input.startDate(), input.endDate()))
+                    .mapToLong(h -> calculateMinutesInRange(h, input.startDate(), input.endDate()))
+                    .sum();
                 Category cat = task.getCategory();
                 DashboardCategoryStats existing = categoryStatsMap.getOrDefault(cat.getId(),
                         new DashboardCategoryStats(cat.getId(), cat.getName(), cat.getColor(), cat.getIcon(), 0L));
@@ -76,12 +88,33 @@ public class DashboardUseCase {
             }
         }
 
+        for (Task task : finishedTasks) {
+            if (Objects.isNull(task.getFinishedAt())) continue;
+            LocalDate day = task.getFinishedAt().toLocalDate();
+            long[] bucket = periodMap.computeIfAbsent(day, k -> new long[]{0L, 0L});
+            bucket[1]++;
+        }
+
+        long daySpan = ChronoUnit.DAYS.between(input.startDate().toLocalDate(), input.endDate().toLocalDate());
+        String groupedBy = daySpan <= 62 ? "DAY" : "MONTH";
+
+        List<DashboardPeriodStats> periodStats = periodMap.entrySet().stream()
+            .map(e -> new DashboardPeriodStats(
+                e.getKey().getYear(), e.getKey().getMonthValue(), e.getKey().getDayOfMonth(),
+                (int) e.getValue()[1], e.getValue()[0]))
+            .sorted(Comparator.comparingInt(DashboardPeriodStats::year)
+                .thenComparingInt(DashboardPeriodStats::month)
+                .thenComparingInt(DashboardPeriodStats::day))
+            .toList();
+
         DashboardOutput output = new DashboardOutput(
             totalMinutes,
             new ArrayList<>(projectStatsMap.values()),
             new ArrayList<>(categoryStatsMap.values()),
             yesterdayTasks.stream().map(CreateTaskMapper::toCreateTaskOutput).toList(),
-            finishedTasks.stream().map(CreateTaskMapper::toCreateTaskOutput).toList()
+            finishedTasks.stream().map(CreateTaskMapper::toCreateTaskOutput).toList(),
+            periodStats,
+            groupedBy
         );
         LOGGER.infof("Dashboard calculated for user %s with %d worked tasks, %d finished tasks and %d total minutes",
                 input.userEmail(), workedTasks.size(), finishedTasks.size(), totalMinutes);

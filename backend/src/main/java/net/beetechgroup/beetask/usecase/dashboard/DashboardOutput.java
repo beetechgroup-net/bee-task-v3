@@ -8,5 +8,7 @@ public record DashboardOutput(
     List<DashboardProjectStats> projectStats,
     List<DashboardCategoryStats> categoryStats,
     List<CreateTaskOutput> yesterdayTasks,
-    List<CreateTaskOutput> finishedTasksInPeriod
+    List<CreateTaskOutput> finishedTasksInPeriod,
+    List<DashboardPeriodStats> periodStats,
+    String groupedBy
 ) {}
