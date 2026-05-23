@@ -64,8 +64,9 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
         int idx = 2;
         if (Objects.nonNull(text) && !text.isBlank()) {
-            query.append(" and (lower(t.title) like ?").append(idx).append(" or lower(t.description) like ?").append(idx + 1).append(")");
-            String pattern = "%" + text.toLowerCase() + "%";
+            query.append(" and (function('unaccent', lower(t.title)) like ?").append(idx)
+                 .append(" or function('unaccent', lower(t.description)) like ?").append(idx + 1).append(")");
+            String pattern = "%" + normalize(text) + "%";
             params.add(pattern);
             params.add(pattern);
             idx += 2;
@@ -105,8 +106,9 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
         int idx = 2;
         if (Objects.nonNull(text) && !text.isBlank()) {
-            query.append(" and (lower(title) like ?").append(idx).append(" or lower(description) like ?").append(idx + 1).append(")");
-            String pattern = "%" + text.toLowerCase() + "%";
+            query.append(" and (function('unaccent', lower(title)) like ?").append(idx)
+                 .append(" or function('unaccent', lower(description)) like ?").append(idx + 1).append(")");
+            String pattern = "%" + normalize(text) + "%";
             params.add(pattern);
             params.add(pattern);
             idx += 2;
@@ -230,5 +232,11 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
                 .filter(h -> Objects.nonNull(h.getEndAt()))
                 .mapToLong(h -> Duration.between(h.getStartAt(), h.getEndAt()).toMinutes())
                 .sum();
+    }
+
+    private static String normalize(String text) {
+        return java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFD)
+                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
+                .toLowerCase();
     }
 }

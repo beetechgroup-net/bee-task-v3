@@ -41,7 +41,7 @@ public class OrganizationRepositoryImpl implements OrganizationRepository, Panac
             return organizations;
         }
 
-        List<Organization> organizations = find("name like ?1", "%" + query + "%").stream()
+        List<Organization> organizations = find("function('unaccent', lower(name)) like ?1", "%" + normalize(query) + "%").stream()
                 .map(OrganizationEntityMapper::toDomain)
                 .toList();
         LOGGER.infof("Loaded %d organizations for search query '%s'", organizations.size(), query);
@@ -61,5 +61,11 @@ public class OrganizationRepositoryImpl implements OrganizationRepository, Panac
     @Override
     public long countAll() {
         return count();
+    }
+
+    private static String normalize(String text) {
+        return java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFD)
+                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
+                .toLowerCase();
     }
 }
