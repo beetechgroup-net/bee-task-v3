@@ -37,10 +37,10 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.minio.rule=Host(`minio.task2.beetech.dev`)"
+      - "traefik.http.routers.minio.rule=Host(`minio-task2.beetech.dev`)"
       - "traefik.http.routers.minio.entrypoints=web"
       - "traefik.http.services.minio.loadbalancer.server.port=9000"
-      - "traefik.http.routers.minio-console.rule=Host(`console.minio.task2.beetech.dev`)"
+      - "traefik.http.routers.minio-console.rule=Host(`console-task2.beetech.dev`)"
       - "traefik.http.routers.minio-console.entrypoints=web"
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
 
@@ -92,7 +92,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.backend.rule=Host(`api.task2.beetech.dev`)"
+      - "traefik.http.routers.backend.rule=Host(`api-task2.beetech.dev`)"
       - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=8081"
 
@@ -101,7 +101,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-https://api.task2.beetech.dev}
+        VITE_API_URL: ${VITE_API_URL:-https://api-task2.beetech.dev}
     container_name: bee-task-frontend
     restart: unless-stopped
     expose:
