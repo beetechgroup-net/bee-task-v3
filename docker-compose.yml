@@ -3,42 +3,49 @@ services:
     image: postgres:16
     container_name: bee-task-postgres
     restart: unless-stopped
-
     environment:
       POSTGRES_USER: beetask
       POSTGRES_PASSWORD: beetask
       POSTGRES_DB: beetask
-
     ports:
-      - "5432:5432"
-
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U beetask"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - internal
 
   minio:
-    image: minio/minio:latest
+    image: pgsty/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
-
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-beetask123}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-beetaskpassword}
-
     ports:
       - "9000:9000"
       - "9001:9001"
-
     volumes:
       - minio_data:/data
+    networks:
+      - proxy
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.minio.rule=Host(`minio.task2.beetech.dev`)"
+      - "traefik.http.routers.minio.entrypoints=web"
+      - "traefik.http.services.minio.loadbalancer.server.port=9000"
+      - "traefik.http.routers.minio-console.rule=Host(`console.minio.task2.beetech.dev`)"
+      - "traefik.http.routers.minio-console.entrypoints=web"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
 
   minio-init:
-    image: minio/mc:latest
+    image: pgsty/mc:latest
     depends_on:
       - minio
     restart: on-failure
@@ -52,7 +59,71 @@ services:
       mc mb --ignore-existing local/avatars &&
       mc anonymous set download local/avatars
       "
+    networks:
+      - internal
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bee-task-backend
+    restart: unless-stopped
+    expose:
+      - "8081"
+    environment:
+      DB_USER: beetask
+      DB_PASSWORD: beetask
+      DB_URL: jdbc:postgresql://postgres:5432/beetask
+      QUARKUS_HTTP_CORS_ORIGINS: https://task2.beetech.dev
+      MP_JWT_VERIFY_ISSUER: ${MP_JWT_VERIFY_ISSUER}
+      SMALLRYE_JWT_SIGN_KEY: ${SMALLRYE_JWT_SIGN_KEY}
+      MP_JWT_VERIFY_PUBLICKEY: ${MP_JWT_VERIFY_PUBLICKEY}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-beetask123}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-beetaskpassword}
+      MINIO_BUCKET: avatars
+      MINIO_PUBLIC_URL: http://localhost:9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - proxy
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.backend.rule=Host(`api.task2.beetech.dev`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=8081"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api.task2.beetech.dev}
+    container_name: bee-task-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - backend
+    networks:
+      - proxy
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.frontend.rule=Host(`task2.beetech.dev`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
 volumes:
   postgres_data:
   minio_data:
+
+networks:
+  proxy:
+    external: true
+  internal:
+    driver: bridge
