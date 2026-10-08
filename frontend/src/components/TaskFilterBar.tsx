@@ -1,8 +1,7 @@
-import { Filter, RefreshCw, Search } from 'lucide-react'
+import { RefreshCw, Search } from 'lucide-react'
 import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS, type TaskStatus } from '../types/task'
 import type { Project } from '../services/projectService'
 import type { Category } from '../types/category'
-import { MultiSelectChips } from './MultiSelectChips'
 import { CategoryIcon } from './CategoryIcon'
 import { MultiSelectDropdown } from './MultiSelectDropdown'
 import type { TaskFilters } from './taskFilters'
@@ -68,84 +67,83 @@ export function TaskFilterBar({
         )}
       </div>
 
-      {projects.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="shrink-0 text-text-muted" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">Projetos</span>
-          <MultiSelectChips
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {projects.length > 0 && (
+          <MultiSelectDropdown
+            label="Projetos"
+            allLabel="Todos os projetos"
             options={projects.map((p) => ({
               value: p.id,
               label: p.name,
-              color: p.color ?? undefined,
               icon: p.icon ? <CategoryIcon iconName={p.icon} size={14} /> : undefined,
             }))}
             selected={filters.projectIds}
             onChange={(projectIds) => update({ projectIds })}
           />
-        </div>
-      )}
+        )}
 
-      <div className="flex items-center gap-2">
-        <Filter size={16} className="shrink-0 text-text-muted" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">Status</span>
-        <MultiSelectChips
+        <MultiSelectDropdown
+          label="Status"
+          allLabel="Todos os status"
           options={TASK_STATUS_OPTIONS.map((s) => ({
             value: s,
             label: TASK_STATUS_LABELS[s],
-            color: STATUS_CHIP_COLORS[s],
+            icon: (
+              <div
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: STATUS_CHIP_COLORS[s] }}
+              />
+            ),
           }))}
           selected={filters.statuses}
           onChange={(statuses) => update({ statuses })}
         />
-      </div>
 
-      {assignees.length > 0 && (
-        <div className="grid gap-2">
-          {currentUserId !== undefined && (
-            <label className="flex cursor-pointer items-center gap-2 self-start">
-              <input
-                type="checkbox"
-                checked={filters.userIds.length === 1 && filters.userIds[0] === currentUserId}
-                onChange={(e) =>
-                  update({ userIds: e.target.checked ? [currentUserId] : [] })
-                }
-                className="h-4 w-4 accent-brand"
-              />
-              <span className="text-xs font-semibold text-text-muted">
-                Mostrar apenas as minhas
-              </span>
-            </label>
-          )}
+        {categories.length > 0 && (
           <MultiSelectDropdown
-            label="Funcionario"
-            allLabel="Todos os funcionarios"
-            options={assignees.map((assignee) => ({
-              value: assignee.id,
-              label: assignee.name,
-              icon: <UserAvatar name={assignee.name} photo={assignee.photo} size="sm" />,
-            }))}
-            selected={filters.userIds}
-            onChange={(userIds) => update({ userIds })}
-          />
-        </div>
-      )}
-
-      {categories.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="shrink-0 text-text-muted" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">Categorias</span>
-          <MultiSelectChips
+            label="Categorias"
+            allLabel="Todas as categorias"
             options={categories.map((c) => ({
               value: c.id,
               label: c.name,
-              color: c.color,
               icon: <CategoryIcon iconName={c.icon} size={14} />,
             }))}
             selected={filters.categoryIds}
             onChange={(categoryIds) => update({ categoryIds })}
           />
-        </div>
-      )}
+        )}
+
+        {assignees.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <MultiSelectDropdown
+              label="Funcionário"
+              allLabel="Todos os funcionários"
+              options={assignees.map((assignee) => ({
+                value: assignee.id,
+                label: assignee.name,
+                icon: <UserAvatar name={assignee.name} photo={assignee.photo} size="sm" />,
+              }))}
+              selected={filters.userIds}
+              onChange={(userIds) => update({ userIds })}
+            />
+            {currentUserId !== undefined && (
+              <label className="flex cursor-pointer items-center gap-2 self-start">
+                <input
+                  type="checkbox"
+                  checked={filters.userIds.length === 1 && filters.userIds[0] === currentUserId}
+                  onChange={(e) =>
+                    update({ userIds: e.target.checked ? [currentUserId] : [] })
+                  }
+                  className="h-4 w-4 accent-brand"
+                />
+                <span className="text-xs font-semibold text-text-muted">
+                  Mostrar apenas as minhas
+                </span>
+              </label>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
