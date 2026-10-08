@@ -39,9 +39,11 @@ services:
       - "traefik.docker.network=proxy"
       - "traefik.http.routers.minio.rule=Host(`minio-task2.beetech.dev`)"
       - "traefik.http.routers.minio.entrypoints=web"
+      - "traefik.http.routers.minio.service=minio"
       - "traefik.http.services.minio.loadbalancer.server.port=9000"
       - "traefik.http.routers.minio-console.rule=Host(`console-task2.beetech.dev`)"
       - "traefik.http.routers.minio-console.entrypoints=web"
+      - "traefik.http.routers.minio-console.service=minio-console"
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
 
   minio-init:
@@ -82,7 +84,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-beetask123}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-beetaskpassword}
       MINIO_BUCKET: avatars
-      MINIO_PUBLIC_URL: http://localhost:9000
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
     depends_on:
       postgres:
         condition: service_healthy

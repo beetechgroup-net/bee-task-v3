@@ -397,10 +397,14 @@ export function AppShell() {
             <div className="relative">
               <button
                 onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 text-brand hover:bg-brand hover:text-white transition-all"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand/10 text-brand transition-all overflow-hidden border border-brand/20 hover:border-brand"
                 title={user?.name}
               >
-                <User size={18} />
+                {user?.photo ? (
+                  <img src={user.photo} alt={user.name} className="h-full w-full object-cover" />
+                ) : (
+                  <User size={18} />
+                )}
               </button>
 
               {showAvatarDropdown && (
