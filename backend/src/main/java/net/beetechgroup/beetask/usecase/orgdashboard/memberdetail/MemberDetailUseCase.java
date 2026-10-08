@@ -66,7 +66,8 @@ public class MemberDetailUseCase {
             for (TaskHistoryItem h : task.getHistory()) {
                 if (!isWithinPeriod(h, start, end)) continue;
                 LocalDateTime effectiveStart = h.getStartAt().isBefore(start) ? start : h.getStartAt();
-                LocalDateTime effectiveEnd = (Objects.isNull(h.getEndAt()) || h.getEndAt().isAfter(end)) ? end : h.getEndAt();
+                LocalDateTime itemEnd = Objects.nonNull(h.getEndAt()) ? h.getEndAt() : LocalDateTime.now();
+                LocalDateTime effectiveEnd = itemEnd.isAfter(end) ? end : itemEnd;
                 if (effectiveStart.isAfter(effectiveEnd)) continue;
 
                 long minutes = Duration.between(effectiveStart, effectiveEnd).toMinutes();

@@ -140,7 +140,8 @@ public class OrgDashboardUseCase {
 
     private long calculateMinutesInRange(TaskHistoryItem item, LocalDateTime start, LocalDateTime end) {
         LocalDateTime effectiveStart = item.getStartAt().isBefore(start) ? start : item.getStartAt();
-        LocalDateTime effectiveEnd = Objects.isNull(item.getEndAt()) || item.getEndAt().isAfter(end) ? end : item.getEndAt();
+        LocalDateTime itemEnd = Objects.nonNull(item.getEndAt()) ? item.getEndAt() : LocalDateTime.now();
+        LocalDateTime effectiveEnd = itemEnd.isAfter(end) ? end : itemEnd;
         if (effectiveStart.isAfter(effectiveEnd)) return 0;
         return Duration.between(effectiveStart, effectiveEnd).toMinutes();
     }
