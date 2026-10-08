@@ -86,7 +86,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
             idx++;
         }
         if (Objects.nonNull(userIds) && !userIds.isEmpty()) {
-            query.append(" and tu.id in ?").append(idx);
+            query.append(" and t.user.id in ?").append(idx);
             params.add(userIds);
         }
 
