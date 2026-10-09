@@ -1,4 +1,5 @@
-import { RefreshCw, Search } from 'lucide-react'
+import { useState } from 'react'
+import { RefreshCw, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react'
 import { TASK_STATUS_LABELS, TASK_STATUS_OPTIONS, type TaskStatus } from '../types/task'
 import type { Project } from '../services/projectService'
 import type { Category } from '../types/category'
@@ -36,8 +37,16 @@ export function TaskFilterBar({
   isLoading,
   onRefresh,
 }: TaskFilterBarProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
   const update = (partial: Partial<TaskFilters>) =>
     onFiltersChange({ ...filters, ...partial })
+
+  const activeFiltersCount =
+    (filters.projectIds?.length || 0) +
+    (filters.statuses?.length || 0) +
+    (filters.categoryIds?.length || 0) +
+    (filters.userIds?.length || 0)
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-border-soft bg-surface p-4 shadow-sm">
@@ -56,18 +65,39 @@ export function TaskFilterBar({
           />
         </div>
 
-        {onRefresh && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={onRefresh}
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-app-bg text-text-muted transition-all hover:bg-surface-muted hover:text-brand"
-            title="Recarregar"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-medium transition-all ${
+              isExpanded || activeFiltersCount > 0
+                ? 'bg-brand/10 text-brand'
+                : 'bg-app-bg text-text-muted hover:bg-surface-muted hover:text-brand'
+            }`}
           >
-            <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+            <Filter size={18} />
+            <span className="hidden sm:inline">Filtros</span>
+            {activeFiltersCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand text-xs text-white">
+                {activeFiltersCount}
+              </span>
+            )}
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
-        )}
+
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-app-bg text-text-muted transition-all hover:bg-surface-muted hover:text-brand"
+              title="Recarregar"
+            >
+              <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {isExpanded && (
+        <div className="grid grid-cols-1 gap-4 border-t border-border-soft pt-4 sm:grid-cols-2 lg:grid-cols-4">
         {projects.length > 0 && (
           <MultiSelectDropdown
             label="Projetos"
@@ -143,7 +173,8 @@ export function TaskFilterBar({
             )}
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
