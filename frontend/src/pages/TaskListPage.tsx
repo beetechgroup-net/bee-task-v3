@@ -113,7 +113,42 @@ export function TaskListPage() {
         onRefresh={() => void loadTasks(filters)}
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="flex border-b border-border-soft overflow-x-auto hide-scrollbar mb-4">
+        {[
+          { label: 'Todas', value: null },
+          { label: 'Pendente', value: 'NOT_STARTED' },
+          { label: 'Em andamento', value: 'IN_PROGRESS' },
+          { label: 'Finalizada', value: 'COMPLETED' },
+          { label: 'Cancelada', value: 'CANCELED' },
+        ].map((tab) => {
+          const isActive =
+            tab.value === null
+              ? filters.statuses.length === 0
+              : filters.statuses.includes(tab.value as any) && filters.statuses.length === 1
+
+          return (
+            <button
+              key={tab.label}
+              onClick={() =>
+                handleFiltersChange({
+                  ...filters,
+                  statuses: tab.value ? [tab.value as any] : [],
+                })
+              }
+              className={cn(
+                'px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors',
+                isActive
+                  ? 'border-brand text-brand'
+                  : 'border-transparent text-text-muted hover:text-text-main hover:border-border-soft'
+              )}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="flex flex-col gap-3">
         <AnimatePresence mode="popLayout">
           {tasks.map((task, i) => {
             const config = getStatusConfig(task.status)
@@ -123,69 +158,67 @@ export function TaskListPage() {
             return (
               <motion.article
                 layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2, delay: i * 0.05 }}
                 key={task.id}
                 onClick={() => navigate(`/edit/${task.id}`)}
-                className="group relative flex cursor-pointer flex-col rounded-[2rem] border border-border-soft bg-surface p-6 shadow-sm transition-all hover:shadow-xl hover:shadow-brand/5"
+                className="group relative flex cursor-pointer flex-col md:flex-row md:items-center gap-4 rounded-2xl border border-border-soft bg-surface p-4 shadow-sm transition-all hover:shadow-md hover:border-brand/30"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 md:w-48 shrink-0">
                   <div
                     className={cn(
-                      'flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                      'flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-black uppercase tracking-wider',
                       config.tone,
                     )}
+                    title={config.label}
                   >
                     <StatusIcon size={12} />
-                    {config.label}
+                    <span className="hidden md:inline">{config.label}</span>
                   </div>
                   <span className="font-mono text-[10px] font-bold text-text-muted transition-colors group-hover:text-brand">
                     #{task.id}
                   </span>
                 </div>
 
-                <h3 className="mt-4 overflow-hidden text-ellipsis text-lg font-bold leading-tight text-text-main transition-colors group-hover:text-brand">
-                  {task.title}
-                </h3>
-
-                <p className="mt-2 flex-1 line-clamp-3 text-sm leading-relaxed text-text-muted">
-                  {task.description || 'Sem descrição informada.'}
-                </p>
-
-                <div className="mt-6 flex flex-col gap-4">
-                  <TaskTimer
-                    task={task}
-                    canControl={canControlTimer}
-                    onUpdate={() => loadTasks(filters, true)}
-                  />
-
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-soft/50 pt-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-text-muted">
-                        <Tag size={14} className="text-brand" />
-                        {task.project?.name || 'Geral'}
-                      </div>
-                      {task.category && (
-                        <>
-                          <div className="h-4 w-px bg-border-soft" />
-                          <CategoryBadge category={task.category} />
-                        </>
-                      )}
-                      <div className="h-4 w-px bg-border-soft" />
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-text-muted">
-                        <Calendar size={14} className="text-accent" />
-                        {task.history?.length ?? 0} registros
-                      </div>
-                    </div>
-
-                    {task.user && (
-                      <div className="flex items-center gap-2 text-xs font-bold text-text-muted">
-                        <UserAvatar name={task.user.name} photo={task.user.photo} size="sm" />
-                      </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="truncate text-base font-bold text-text-main transition-colors group-hover:text-brand">
+                    {task.title}
+                  </h3>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted">
+                    <span className="flex items-center gap-1 font-medium">
+                      <Tag size={12} className="text-brand" />
+                      {task.project?.name || 'Geral'}
+                    </span>
+                    {task.category && (
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-border-soft" />
+                        <CategoryBadge category={task.category} />
+                      </>
                     )}
+                    <span className="w-1 h-1 rounded-full bg-border-soft" />
+                    <span className="flex items-center gap-1 font-medium">
+                      <Calendar size={12} className="text-accent" />
+                      {task.history?.length ?? 0}
+                    </span>
                   </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 md:ml-auto">
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <TaskTimer
+                      task={task}
+                      canControl={canControlTimer}
+                      onUpdate={() => loadTasks(filters, true)}
+                    />
+                  </div>
+
+                  {task.user && (
+                    <div className="flex items-center justify-end gap-2 text-xs font-bold text-text-muted">
+                      <UserAvatar name={task.user.name} photo={task.user.photo} size="sm" />
+                    </div>
+                  )}
                 </div>
               </motion.article>
             )
@@ -219,11 +252,11 @@ export function TaskListPage() {
       )}
 
       {isLoading && tasks.length === 0 && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="flex flex-col gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-56 animate-pulse rounded-[2rem] border border-border-soft bg-surface-muted"
+              className="h-20 animate-pulse rounded-2xl border border-border-soft bg-surface-muted"
             />
           ))}
         </div>
