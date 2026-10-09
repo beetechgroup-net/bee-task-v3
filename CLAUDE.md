@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository. Keep edits aligned wit
 
 ## Project
 
-**bee-task-v3 / TimeTrack** — task & time-tracking SaaS. Monorepo with React (Vite) frontend and Quarkus backend, PostgreSQL + Keycloak via Docker. Backlog and user stories live in `backlog.md`.
+**bee-task-v3 / TimeTrack** — task & time-tracking SaaS. Monorepo with React (Vite) frontend and Quarkus backend, PostgreSQL via Docker. Backlog and user stories live in `backlog.md`.
 
 ## Layout
 
@@ -12,7 +12,7 @@ Guidance for Claude Code when working in this repository. Keep edits aligned wit
 backend/    Quarkus 3.34, Java 17, Hibernate ORM + Panache, Flyway, JWT (smallrye)
 frontend/   Vite + React 19 + TypeScript + Tailwind v4
 docker/     Postgres init scripts
-docker-compose.yml   Postgres + Keycloak
+docker-compose.yml   Postgres
 specification/       Domain specs
 backlog.md           User stories (US-001…)
 ```
@@ -21,7 +21,7 @@ Java root package: `net.beetechgroup.beetask`.
 
 ## Commands
 
-Infra: `docker-compose up` (Postgres :5432, Keycloak :8081).
+Infra: `docker-compose up` (Postgres :5432).
 
 Backend (`cd backend`):
 - Dev: `./mvnw quarkus:dev` (port 8080, uses H2 in dev profile, swagger at `/swagger`, OpenAPI at `/openapi`)
@@ -92,7 +92,6 @@ The authenticated email comes from `securityIdentity.getPrincipal().getName()` a
 ### Auth
 
 - JWT signed with `privateKey.pem`, verified with `publicKey.pem`. Issuer `https://beetech.net`.
-- Keycloak is provisioned in docker-compose but **not yet integrated** into the app — JWTs are minted by `usecase/auth/login`.
 
 ## Frontend Conventions
 

@@ -5,17 +5,16 @@ Minimal vertical slice for task management using:
 - React + TypeScript + Tailwind CSS
 - Java + Quarkus
 - PostgreSQL
-- Keycloak prepared for future authentication
 
 ## Structure
 
 - `frontend/`: Vite React app with task list, task creation, and status updates
 - `backend/`: Quarkus API with a simple Clean Architecture split
-- `docker-compose.yml`: local PostgreSQL and Keycloak services
+- `docker-compose.yml`: local PostgreSQL service
 
 ## Run infrastructure
 
-Start PostgreSQL and Keycloak:
+Start PostgreSQL:
 
 ```bash
 docker-compose up
@@ -24,8 +23,6 @@ docker-compose up
 Services:
 
 - PostgreSQL: `localhost:5432`
-- Keycloak: `http://localhost:8081`
-- Keycloak admin: `admin` / `admin`
 
 ## Run the backend
 
@@ -88,7 +85,6 @@ Important pragmatic decisions:
 
 - UUIDs are generated in the application layer to keep the slice simple.
 - Flyway owns schema creation with a single migration.
-- Keycloak is available locally now but not integrated into the app yet.
 
 ## Verification
 

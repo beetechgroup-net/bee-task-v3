@@ -80,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const renewToken = async (refreshToken: string) => {
     try {
       const response = await authService.refresh(refreshToken);
+      response.issuedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response));
       setUser(response);
     } catch (error) {
@@ -117,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password);
+    response.issuedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response));
     setUser(response);
     setupActiveOrg(response.organizations);
