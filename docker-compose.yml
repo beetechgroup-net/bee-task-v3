@@ -120,6 +120,28 @@ services:
       - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
+  frontend2:
+    build:
+      context: ./new-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-https://api-task3.beetech.dev}
+    container_name: bee-task-frontend2
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - backend
+    networks:
+      - proxy
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.frontend2.rule=Host(`task3.beetech.dev`)"
+      - "traefik.http.routers.frontend2.entrypoints=web"
+      - "traefik.http.services.frontend2.loadbalancer.server.port=80"
+
 volumes:
   postgres_data:
   minio_data:
