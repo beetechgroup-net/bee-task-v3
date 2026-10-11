@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom"
 import { Button, Chip, ChipLabel } from "@heroui/react"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Sun, Moon } from "lucide-react"
+import { useTheme } from "../../contexts/ThemeContext"
 
 export const Navbar = () => {
+  const { theme, toggleTheme } = useTheme()
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-surface/85 border-b border-border-soft transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -62,6 +64,20 @@ export const Navbar = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+            className="p-2 rounded-xl border border-border bg-surface text-muted hover:text-foreground hover:bg-surface-raised transition-colors shadow-xs"
+            aria-label="Alternar tema"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-brand" />
+            )}
+          </button>
+
           <Link
             to="/login"
             className="text-sm font-semibold text-text-main hover:text-brand px-3 py-2 transition-colors"

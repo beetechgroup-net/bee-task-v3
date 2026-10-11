@@ -17,11 +17,14 @@ import {
   PlusCircle,
   Menu as MenuIcon,
   Check,
+  Square,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useTheme } from '../../contexts/ThemeContext'
 import { useTimer } from '../../contexts/TimerContext'
 import { formatSecondsToTimer } from '../../lib/timeUtils'
-import { Square } from 'lucide-react'
 
 interface HeaderProps {
   onToggleMobileSidebar: () => void
@@ -29,6 +32,7 @@ interface HeaderProps {
 
 export const Header = ({ onToggleMobileSidebar }: HeaderProps) => {
   const { user, activeOrg, setActiveOrg, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const { activeTask, activeSeconds, stopTimer } = useTimer()
   const [showOrgDropdown, setShowOrgDropdown] = useState(false)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
@@ -206,6 +210,21 @@ export const Header = ({ onToggleMobileSidebar }: HeaderProps) => {
           <span className="hidden sm:inline">Tarefas</span>
         </Button>
 
+        {/* Theme Toggle Button */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+          className="p-2 rounded-xl border border-border bg-surface text-muted hover:text-foreground hover:bg-surface-raised transition-colors shadow-xs flex items-center justify-center"
+          aria-label="Alternar tema claro e escuro"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400 hover:rotate-45 transition-transform" />
+          ) : (
+            <Moon className="w-4 h-4 text-brand hover:-rotate-12 transition-transform" />
+          )}
+        </button>
+
         {/* User Profile Menu Dropdown */}
         <div ref={userRef} className="relative">
           <button
@@ -270,6 +289,24 @@ export const Header = ({ onToggleMobileSidebar }: HeaderProps) => {
                   <Settings className="w-4 h-4 text-brand" />
                   Configurações do Workspace
                 </Link>
+
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold text-text-muted hover:text-text-main hover:bg-surface-muted transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {theme === 'dark' ? (
+                      <Sun className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <Moon className="w-4 h-4 text-brand" />
+                    )}
+                    <span>Tema {theme === 'dark' ? 'Claro' : 'Escuro'}</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold text-muted bg-surface-raised px-1.5 py-0.5 rounded-md border border-border">
+                    {theme}
+                  </span>
+                </button>
               </div>
 
               <div className="border-t border-border-soft pt-1 mt-1">

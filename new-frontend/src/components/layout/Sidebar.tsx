@@ -9,9 +9,12 @@ import {
   Settings,
   X,
   Building2,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { Chip, ChipLabel } from '@heroui/react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useTheme } from '../../contexts/ThemeContext'
 
 interface SidebarProps {
   isMobileOpen: boolean
@@ -20,6 +23,7 @@ interface SidebarProps {
 
 export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
   const { activeOrg } = useAuth()
+  const { theme, toggleTheme } = useTheme()
 
   const navItems = [
     {
@@ -111,18 +115,34 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
 
       {/* Bottom Workspace Card Info */}
       <div className="p-4 border-t border-border-soft">
-        <div className="p-3 rounded-2xl bg-surface-muted/70 border border-border-soft flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-brand-soft text-brand flex items-center justify-center font-bold text-xs shrink-0">
-            <Building2 className="w-4 h-4 text-brand" />
+        <div className="p-3 rounded-2xl bg-surface-muted/70 border border-border-soft flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-brand-soft text-brand flex items-center justify-center font-bold text-xs shrink-0">
+              <Building2 className="w-4 h-4 text-brand" />
+            </div>
+            <div className="truncate flex-1 min-w-0">
+              <p className="text-xs font-bold text-text-main truncate">
+                {activeOrg?.name || 'Workspace Padrão'}
+              </p>
+              <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                {activeOrg?.roles[0] || 'Ativo'}
+              </span>
+            </div>
           </div>
-          <div className="truncate flex-1 min-w-0">
-            <p className="text-xs font-bold text-text-main truncate">
-              {activeOrg?.name || 'Workspace Padrão'}
-            </p>
-            <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
-              {activeOrg?.roles[0] || 'Ativo'}
-            </span>
-          </div>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+            className="p-1.5 rounded-lg border border-border-soft bg-surface text-muted hover:text-foreground hover:bg-surface-raised transition-colors shrink-0"
+            aria-label="Alternar tema"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <Moon className="w-3.5 h-3.5 text-brand" />
+            )}
+          </button>
         </div>
       </div>
     </div>

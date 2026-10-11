@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { TimerProvider } from './contexts/TimerContext'
 import { LandingPage } from './pages/LandingPage'
@@ -18,11 +19,12 @@ import { ProfilePage } from './pages/ProfilePage'
 export function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <TimerProvider>
-          <Routes>
-            {/* Rotas Públicas */}
-            <Route path="/" element={<LandingPage />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <TimerProvider>
+            <Routes>
+              {/* Rotas Públicas */}
+              <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/register" element={<AuthPage />} />
 
@@ -49,8 +51,9 @@ export function App() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </TimerProvider>
-      </AuthProvider>
+          </TimerProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }
