@@ -12,6 +12,8 @@ import { ProjectsPage } from './pages/ProjectsPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { MembersPage } from './pages/MembersPage'
 import { OrganizationSettingsPage } from './pages/OrganizationSettingsPage'
+import { AnalyticsPage } from './pages/AnalyticsPage'
+import { ProfilePage } from './pages/ProfilePage'
 
 export function App() {
   return (
@@ -38,10 +40,10 @@ export function App() {
               <Route path="/kanban" element={<TasksPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
-              <Route path="/analytics" element={<DashboardPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/members" element={<MembersPage />} />
               <Route path="/organization/settings" element={<OrganizationSettingsPage />} />
-              <Route path="/profile" element={<DashboardPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
 
             {/* Fallback */}
