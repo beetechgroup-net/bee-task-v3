@@ -5,9 +5,6 @@ import {
   Button,
   Chip,
   ChipLabel,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
 } from '@heroui/react'
 import {
   Building2,
@@ -217,17 +214,22 @@ export const Header = ({ onToggleMobileSidebar }: HeaderProps) => {
               setShowUserDropdown(!showUserDropdown)
               setShowOrgDropdown(false)
             }}
-            className="flex items-center gap-2 p-1 rounded-full hover:ring-2 hover:ring-brand/30 transition-all"
+            className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-brand/30 transition-all focus:outline-none"
             aria-label="Menu do usuário"
           >
-            <Avatar className="w-9 h-9 rounded-full ring-2 ring-border-soft">
+            <div className="w-9 h-9 rounded-full overflow-hidden border border-border bg-surface-raised flex items-center justify-center shrink-0">
               {user?.photo ? (
-                <AvatarImage src={user.photo} alt={user.name} />
-              ) : null}
-              <AvatarFallback className="bg-brand-soft text-brand font-bold text-xs">
-                {userInitials}
-              </AvatarFallback>
-            </Avatar>
+                <img
+                  src={user.photo}
+                  alt={user.name || 'Avatar'}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <span className="w-full h-full bg-brand/15 text-brand font-bold text-xs flex items-center justify-center uppercase select-none">
+                  {userInitials}
+                </span>
+              )}
+            </div>
           </button>
 
           {/* User Dropdown Menu */}
