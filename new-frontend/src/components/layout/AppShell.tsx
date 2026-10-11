@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
-import { Header } from './Header'
+import { Menu as MenuIcon } from 'lucide-react'
 
 export const AppShell = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
@@ -20,7 +20,25 @@ export const AppShell = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 z-10">
-        <Header onToggleMobileSidebar={() => setIsMobileOpen(true)} />
+        {/* Mobile-only compact top bar to open drawer on smartphones */}
+        <div className="lg:hidden h-14 border-b border-border-soft bg-surface/85 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-20">
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen(true)}
+            className="p-2 rounded-xl text-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+            aria-label="Abrir menu lateral"
+          >
+            <MenuIcon className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🐝</span>
+            <span className="font-extrabold text-sm tracking-tight text-foreground">
+              Bee<span className="text-accent">Task</span>
+            </span>
+          </div>
+          <div className="w-9" />
+        </div>
+
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-300">
           <Outlet />
         </main>
