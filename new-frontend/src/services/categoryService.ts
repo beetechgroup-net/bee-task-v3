@@ -12,4 +12,15 @@ export const categoryService = {
       body: data,
     })
   },
+
+  async updateCategory(
+    orgId: number,
+    id: number,
+    data: { name: string; color?: string; icon?: string }
+  ): Promise<Category> {
+    return apiFetch<Category>(`/organizations/${orgId}/categories/${id}`, {
+      method: 'PUT',
+      body: data,
+    })
+  },
 }

@@ -8,6 +8,8 @@ import { AppShell } from './components/layout/AppShell'
 import { DashboardPage } from './pages/DashboardPage'
 import { OrganizationsPage } from './pages/OrganizationsPage'
 import { TasksPage } from './pages/TasksPage'
+import { ProjectsPage } from './pages/ProjectsPage'
+import { CategoriesPage } from './pages/CategoriesPage'
 
 export function App() {
   return (
@@ -32,8 +34,8 @@ export function App() {
               <Route path="/organizations" element={<OrganizationsPage />} />
               <Route path="/tasks" element={<TasksPage />} />
               <Route path="/kanban" element={<TasksPage />} />
-              <Route path="/projects" element={<DashboardPage />} />
-              <Route path="/categories" element={<DashboardPage />} />
+              <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/analytics" element={<DashboardPage />} />
               <Route path="/members" element={<OrganizationsPage />} />
               <Route path="/organization/settings" element={<OrganizationsPage />} />
