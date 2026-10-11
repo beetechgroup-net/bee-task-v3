@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import {
   Button,
   Card,
@@ -80,12 +81,12 @@ export const Hero = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-              <a href="#comecar" className="w-full sm:w-auto">
+              <Link to="/register" className="w-full sm:w-auto">
                 <Button className="w-full sm:w-auto bg-brand hover:bg-brand-strong text-white font-bold text-base px-7 py-3.5 rounded-xl shadow-xl shadow-brand/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5">
                   Criar Workspace Grátis
                   <ArrowRight className="w-4 h-4" />
                 </Button>
-              </a>
+              </Link>
               <a href="#preview" className="w-full sm:w-auto">
                 <Button className="w-full sm:w-auto bg-surface hover:bg-surface-muted text-text-main font-semibold text-base px-6 py-3.5 rounded-xl border border-border-soft shadow-xs transition-colors duration-150 flex items-center justify-center gap-2">
                   <Play className="w-4 h-4 text-accent fill-accent" />
