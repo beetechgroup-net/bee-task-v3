@@ -18,6 +18,13 @@ export type JoinRequestOutput = {
   createdAt: string
 }
 
+export type OrganizationMember = {
+  userId: number
+  userName: string
+  userEmail: string
+  userPhoto?: string
+}
+
 export const organizationService = {
   async create(name: string): Promise<CreateOrgResponse> {
     return apiFetch<CreateOrgResponse>('/organizations', {
@@ -39,4 +46,9 @@ export const organizationService = {
   async listMyRequests(): Promise<JoinRequestOutput[]> {
     return apiFetch<JoinRequestOutput[]>('/organizations/my-requests')
   },
+
+  async listMembers(organizationId: number): Promise<OrganizationMember[]> {
+    return apiFetch<OrganizationMember[]>(`/organizations/${organizationId}/members`)
+  },
 }
+
