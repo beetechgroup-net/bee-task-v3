@@ -10,6 +10,8 @@ import { OrganizationsPage } from './pages/OrganizationsPage'
 import { TasksPage } from './pages/TasksPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { CategoriesPage } from './pages/CategoriesPage'
+import { MembersPage } from './pages/MembersPage'
+import { OrganizationSettingsPage } from './pages/OrganizationSettingsPage'
 
 export function App() {
   return (
@@ -37,8 +39,8 @@ export function App() {
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/analytics" element={<DashboardPage />} />
-              <Route path="/members" element={<OrganizationsPage />} />
-              <Route path="/organization/settings" element={<OrganizationsPage />} />
+              <Route path="/members" element={<MembersPage />} />
+              <Route path="/organization/settings" element={<OrganizationSettingsPage />} />
               <Route path="/profile" element={<DashboardPage />} />
             </Route>
 

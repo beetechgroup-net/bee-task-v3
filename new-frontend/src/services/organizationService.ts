@@ -25,6 +25,13 @@ export type OrganizationMember = {
   userPhoto?: string
 }
 
+export type PendingJoinRequest = {
+  userId: number
+  name: string
+  email: string
+  photo?: string
+}
+
 export const organizationService = {
   async create(name: string): Promise<CreateOrgResponse> {
     return apiFetch<CreateOrgResponse>('/organizations', {
@@ -49,6 +56,22 @@ export const organizationService = {
 
   async listMembers(organizationId: number): Promise<OrganizationMember[]> {
     return apiFetch<OrganizationMember[]>(`/organizations/${organizationId}/members`)
+  },
+
+  async listPendingRequests(organizationId: number): Promise<PendingJoinRequest[]> {
+    return apiFetch<PendingJoinRequest[]>(`/organizations/${organizationId}/requests`)
+  },
+
+  async approveRequest(organizationId: number, userId: number): Promise<void> {
+    return apiFetch<void>(`/organizations/${organizationId}/requests/${userId}/approve`, {
+      method: 'PATCH',
+    })
+  },
+
+  async rejectRequest(organizationId: number, userId: number): Promise<void> {
+    return apiFetch<void>(`/organizations/${organizationId}/requests/${userId}/reject`, {
+      method: 'PATCH',
+    })
   },
 }
 
