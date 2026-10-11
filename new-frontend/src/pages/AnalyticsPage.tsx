@@ -211,11 +211,12 @@ export const AnalyticsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-brand via-brand-strong to-accent bg-clip-text text-transparent">
               Analytics & Produtividade
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
               {activeOrg?.name || 'Workspace'}
             </span>
           </div>
@@ -229,14 +230,14 @@ export const AnalyticsPage: React.FC = () => {
           onClick={loadData}
           disabled={refreshing}
           title="Recarregar métricas"
-          className="self-start sm:self-auto p-2 rounded-xl border border-border bg-surface text-muted hover:text-foreground hover:bg-surface-raised transition-colors disabled:opacity-50"
+          className="self-start sm:self-auto p-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-muted hover:text-foreground hover:bg-surface-raised transition-all shadow-panel disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-brand' : ''}`} />
         </button>
       </div>
 
       {error && (
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs shadow-panel backdrop-blur-md">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-rose-400" />
             <span>{error}</span>
@@ -256,7 +257,7 @@ export const AnalyticsPage: React.FC = () => {
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-32 rounded-2xl border border-border bg-surface-sunken/40 animate-pulse p-4"
+              className="h-32 rounded-3xl border border-border-soft bg-surface-sunken/40 animate-pulse p-5"
             />
           ))}
         </div>
@@ -264,86 +265,86 @@ export const AnalyticsPage: React.FC = () => {
         <>
           {/* Top 4 KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Time */}
-        <div className="p-5 rounded-2xl border border-border bg-surface flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-muted">Tempo Total Dedicado</span>
-            <div className="w-8 h-8 rounded-lg bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
-              <Clock className="w-4 h-4" />
+            {/* Total Time */}
+            <div className="p-6 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex flex-col justify-between shadow-panel hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-muted">Tempo Total Dedicado</span>
+                <div className="w-9 h-9 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
+                  <Clock className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight font-mono">
+                  {formatSecondsToTimer(kpis.totalSecondsTracked)}
+                </p>
+                <p className="text-[11px] text-muted mt-1">
+                  Equivalente a {formatSecondsToHuman(kpis.totalSecondsTracked)}
+                </p>
+              </div>
             </div>
-          </div>
-          <div>
-            <p className="text-2xl font-extrabold text-foreground tracking-tight font-mono">
-              {formatSecondsToTimer(kpis.totalSecondsTracked)}
-            </p>
-            <p className="text-[11px] text-muted mt-1">
-              Equivalente a {formatSecondsToHuman(kpis.totalSecondsTracked)}
-            </p>
-          </div>
-        </div>
 
-        {/* Completion Rate */}
-        <div className="p-5 rounded-2xl border border-border bg-surface flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-muted">Taxa de Conclusão</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <TrendingUp className="w-4 h-4" />
+            {/* Completion Rate */}
+            <div className="p-6 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex flex-col justify-between shadow-panel hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-muted">Taxa de Conclusão</span>
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">
+                  {kpis.completionRate}%
+                </p>
+                <p className="text-[11px] text-muted mt-1">
+                  {kpis.completedTasks} de {kpis.totalTasks} demandas finalizadas
+                </p>
+              </div>
             </div>
-          </div>
-          <div>
-            <p className="text-2xl font-extrabold text-emerald-400 tracking-tight">
-              {kpis.completionRate}%
-            </p>
-            <p className="text-[11px] text-muted mt-1">
-              {kpis.completedTasks} de {kpis.totalTasks} demandas finalizadas
-            </p>
-          </div>
-        </div>
 
-        {/* In Progress vs Backlog */}
-        <div className="p-5 rounded-2xl border border-border bg-surface flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-muted">Em Execução Agora</span>
-            <div className="w-8 h-8 rounded-lg bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">
-              <Activity className="w-4 h-4" />
+            {/* In Progress vs Backlog */}
+            <div className="p-6 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex flex-col justify-between shadow-panel hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-muted">Em Execução Agora</span>
+                <div className="w-9 h-9 rounded-xl bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">
+                  <Activity className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-extrabold text-teal-300 tracking-tight">
+                  {kpis.inProgressTasks} tarefas
+                </p>
+                <p className="text-[11px] text-muted mt-1">
+                  {kpis.notStartedTasks} no backlog aguardando início
+                </p>
+              </div>
             </div>
-          </div>
-          <div>
-            <p className="text-2xl font-extrabold text-teal-300 tracking-tight">
-              {kpis.inProgressTasks} tarefas
-            </p>
-            <p className="text-[11px] text-muted mt-1">
-              {kpis.notStartedTasks} no backlog aguardando início
-            </p>
-          </div>
-        </div>
 
-        {/* Avg Time per Task */}
-        <div className="p-5 rounded-2xl border border-border bg-surface flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-muted">Média por Entrega</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Sparkles className="w-4 h-4" />
+            {/* Avg Time per Task */}
+            <div className="p-6 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex flex-col justify-between shadow-panel hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-muted">Média por Entrega</span>
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight font-mono">
+                  {formatSecondsToHuman(kpis.avgSecondsPerCompletedTask)}
+                </p>
+                <p className="text-[11px] text-muted mt-1">
+                  Tempo médio gasto em cada entrega concluída
+                </p>
+              </div>
             </div>
           </div>
-          <div>
-            <p className="text-2xl font-extrabold text-foreground tracking-tight font-mono">
-              {formatSecondsToHuman(kpis.avgSecondsPerCompletedTask)}
-            </p>
-            <p className="text-[11px] text-muted mt-1">
-              Tempo médio gasto em cada entrega concluída
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Main Grid: Projects & Categories Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Project Time Distribution */}
-        <div className="p-6 rounded-2xl border border-border bg-surface shadow-xs space-y-5">
+        <div className="p-6 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md shadow-panel space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">
+              <div className="w-8 h-8 rounded-xl bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">
                 <Folder className="w-4 h-4" />
               </div>
               <h2 className="text-sm font-bold text-foreground">
@@ -405,10 +406,10 @@ export const AnalyticsPage: React.FC = () => {
         </div>
 
         {/* Category Time Distribution */}
-        <div className="p-6 rounded-2xl border border-border bg-surface shadow-xs space-y-5">
+        <div className="p-6 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md shadow-panel space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
                 <Tag className="w-4 h-4" />
               </div>
               <h2 className="text-sm font-bold text-foreground">
@@ -471,7 +472,7 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* Team Productivity Table */}
-      <div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-4">
+      <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-6 shadow-panel space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">

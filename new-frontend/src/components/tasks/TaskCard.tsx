@@ -52,10 +52,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     <div
       draggable
       onDragStart={handleDragStart}
-      className={`group relative rounded-xl border bg-surface p-4 transition-all duration-200 cursor-grab active:cursor-grabbing hover:shadow-lg hover:border-zinc-700 ${
+      className={`group relative rounded-2xl border bg-surface/90 backdrop-blur-md p-4 transition-all duration-200 cursor-grab active:cursor-grabbing hover:shadow-xl hover:-translate-y-0.5 hover:border-brand/40 ${
         running
-          ? 'border-brand/60 shadow-[0_0_20px_rgba(15,118,110,0.18)] ring-1 ring-brand/40'
-          : 'border-border shadow-xs'
+          ? 'border-brand/60 shadow-[0_0_25px_rgba(15,118,110,0.22)] ring-1 ring-brand/40 bg-brand/5'
+          : 'border-border-soft shadow-panel'
       }`}
     >
       {/* Top Row: Project & Quick Status Menu */}

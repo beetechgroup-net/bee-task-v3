@@ -112,7 +112,7 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
             onDragOver={(e) => handleDragOver(e, col.status)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, col.status)}
-            className={`flex flex-col rounded-2xl border transition-all duration-200 min-h-[480px] bg-surface-sunken/40 ${
+            className={`flex flex-col rounded-3xl border transition-all duration-200 min-h-[500px] bg-surface/60 backdrop-blur-md shadow-xs ${
               isOver
                 ? 'border-brand ring-2 ring-brand/30 bg-brand/5'
                 : col.borderColor

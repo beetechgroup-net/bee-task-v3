@@ -51,7 +51,7 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
   ]
 
   const navContent = (
-    <div className="flex flex-col h-full bg-surface border-r border-border-soft select-none">
+    <div className="flex flex-col h-full bg-surface/90 backdrop-blur-md border-r border-border-soft select-none">
       {/* Brand & Logo */}
       <div className="h-18 px-6 flex items-center justify-between border-b border-border-soft">
         <NavLink to="/dashboard" className="flex items-center gap-3">

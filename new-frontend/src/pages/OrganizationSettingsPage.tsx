@@ -29,11 +29,12 @@ export const OrganizationSettingsPage: React.FC = () => {
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-brand via-brand-strong to-accent bg-clip-text text-transparent">
             Configurações do Workspace
           </h1>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25 shadow-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
             {activeOrg.name}
           </span>
         </div>
@@ -43,8 +44,8 @@ export const OrganizationSettingsPage: React.FC = () => {
       </div>
 
       {/* Main Settings Card */}
-      <div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-6">
-        <div className="flex items-start justify-between gap-4 pb-6 border-b border-border">
+      <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-8 shadow-panel space-y-6">
+        <div className="flex items-start justify-between gap-4 pb-6 border-b border-border-soft/60">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-teal-700 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-brand/20">
               {activeOrg.name.slice(0, 2).toUpperCase()}
@@ -56,7 +57,7 @@ export const OrganizationSettingsPage: React.FC = () => {
           </div>
 
           <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
               isOwner
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                 : 'bg-teal-500/15 text-teal-300 border-teal-500/30'
@@ -69,14 +70,14 @@ export const OrganizationSettingsPage: React.FC = () => {
 
         {/* Workspace Details List */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl bg-surface-raised border border-border">
+          <div className="p-4 rounded-2xl bg-surface-raised/80 border border-border-soft">
             <span className="text-[11px] font-semibold text-muted block mb-1">
               Nome da Organização
             </span>
             <span className="text-sm font-bold text-foreground">{activeOrg.name}</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-surface-raised border border-border">
+          <div className="p-4 rounded-2xl bg-surface-raised/80 border border-border-soft">
             <span className="text-[11px] font-semibold text-muted block mb-1">
               Seu Perfil Conectado
             </span>
@@ -85,7 +86,7 @@ export const OrganizationSettingsPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="p-4 rounded-xl bg-surface-raised border border-border">
+          <div className="p-4 rounded-2xl bg-surface-raised/80 border border-border-soft">
             <span className="text-[11px] font-semibold text-muted block mb-1">
               Permissões Ativas
             </span>
@@ -101,7 +102,7 @@ export const OrganizationSettingsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-surface-raised border border-border">
+          <div className="p-4 rounded-2xl bg-surface-raised/80 border border-border-soft">
             <span className="text-[11px] font-semibold text-muted block mb-1">
               Status da Conexão
             </span>
@@ -121,7 +122,7 @@ export const OrganizationSettingsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/members')}
-              className="p-3.5 rounded-xl border border-border bg-surface-raised hover:border-brand transition-colors text-left flex items-center justify-between"
+              className="p-4 rounded-2xl border border-border-soft bg-surface-raised/80 hover:border-brand/40 hover:-translate-y-0.5 hover:shadow-md transition-all text-left flex items-center justify-between"
             >
               <div className="flex items-center gap-2.5">
                 <Users className="w-4 h-4 text-brand" />
@@ -133,7 +134,7 @@ export const OrganizationSettingsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/projects')}
-              className="p-3.5 rounded-xl border border-border bg-surface-raised hover:border-brand transition-colors text-left flex items-center justify-between"
+              className="p-4 rounded-2xl border border-border-soft bg-surface-raised/80 hover:border-brand/40 hover:-translate-y-0.5 hover:shadow-md transition-all text-left flex items-center justify-between"
             >
               <div className="flex items-center gap-2.5">
                 <FolderKanban className="w-4 h-4 text-brand" />
@@ -145,7 +146,7 @@ export const OrganizationSettingsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/organizations')}
-              className="p-3.5 rounded-xl border border-border bg-surface-raised hover:border-brand transition-colors text-left flex items-center justify-between"
+              className="p-4 rounded-2xl border border-border-soft bg-surface-raised/80 hover:border-brand/40 hover:-translate-y-0.5 hover:shadow-md transition-all text-left flex items-center justify-between"
             >
               <div className="flex items-center gap-2.5">
                 <Building2 className="w-4 h-4 text-brand" />
@@ -157,7 +158,7 @@ export const OrganizationSettingsPage: React.FC = () => {
         </div>
 
         {/* Security Note */}
-        <div className="p-4 rounded-xl bg-surface-sunken/60 border border-border flex items-start gap-3 text-xs text-muted">
+        <div className="p-4 rounded-2xl bg-surface-sunken/60 border border-border-soft flex items-start gap-3 text-xs text-muted">
           <Info className="w-4 h-4 text-brand shrink-0 mt-0.5" />
           <p>
             As alterações nos dados cadastrais da organização respeitam a política de isolamento multi-tenant do BeeTask. Apenas os usuários autenticados e aprovados têm acesso aos dados deste workspace.

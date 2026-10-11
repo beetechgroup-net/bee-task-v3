@@ -157,11 +157,12 @@ export const CategoriesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-accent via-amber-400 to-brand bg-clip-text text-transparent">
               Categorias & Tags
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/25">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/25 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               {activeOrg?.name || 'Workspace'}
             </span>
           </div>
@@ -176,7 +177,7 @@ export const CategoriesPage: React.FC = () => {
             onClick={loadData}
             disabled={refreshing}
             title="Recarregar categorias"
-            className="p-2 rounded-xl border border-border bg-surface text-muted hover:text-foreground hover:bg-surface-raised transition-colors disabled:opacity-50"
+            className="p-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-muted hover:text-foreground hover:bg-surface-raised transition-all shadow-panel disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-accent' : ''}`} />
           </button>
@@ -184,7 +185,7 @@ export const CategoriesPage: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white font-semibold text-xs hover:bg-accent-hover shadow-md shadow-accent/20 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent text-white font-semibold text-xs hover:bg-accent-hover shadow-md shadow-accent/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
           >
             <Plus className="w-4 h-4" />
             <span>Nova Categoria</span>
@@ -193,7 +194,7 @@ export const CategoriesPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs shadow-panel backdrop-blur-md">
           <div className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-rose-400" />
             <span>{error}</span>
@@ -209,15 +210,15 @@ export const CategoriesPage: React.FC = () => {
       )}
 
       {/* Search Bar */}
-      <div className="p-3.5 rounded-2xl border border-border bg-surface flex items-center justify-between gap-3 shadow-xs">
+      <div className="p-4 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex items-center justify-between gap-3 shadow-panel">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar categoria por nome..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-surface-raised text-xs text-foreground placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all"
+            className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-border-soft bg-surface-raised/80 text-xs text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all"
           />
         </div>
         <div className="text-xs text-muted font-medium">
@@ -227,11 +228,11 @@ export const CategoriesPage: React.FC = () => {
 
       {/* Grid of Categories */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-40 rounded-2xl border border-border bg-surface-sunken/40 animate-pulse p-5 space-y-3"
+              className="h-44 rounded-3xl border border-border-soft bg-surface-sunken/40 animate-pulse p-6 space-y-3"
             >
               <div className="h-5 bg-surface-raised rounded-md w-1/2" />
               <div className="h-3 bg-surface-raised rounded-md w-3/4" />
@@ -239,12 +240,12 @@ export const CategoriesPage: React.FC = () => {
           ))}
         </div>
       ) : filteredCategories.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-2xl border border-dashed border-border bg-surface/50">
+        <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-3xl border border-dashed border-border-soft bg-surface/60 backdrop-blur-md shadow-panel">
           <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent mb-4">
             <Tag className="w-7 h-7" />
           </div>
           <h3 className="text-base font-bold text-foreground mb-1">
-            Nenhuma categoria cadastrada
+            Nenhum categoria cadastrada
           </h3>
           <p className="text-xs text-muted max-w-sm mb-5 leading-relaxed">
             {searchQuery
@@ -254,7 +255,7 @@ export const CategoriesPage: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white text-xs font-semibold hover:bg-accent-hover shadow-md shadow-accent/20 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white text-xs font-semibold hover:bg-accent-hover shadow-md shadow-accent/25 transition-all hover:-translate-y-0.5"
           >
             <Plus className="w-4 h-4" />
             <span>Criar Primeira Categoria</span>
@@ -271,7 +272,7 @@ export const CategoriesPage: React.FC = () => {
             return (
               <div
                 key={category.id}
-                className="group rounded-2xl border border-border bg-surface p-5 hover:border-zinc-700 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
+                className="group rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-6 hover:border-accent/40 shadow-panel hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-4">
@@ -307,7 +308,7 @@ export const CategoriesPage: React.FC = () => {
                   </div>
 
                   {/* Metrics Bar */}
-                  <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-surface-sunken/60 border border-border/60 mb-4">
+                  <div className="grid grid-cols-2 gap-2 p-3.5 rounded-2xl bg-surface-sunken/60 border border-border-soft mb-4">
                     <div className="flex items-center gap-2">
                       <ListTodo className="w-3.5 h-3.5 text-muted" />
                       <div>
@@ -330,7 +331,7 @@ export const CategoriesPage: React.FC = () => {
                 </div>
 
                 {/* Footer Link */}
-                <div className="pt-3 border-t border-border/80 flex items-center justify-between">
+                <div className="pt-3 border-t border-border-soft/60 flex items-center justify-between">
                   <span
                     className="inline-block w-3 h-3 rounded-full"
                     style={{ backgroundColor: category.color || '#d97706' }}

@@ -50,7 +50,7 @@ export const ProfilePage: React.FC = () => {
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-1">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-brand via-brand-strong to-accent bg-clip-text text-transparent mb-1">
           Meu Perfil & Conta
         </h1>
         <p className="text-xs text-muted">
@@ -59,8 +59,8 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       {/* Main Profile Info Card */}
-      <div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+      <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-8 shadow-panel space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border-soft/60">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-brand/40 bg-gradient-to-br from-brand to-teal-700 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg shadow-brand/20 shrink-0">
               {user.photo ? (
@@ -87,7 +87,7 @@ export const ProfilePage: React.FC = () => {
           <button
             type="button"
             onClick={handleLogout}
-            className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 text-xs font-semibold transition-colors"
+            className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 text-xs font-semibold transition-all hover:shadow-xs"
           >
             <LogOut className="w-4 h-4" />
             <span>Encerrar Sessão</span>
@@ -100,13 +100,13 @@ export const ProfilePage: React.FC = () => {
             Meu Desempenho no Workspace Atual ({activeOrg?.name})
           </h3>
           {loading ? (
-            <div className="flex items-center justify-center py-8 text-muted gap-2 text-xs rounded-xl bg-surface-raised border border-border">
+            <div className="flex items-center justify-center py-8 text-muted gap-2 text-xs rounded-2xl bg-surface-raised/80 border border-border-soft">
               <Loader2 className="w-4 h-4 animate-spin text-brand" />
               <span>Carregando estatísticas pessoais...</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 rounded-xl bg-surface-raised border border-border">
+              <div className="p-5 rounded-2xl bg-surface-raised/80 border border-border-soft shadow-xs">
                 <span className="text-[11px] font-semibold text-muted block mb-1">
                   Tempo Registrado
                 </span>
@@ -118,7 +118,7 @@ export const ProfilePage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-surface-raised border border-border">
+              <div className="p-5 rounded-2xl bg-surface-raised/80 border border-border-soft shadow-xs">
                 <span className="text-[11px] font-semibold text-muted block mb-1">
                   Tarefas Concluídas
                 </span>
@@ -130,7 +130,7 @@ export const ProfilePage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-surface-raised border border-border">
+              <div className="p-5 rounded-2xl bg-surface-raised/80 border border-border-soft shadow-xs">
                 <span className="text-[11px] font-semibold text-muted block mb-1">
                   Workspace Ativo
                 </span>
@@ -168,18 +168,18 @@ export const ProfilePage: React.FC = () => {
                 <div
                   key={org.id}
                   onClick={() => setActiveOrg(org.id)}
-                  className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
                     isCurrent
-                      ? 'border-brand bg-brand/5 ring-1 ring-brand/30'
-                      : 'border-border bg-surface-raised hover:border-zinc-700'
+                      ? 'border-brand bg-brand/10 ring-1 ring-brand/40 shadow-xs'
+                      : 'border-border-soft bg-surface-raised/80 hover:border-brand/40 hover:-translate-y-0.5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
                         isCurrent
-                          ? 'bg-brand text-white'
-                          : 'bg-surface-sunken text-muted border border-border'
+                          ? 'bg-brand text-white shadow-xs'
+                          : 'bg-surface-sunken text-muted border border-border-soft'
                       }`}
                     >
                       {org.name.slice(0, 2).toUpperCase()}
@@ -191,7 +191,7 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   {isCurrent && (
-                    <span className="px-2 py-0.5 rounded-md bg-brand/20 text-brand text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-brand/20 text-brand text-[10px] font-bold">
                       Ativo
                     </span>
                   )}

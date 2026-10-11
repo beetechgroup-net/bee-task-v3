@@ -16,6 +16,7 @@ import {
   Tag,
   Activity,
   AlertCircle,
+  Zap,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTimer } from '../contexts/TimerContext'
@@ -135,47 +136,55 @@ export const DashboardPage: React.FC = () => {
     return tasks.find((t) => t.status === 'IN_PROGRESS') || tasks.find((t) => t.status === 'NOT_STARTED') || tasks[0]
   }, [tasks])
 
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Desenvolvedor'
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Olá, {user?.name?.split(' ')[0] || 'Desenvolvedor'}! 👋
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25">
-              {activeOrg?.name || 'Workspace'}
-            </span>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Top Banner with Landing Page aesthetic */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 pb-2">
+        <div className="space-y-1.5">
+          {/* Top pill badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface/90 backdrop-blur-md border border-border-soft shadow-xs text-xs font-semibold text-brand">
+            <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse" />
+            <span>Workspace: {activeOrg?.name || 'BeeTask'}</span>
+            <Sparkles className="w-3.5 h-3.5 text-accent" />
           </div>
-          <p className="text-xs text-muted">
-            Visão geral da sua produtividade, metas e atividades recentes no workspace.
+
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
+            Olá, {firstName}!{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand-strong to-accent">
+              Bom trabalho hoje.
+            </span>
+          </h1>
+          <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed">
+            Acompanhe o ritmo de entregas da sua equipe, audite suas horas e mantenha o foco na próxima entrega.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
             onClick={loadData}
             disabled={refreshing}
-            title="Recarregar dashboard"
-            className="p-2 rounded-xl border border-border bg-surface text-muted hover:text-foreground hover:bg-surface-raised transition-colors disabled:opacity-50"
+            title="Recarregar dados"
+            className="p-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-muted hover:text-foreground hover:bg-surface-raised transition-all shadow-xs disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-brand' : ''}`} />
           </button>
 
-          <button
-            type="button"
-            onClick={() => navigate('/tasks')}
-            className="px-3.5 py-2 rounded-xl border border-border bg-surface text-xs font-semibold text-foreground hover:bg-surface-raised transition-colors shadow-xs"
-          >
-            Quadro Kanban
-          </button>
+          <Link to="/tasks">
+            <button
+              type="button"
+              className="px-4 py-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-xs font-bold text-foreground hover:bg-surface-raised hover:border-brand/40 transition-all shadow-xs"
+            >
+              Quadro Kanban
+            </button>
+          </Link>
 
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand text-white font-semibold text-xs hover:bg-brand-hover shadow-md shadow-brand/20 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs shadow-lg shadow-brand/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
             <span>Nova Tarefa</span>
@@ -184,8 +193,8 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs backdrop-blur-xs">
+          <div className="flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 text-rose-400" />
             <span>{error}</span>
           </div>
@@ -199,183 +208,189 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* KPI Cards */}
+      {/* 4 Premium KPI Cards with shadow-panel & backdrop-blur */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-28 rounded-2xl border border-border bg-surface-sunken/40 animate-pulse p-4"
+              className="h-32 rounded-3xl border border-border-soft bg-surface/60 backdrop-blur-md animate-pulse p-5"
             />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* In Progress */}
-          <div className="p-5 rounded-2xl border border-border bg-surface flex flex-col justify-between shadow-xs hover:border-zinc-700 transition-colors">
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-muted">Tarefas em Andamento</span>
-              <div className="w-8 h-8 rounded-lg bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400">
+              <span className="text-xs font-bold text-muted">Tarefas em Andamento</span>
+              <div className="w-9 h-9 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 shadow-xs">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <p className="text-2xl font-extrabold text-teal-400 tracking-tight">
+              <p className="text-3xl font-extrabold text-teal-400 tracking-tight font-mono">
                 {stats.inProgress}
               </p>
-              <p className="text-[11px] text-muted mt-1">
-                {stats.notStarted} no backlog para iniciar
+              <p className="text-[11px] text-muted font-medium mt-1">
+                {stats.notStarted} tarefas aguardando no backlog
               </p>
             </div>
           </div>
 
           {/* Completed */}
-          <div className="p-5 rounded-2xl border border-border bg-surface flex flex-col justify-between shadow-xs hover:border-zinc-700 transition-colors">
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-muted">Entregas Concluídas</span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <span className="text-xs font-bold text-muted">Entregas Concluídas</span>
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-xs">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <p className="text-2xl font-extrabold text-emerald-400 tracking-tight">
+              <p className="text-3xl font-extrabold text-emerald-400 tracking-tight font-mono">
                 {stats.completed}
               </p>
-              <p className="text-[11px] text-muted mt-1">
-                de {tasks.length} tarefas cadastradas
+              <p className="text-[11px] text-muted font-medium mt-1">
+                de {tasks.length} demandas cadastradas
               </p>
             </div>
           </div>
 
           {/* Time Tracked */}
-          <div className="p-5 rounded-2xl border border-border bg-surface flex flex-col justify-between shadow-xs hover:border-zinc-700 transition-colors">
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-muted">Tempo Total Dedicado</span>
-              <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <span className="text-xs font-bold text-muted">Tempo Total Dedicado</span>
+              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-xs">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <p className="text-2xl font-extrabold text-amber-400 tracking-tight font-mono">
+              <p className="text-3xl font-extrabold text-amber-400 tracking-tight font-mono">
                 {formatSecondsToTimer(stats.totalSeconds)}
               </p>
-              <p className="text-[11px] text-muted mt-1">
-                {formatSecondsToHuman(stats.totalSeconds)} acumuladas
+              <p className="text-[11px] text-muted font-medium mt-1">
+                {formatSecondsToHuman(stats.totalSeconds)} auditadas no time
               </p>
             </div>
           </div>
 
           {/* Projects */}
-          <div className="p-5 rounded-2xl border border-border bg-surface flex flex-col justify-between shadow-xs hover:border-zinc-700 transition-colors">
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-muted">Projetos Ativos</span>
-              <div className="w-8 h-8 rounded-lg bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">
-                <FolderKanban className="w-4 h-4" />
+              <span className="text-xs font-bold text-muted">Projetos Ativos</span>
+              <div className="w-9 h-9 rounded-xl bg-brand-soft text-brand border border-brand/25 flex items-center justify-center shadow-xs">
+                <FolderKanban className="w-4 h-4 text-brand" />
               </div>
             </div>
             <div>
-              <p className="text-2xl font-extrabold text-foreground tracking-tight">
+              <p className="text-3xl font-extrabold text-foreground tracking-tight font-mono">
                 {stats.projectsCount}
               </p>
-              <p className="text-[11px] text-muted mt-1">
-                Iniciativas no workspace
+              <p className="text-[11px] text-muted font-medium mt-1">
+                Iniciativas ativas no workspace
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Content: Focus Session (Left) + Recent Tasks (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Focus Session Card (Left 5 cols) */}
-        <div className="lg:col-span-5 space-y-5">
-          <div className="rounded-2xl border border-border bg-surface p-6 shadow-xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">
-                  <Flame className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-foreground">Sessão em Foco</h2>
-                  <p className="text-xs text-muted">Cronômetro em tempo real</p>
-                </div>
+      {/* Main Grid: Focus Session (5 cols) + Recent Sprint Tasks (7 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Focus Session Hero Card (Left 5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-6 shadow-panel space-y-5 transition-all hover:shadow-2xl">
+            {/* Header with macOS style dots */}
+            <div className="flex items-center justify-between pb-4 border-b border-border-soft">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+                <span className="text-xs font-bold text-foreground ml-1.5 flex items-center gap-1.5">
+                  <Flame className="w-3.5 h-3.5 text-accent" />
+                  Sessão em Foco
+                </span>
               </div>
 
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                  activeTask
-                    ? 'bg-teal-500/15 text-teal-300 border-teal-500/30 animate-pulse'
-                    : 'bg-zinc-800 text-zinc-400 border-zinc-700'
-                }`}
-              >
-                {activeTask ? 'ATIVO' : 'EM ESPERA'}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    activeTask ? 'bg-emerald-500 animate-ping' : 'bg-zinc-400'
+                  }`}
+                />
+                <span
+                  className={`text-xs font-bold ${
+                    activeTask ? 'text-teal-400' : 'text-muted'
+                  }`}
+                >
+                  {activeTask ? 'CRONOMETRANDO' : 'EM ESPERA'}
+                </span>
+              </div>
             </div>
 
-            {/* Active or Suggested Task Info */}
+            {/* Active or Suggested Task Info Box */}
             {activeTask ? (
-              <div className="p-4 rounded-xl bg-surface-raised border border-border space-y-2">
-                <div className="flex items-center gap-2">
+              <div className="p-4 rounded-2xl bg-surface-raised border border-border-soft space-y-2 shadow-xs">
+                <div className="flex items-center gap-2 flex-wrap">
                   {activeTask.project && (
                     <span
-                      className="px-2 py-0.5 rounded-md text-[10px] font-medium border"
+                      className="px-2 py-0.5 rounded-md text-[10px] font-semibold border"
                       style={{
                         backgroundColor: activeTask.project.color ? `${activeTask.project.color}15` : 'rgba(15,118,110,0.1)',
                         color: activeTask.project.color || '#0f766e',
-                        borderColor: activeTask.project.color ? `${activeTask.project.color}30` : 'rgba(15,118,110,0.25)',
+                        borderColor: activeTask.project.color ? `${activeTask.project.color}35` : 'rgba(15,118,110,0.25)',
                       }}
                     >
                       {activeTask.project.name}
                     </span>
                   )}
                   {activeTask.category && (
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-accent-soft text-accent border border-accent/25">
                       {activeTask.category.name}
                     </span>
                   )}
                 </div>
-                <h3 className="text-sm font-bold text-foreground line-clamp-2">
+                <h3 className="text-sm font-bold text-foreground line-clamp-2 leading-snug">
                   {activeTask.title}
                 </h3>
               </div>
             ) : suggestedTask ? (
-              <div className="p-4 rounded-xl bg-surface-sunken/60 border border-border space-y-2">
+              <div className="p-4 rounded-2xl bg-surface-muted/60 border border-border-soft space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">
-                    Próxima da fila
+                  <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
+                    Sugerida para Focar
                   </span>
                   {suggestedTask.project && (
-                    <span className="text-[10px] text-muted truncate max-w-[120px]">
+                    <span className="text-[11px] text-muted font-medium truncate max-w-[140px]">
                       {suggestedTask.project.name}
                     </span>
                   )}
                 </div>
-                <h3 className="text-sm font-semibold text-foreground line-clamp-2">
+                <h3 className="text-sm font-bold text-foreground line-clamp-2 leading-snug">
                   {suggestedTask.title}
                 </h3>
               </div>
             ) : (
-              <div className="p-6 rounded-xl bg-surface-sunken/40 border border-dashed border-border text-center text-xs text-muted">
-                Nenhuma tarefa pendente. Crie uma nova tarefa para iniciar o foco!
+              <div className="p-6 rounded-2xl bg-surface-muted/40 border border-dashed border-border-soft text-center text-xs text-muted">
+                Nenhuma tarefa ativa. Crie uma demanda para iniciar sua sessão produtiva!
               </div>
             )}
 
-            {/* Big Timer Display */}
-            <div className="text-center py-4 rounded-xl bg-surface-sunken border border-border">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-                {activeTask ? 'Tempo Decorrido na Tarefa' : 'Pronto para Cronometrar'}
+            {/* Big Bold Timer Display */}
+            <div className="text-center py-5 rounded-2xl bg-surface border border-border-soft shadow-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                {activeTask ? 'Tempo Decorrido na Tarefa' : 'Pronto para Iniciar'}
               </span>
-              <p className="text-3xl sm:text-4xl font-extrabold font-mono text-foreground mt-1">
+              <p className="text-4xl sm:text-5xl font-extrabold font-mono text-foreground mt-1.5 tracking-tight">
                 {activeTask ? formatSecondsToTimer(activeSeconds) : '00:00:00'}
               </p>
             </div>
 
-            {/* Controls */}
+            {/* Timer Actions */}
             {activeTask ? (
               <button
                 type="button"
                 onClick={() => stopTimer(activeTask)}
-                className="w-full py-2.5 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs"
               >
                 <Square className="w-4 h-4 fill-rose-300" />
                 <span>Pausar Cronômetro</span>
@@ -384,60 +399,60 @@ export const DashboardPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleToggleTimer(suggestedTask)}
-                className="w-full py-2.5 rounded-xl bg-brand text-white hover:bg-brand-hover shadow-md shadow-brand/20 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-lg shadow-brand/25 transition-all flex items-center justify-center gap-2 duration-200 hover:scale-[1.01] active:scale-[0.99]"
               >
                 <Play className="w-4 h-4 fill-white" />
-                <span>Iniciar Foco Nesta Tarefa</span>
+                <span>Iniciar Tempo nesta Tarefa</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
-                className="w-full py-2.5 rounded-xl bg-brand text-white hover:bg-brand-hover text-xs font-bold transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-lg shadow-brand/25 transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                <span>Criar Tarefa para Iniciar</span>
+                <span>Criar Tarefa para Focar</span>
               </button>
             )}
 
-            <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted">
-              <span>Usuário ativo:</span>
-              <span className="font-semibold text-foreground truncate max-w-[150px]">
+            <div className="pt-2 border-t border-border-soft flex items-center justify-between text-[11px] text-muted">
+              <span>Usuário conectado</span>
+              <span className="font-bold text-foreground truncate max-w-[160px]">
                 {user?.name || user?.email}
               </span>
             </div>
           </div>
 
-          {/* Quick Shortcuts */}
-          <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-3">
+          {/* Quick Shortcuts Card */}
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel space-y-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted block">
-              Atalhos de Gestão
+              Acesso Rápido ao Workspace
             </span>
             <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
               <Link
                 to="/projects"
-                className="p-3 rounded-xl bg-surface-raised hover:bg-brand/10 hover:text-brand border border-border transition-colors flex items-center gap-2 text-foreground"
+                className="p-3.5 rounded-xl bg-surface-muted/60 hover:bg-brand-soft/50 hover:text-brand border border-border-soft transition-all flex items-center gap-2.5 text-foreground shadow-xs"
               >
                 <FolderKanban className="w-4 h-4 text-brand" />
-                <span>Projetos</span>
+                <span>Ver Projetos</span>
               </Link>
               <Link
                 to="/analytics"
-                className="p-3 rounded-xl bg-surface-raised hover:bg-amber-500/10 hover:text-amber-400 border border-border transition-colors flex items-center gap-2 text-foreground"
+                className="p-3.5 rounded-xl bg-surface-muted/60 hover:bg-accent-soft/50 hover:text-accent border border-border-soft transition-all flex items-center gap-2.5 text-foreground shadow-xs"
               >
-                <TrendingUp className="w-4 h-4 text-amber-400" />
-                <span>Analytics</span>
+                <TrendingUp className="w-4 h-4 text-accent" />
+                <span>Analytics da Org</span>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Recent Tasks List (Right 7 cols) */}
+        {/* Recent Sprint Tasks (Right 7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-accent" />
-              Tarefas Recentes
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Zap className="w-4 h-4 text-accent" />
+              Tarefas Recentes da Equipe
             </h2>
             <Link
               to="/tasks"
@@ -453,22 +468,22 @@ export const DashboardPage: React.FC = () => {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-20 rounded-2xl border border-border bg-surface-sunken/40 animate-pulse p-4"
+                  className="h-20 rounded-2xl border border-border-soft bg-surface/60 backdrop-blur-md animate-pulse p-4"
                 />
               ))}
             </div>
           ) : recentTasks.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-surface/50">
+            <div className="text-center py-20 rounded-3xl border border-dashed border-border-soft bg-surface/60 backdrop-blur-md">
               <Activity className="w-8 h-8 text-muted mx-auto mb-2" />
-              <p className="text-xs text-muted mb-4">
+              <p className="text-xs text-muted mb-4 font-medium">
                 Nenhuma tarefa encontrada neste workspace.
               </p>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand text-white text-xs font-semibold hover:bg-brand-hover shadow-xs"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-strong shadow-md shadow-brand/20 transition-all"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span>Criar Primeira Tarefa</span>
               </button>
             </div>
@@ -481,45 +496,62 @@ export const DashboardPage: React.FC = () => {
                 return (
                   <div
                     key={task.id}
-                    className={`rounded-2xl border p-4 transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                    className={`rounded-2xl border p-4 transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-panel ${
                       isTracking
-                        ? 'border-brand/60 bg-brand/5 ring-1 ring-brand/30 shadow-md'
-                        : 'border-border bg-surface hover:border-zinc-700 shadow-xs'
+                        ? 'border-brand/60 bg-brand/5 ring-1 ring-brand/30 shadow-lg'
+                        : 'border-border-soft bg-surface/90 backdrop-blur-md hover:border-brand/30 hover:shadow-xl'
                     }`}
                   >
                     <div className="space-y-1.5 flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {task.project && (
                           <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border"
                             style={{
                               backgroundColor: task.project.color ? `${task.project.color}15` : 'rgba(255,255,255,0.05)',
                               color: task.project.color || '#94a3b8',
                               borderColor: task.project.color ? `${task.project.color}30` : 'rgba(255,255,255,0.1)',
                             }}
                           >
-                            <Folder className="w-2.5 h-2.5" />
+                            <Folder className="w-3 h-3" />
                             {task.project.name}
                           </span>
                         )}
                         {task.category && (
                           <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border"
                             style={{
                               backgroundColor: task.category.color ? `${task.category.color}15` : 'rgba(217,119,6,0.1)',
                               color: task.category.color || '#d97706',
                               borderColor: task.category.color ? `${task.category.color}30` : 'rgba(217,119,6,0.2)',
                             }}
                           >
-                            <Tag className="w-2.5 h-2.5" />
+                            <Tag className="w-3 h-3" />
                             {task.category.name}
                           </span>
                         )}
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                            task.status === 'COMPLETED'
+                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
+                              : task.status === 'IN_PROGRESS'
+                              ? 'bg-teal-500/15 text-teal-400 border-teal-500/25'
+                              : 'bg-surface-muted text-muted border-border-soft'
+                          }`}
+                        >
+                          {task.status === 'COMPLETED'
+                            ? 'Concluído'
+                            : task.status === 'IN_PROGRESS'
+                            ? 'Em Andamento'
+                            : task.status === 'CANCELED'
+                            ? 'Cancelado'
+                            : 'A Fazer'}
+                        </span>
                       </div>
 
                       <h3
                         onClick={() => navigate('/tasks')}
-                        className="text-xs font-bold text-foreground hover:text-brand cursor-pointer truncate"
+                        className="text-sm font-bold text-foreground hover:text-brand cursor-pointer truncate transition-colors"
                       >
                         {task.title}
                       </h3>
@@ -527,13 +559,13 @@ export const DashboardPage: React.FC = () => {
 
                     <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
                       <div
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md font-mono text-[11px] ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-mono text-[11px] font-bold ${
                           isTracking
-                            ? 'bg-teal-500/20 text-teal-300 font-bold'
-                            : 'bg-surface-sunken text-muted'
+                            ? 'bg-teal-500/20 text-teal-300'
+                            : 'bg-surface-muted text-muted'
                         }`}
                       >
-                        <Clock className={`w-3 h-3 ${isTracking ? 'animate-pulse text-brand' : ''}`} />
+                        <Clock className={`w-3.5 h-3.5 ${isTracking ? 'animate-pulse text-brand' : ''}`} />
                         <span>{formatSecondsToTimer(taskSec)}</span>
                       </div>
 
@@ -541,10 +573,10 @@ export const DashboardPage: React.FC = () => {
                         type="button"
                         onClick={() => handleToggleTimer(task)}
                         title={isTracking ? 'Pausar cronômetro' : 'Iniciar cronômetro'}
-                        className={`p-1.5 rounded-lg transition-colors ${
+                        className={`p-2 rounded-xl transition-all shadow-xs ${
                           isTracking
-                            ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30'
-                            : 'bg-brand/15 text-teal-300 hover:bg-brand/25'
+                            ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 ring-1 ring-rose-500/40'
+                            : 'bg-brand/15 text-teal-300 hover:bg-brand/25 ring-1 ring-brand/30'
                         }`}
                       >
                         {isTracking ? (

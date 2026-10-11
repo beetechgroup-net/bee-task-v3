@@ -153,11 +153,12 @@ export const MembersPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-brand via-brand-strong to-accent bg-clip-text text-transparent">
               Membros & Equipe
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
               {activeOrg?.name || 'Workspace'}
             </span>
           </div>
@@ -171,7 +172,7 @@ export const MembersPage: React.FC = () => {
           onClick={loadData}
           disabled={refreshing}
           title="Recarregar dados"
-          className="self-start sm:self-auto p-2 rounded-xl border border-border bg-surface text-muted hover:text-foreground hover:bg-surface-raised transition-colors disabled:opacity-50"
+          className="self-start sm:self-auto p-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-muted hover:text-foreground hover:bg-surface-raised transition-all shadow-panel disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-brand' : ''}`} />
         </button>
@@ -180,7 +181,7 @@ export const MembersPage: React.FC = () => {
       {/* Feedback Alert */}
       {feedbackMsg && (
         <div
-          className={`flex items-center justify-between p-3.5 rounded-xl border text-xs ${
+          className={`flex items-center justify-between p-4 rounded-2xl border text-xs shadow-panel backdrop-blur-md ${
             feedbackMsg.type === 'success'
               ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300'
               : 'bg-rose-500/10 border-rose-500/25 text-rose-300'
@@ -205,19 +206,19 @@ export const MembersPage: React.FC = () => {
       )}
 
       {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-border pb-1 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-border-soft pb-1.5 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('members')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
             activeTab === 'members'
-              ? 'bg-brand text-white shadow-xs'
-              : 'text-muted hover:text-foreground hover:bg-surface-raised'
+              ? 'bg-brand text-white shadow-md shadow-brand/20'
+              : 'text-muted hover:text-foreground hover:bg-surface-raised/80'
           }`}
         >
           <Users className="w-4 h-4" />
           <span>Membros Ativos</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/20 font-bold">
             {members.length}
           </span>
         </button>
@@ -228,14 +229,14 @@ export const MembersPage: React.FC = () => {
             onClick={() => setActiveTab('pending')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'pending'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'text-muted hover:text-foreground hover:bg-surface-raised'
+                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
+                : 'text-muted hover:text-foreground hover:bg-surface-raised/80'
             }`}
           >
             <Clock className="w-4 h-4" />
             <span>Solicitações Pendentes</span>
             {pendingRequests.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold animate-pulse">
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500 text-white font-bold animate-pulse">
                 {pendingRequests.length}
               </span>
             )}
@@ -247,8 +248,8 @@ export const MembersPage: React.FC = () => {
           onClick={() => setActiveTab('discover')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
             activeTab === 'discover'
-              ? 'bg-brand text-white shadow-xs'
-              : 'text-muted hover:text-foreground hover:bg-surface-raised'
+              ? 'bg-brand text-white shadow-md shadow-brand/20'
+              : 'text-muted hover:text-foreground hover:bg-surface-raised/80'
           }`}
         >
           <UserPlus className="w-4 h-4" />
@@ -260,15 +261,15 @@ export const MembersPage: React.FC = () => {
       {activeTab === 'members' && (
         <div className="space-y-4">
           {/* Member Search Bar */}
-          <div className="p-3.5 rounded-2xl border border-border bg-surface flex items-center justify-between gap-3 shadow-xs">
+          <div className="p-4 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex items-center justify-between gap-3 shadow-panel">
             <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={memberSearchTerm}
                 onChange={(e) => setMemberSearchTerm(e.target.value)}
                 placeholder="Filtrar por nome ou e-mail..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-surface-raised text-xs text-foreground placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-border-soft bg-surface-raised/80 text-xs text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
               />
             </div>
             <span className="text-xs text-muted font-medium">
@@ -281,12 +282,12 @@ export const MembersPage: React.FC = () => {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-28 rounded-2xl border border-border bg-surface-sunken/40 animate-pulse p-4"
+                  className="h-28 rounded-3xl border border-border-soft bg-surface-sunken/40 animate-pulse p-5"
                 />
               ))}
             </div>
           ) : filteredMembers.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-surface/50">
+            <div className="text-center py-16 rounded-3xl border border-dashed border-border-soft bg-surface/60 backdrop-blur-md shadow-panel">
               <Users className="w-8 h-8 text-muted mx-auto mb-2" />
               <p className="text-xs text-muted">Nenhum membro encontrado com este termo.</p>
             </div>
@@ -297,7 +298,7 @@ export const MembersPage: React.FC = () => {
                 return (
                   <div
                     key={member.userId}
-                    className="p-4 rounded-2xl border border-border bg-surface hover:border-zinc-700 transition-all flex items-center justify-between gap-3"
+                    className="p-5 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md shadow-panel hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3 truncate">
                       <div className="w-10 h-10 rounded-full bg-brand/15 border border-brand/30 flex items-center justify-center text-sm font-bold text-brand uppercase shrink-0">
@@ -322,7 +323,7 @@ export const MembersPage: React.FC = () => {
                     </div>
 
                     <div className="shrink-0">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-raised border border-border text-muted">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         <UserCheck className="w-3 h-3 text-emerald-400" />
                         Ativo
                       </span>
@@ -349,7 +350,7 @@ export const MembersPage: React.FC = () => {
           </div>
 
           {pendingRequests.length === 0 ? (
-            <div className="text-center py-16 rounded-2xl border border-dashed border-border bg-surface/50">
+            <div className="text-center py-16 rounded-3xl border border-dashed border-border-soft bg-surface/60 backdrop-blur-md shadow-panel">
               <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
               <h4 className="text-sm font-bold text-foreground">Tudo limpo!</h4>
               <p className="text-xs text-muted">Não há solicitações pendentes de aprovação no momento.</p>
@@ -359,7 +360,7 @@ export const MembersPage: React.FC = () => {
               {pendingRequests.map((req) => (
                 <div
                   key={req.userId}
-                  className="p-4 rounded-2xl border border-border bg-surface flex items-center justify-between gap-4"
+                  className="p-5 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md shadow-panel hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-3 truncate">
                     <div className="w-10 h-10 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-sm font-bold text-amber-400 uppercase shrink-0">
@@ -376,7 +377,7 @@ export const MembersPage: React.FC = () => {
                       type="button"
                       disabled={actionLoadingId === req.userId}
                       onClick={() => handleReject(req.userId)}
-                      className="p-2 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/15 transition-colors"
+                      className="p-2.5 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/15 transition-colors"
                       title="Rejeitar"
                     >
                       <XCircle className="w-4 h-4" />
@@ -385,7 +386,7 @@ export const MembersPage: React.FC = () => {
                       type="button"
                       disabled={actionLoadingId === req.userId}
                       onClick={() => handleApprove(req.userId)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-hover shadow-xs transition-colors"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-hover shadow-md shadow-brand/20 transition-all"
                     >
                       {actionLoadingId === req.userId ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -406,7 +407,7 @@ export const MembersPage: React.FC = () => {
       {activeTab === 'discover' && (
         <div className="space-y-6">
           {/* Search other organizations */}
-          <div className="p-5 rounded-2xl border border-border bg-surface shadow-xs space-y-4">
+          <div className="p-6 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md shadow-panel space-y-4">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">
                 <Sparkles className="w-4 h-4" />
@@ -423,19 +424,19 @@ export const MembersPage: React.FC = () => {
 
             <form onSubmit={handleSearchOrg} className="flex gap-2.5">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={searchOrgTerm}
                   onChange={(e) => setSearchOrgTerm(e.target.value)}
                   placeholder="Digite o nome da organização (ex: BeeTech, Squad Core...)"
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-border bg-surface-raised text-xs text-foreground placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-border-soft bg-surface-raised/80 text-xs text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
                 />
               </div>
               <button
                 type="submit"
                 disabled={searching || !searchOrgTerm.trim()}
-                className="px-4 py-2.5 rounded-xl bg-brand text-white text-xs font-semibold hover:bg-brand-hover shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl bg-brand text-white text-xs font-semibold hover:bg-brand-hover shadow-md shadow-brand/20 flex items-center gap-1.5 disabled:opacity-50 transition-all"
               >
                 {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 <span>Buscar</span>
@@ -444,7 +445,7 @@ export const MembersPage: React.FC = () => {
 
             {/* Results */}
             {searchResults.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-border">
+              <div className="space-y-2 pt-2 border-t border-border-soft/60">
                 <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
                   Resultados da Busca
                 </p>
@@ -456,7 +457,7 @@ export const MembersPage: React.FC = () => {
                     return (
                       <div
                         key={org.id}
-                        className="p-3.5 rounded-xl border border-border bg-surface-raised flex items-center justify-between gap-3"
+                        className="p-4 rounded-2xl border border-border-soft bg-surface-raised/80 flex items-center justify-between gap-3 shadow-xs"
                       >
                         <div className="truncate">
                           <p className="text-xs font-bold text-foreground truncate">{org.name}</p>
@@ -491,7 +492,7 @@ export const MembersPage: React.FC = () => {
           </div>
 
           {/* Minhas solicitações enviadas */}
-          <div className="p-5 rounded-2xl border border-border bg-surface shadow-xs space-y-3">
+          <div className="p-6 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md shadow-panel space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
               Minhas Solicitações de Ingresso
             </h3>

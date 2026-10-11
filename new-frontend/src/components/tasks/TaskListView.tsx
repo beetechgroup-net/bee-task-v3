@@ -42,7 +42,7 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
   const [activeMenuId, setActiveMenuId] = React.useState<number | null>(null)
 
   return (
-    <div className="rounded-2xl border border-border bg-surface overflow-hidden shadow-xs">
+    <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md overflow-hidden shadow-panel">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
