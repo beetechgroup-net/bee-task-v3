@@ -5,6 +5,7 @@ import type { OrganizationMember } from '../../services/organizationService'
 import { projectService } from '../../services/projectService'
 import { categoryService } from '../../services/categoryService'
 import { organizationService } from '../../services/organizationService'
+import { CustomSelect } from '../ui/Select'
 
 interface CreateTaskModalProps {
   isOpen: boolean
@@ -272,18 +273,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   </button>
                 </div>
               ) : (
-                <select
-                  value={projectId ?? ''}
-                  onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
-                >
-                  <option value="">Sem projeto</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={projectId ?? 0}
+                  onChange={(val) => setProjectId(Number(val) === 0 ? undefined : Number(val))}
+                  placeholder="Sem projeto"
+                  leftIcon={<Folder className="w-3.5 h-3.5 text-brand" />}
+                  options={[
+                    { value: 0, label: 'Sem projeto' },
+                    ...projects.map((p) => ({
+                      value: p.id,
+                      label: p.name,
+                      color: p.color || '#0f766e',
+                    })),
+                  ]}
+                />
               )}
             </div>
 
@@ -297,7 +300,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAddCategory(!showAddCategory)}
-                  className="text-[11px] text-accent hover:underline font-medium"
+                  className="text-[11px] text-accent hover:underline font-medium cursor-pointer"
                 >
                   {showAddCategory ? 'Cancelar' : '+ Nova'}
                 </button>
@@ -321,18 +324,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   </button>
                 </div>
               ) : (
-                <select
-                  value={categoryId ?? ''}
-                  onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
-                >
-                  <option value="">Sem categoria</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={categoryId ?? 0}
+                  onChange={(val) => setCategoryId(Number(val) === 0 ? undefined : Number(val))}
+                  placeholder="Sem categoria"
+                  leftIcon={<Tag className="w-3.5 h-3.5 text-accent" />}
+                  options={[
+                    { value: 0, label: 'Sem categoria' },
+                    ...categories.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                      color: c.color || '#d97706',
+                    })),
+                  ]}
+                />
               )}
             </div>
           </div>
@@ -345,20 +350,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                 <User className="w-3.5 h-3.5 text-muted" />
                 Responsável
               </label>
-              <select
-                value={assigneeUserId ?? ''}
-                onChange={(e) =>
-                  setAssigneeUserId(e.target.value ? Number(e.target.value) : undefined)
-                }
-                className="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
-              >
-                <option value="">Atribuir a mim mesmo / Sem responsável</option>
-                {members.map((m) => (
-                  <option key={m.userId} value={m.userId}>
-                    {m.userName} ({m.userEmail})
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                value={assigneeUserId ?? 0}
+                onChange={(val) => setAssigneeUserId(Number(val) === 0 ? undefined : Number(val))}
+                placeholder="Atribuir a mim mesmo / Sem responsável"
+                leftIcon={<User className="w-3.5 h-3.5 text-muted" />}
+                options={[
+                  { value: 0, label: 'Sem responsável (atribuir a mim)' },
+                  ...members.map((m) => ({
+                    value: m.userId,
+                    label: m.userName,
+                    description: m.userEmail,
+                  })),
+                ]}
+              />
             </div>
 
             {/* Status */}
@@ -366,16 +371,16 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               <label className="block text-xs font-semibold text-foreground mb-1.5">
                 Status Inicial
               </label>
-              <select
+              <CustomSelect
                 value={status}
-                onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                className="w-full px-3 py-2 rounded-xl border border-border bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
-              >
-                <option value="NOT_STARTED">A Fazer (NOT_STARTED)</option>
-                <option value="IN_PROGRESS">Em Andamento (IN_PROGRESS)</option>
-                <option value="COMPLETED">Concluído (COMPLETED)</option>
-                <option value="CANCELED">Cancelado (CANCELED)</option>
-              </select>
+                onChange={(val) => setStatus(val as TaskStatus)}
+                options={[
+                  { value: 'NOT_STARTED', label: 'A Fazer', color: '#71717a' },
+                  { value: 'IN_PROGRESS', label: 'Em Andamento', color: '#14b8a6' },
+                  { value: 'COMPLETED', label: 'Concluído', color: '#10b981' },
+                  { value: 'CANCELED', label: 'Cancelado', color: '#f43f5e' },
+                ]}
+              />
             </div>
           </div>
 

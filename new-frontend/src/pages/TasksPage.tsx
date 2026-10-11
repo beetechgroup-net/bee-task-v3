@@ -22,6 +22,7 @@ import type { Task, TaskStatus, Project } from '../types/task'
 import { TaskKanbanView } from '../components/tasks/TaskKanbanView'
 import { TaskListView } from '../components/tasks/TaskListView'
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
+import { CustomSelect } from '../components/ui/Select'
 
 export const TasksPage: React.FC = () => {
   const { activeOrg } = useAuth()
@@ -367,39 +368,37 @@ export const TasksPage: React.FC = () => {
 
           {/* Project Filter */}
           {projects.length > 0 && (
-            <div className="relative">
-              <select
+            <div className="w-48">
+              <CustomSelect
                 value={selectedProjectId}
-                onChange={(e) =>
-                  setSelectedProjectId(
-                    e.target.value === 'ALL' ? 'ALL' : Number(e.target.value)
-                  )
-                }
-                className="pl-7 pr-3.5 py-2 rounded-xl border border-border-soft bg-surface-raised/80 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand cursor-pointer"
-              >
-                <option value="ALL">Todos os Projetos</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <Folder className="w-3.5 h-3.5 text-brand absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                onChange={(val) => setSelectedProjectId(val)}
+                leftIcon={<Folder className="w-3.5 h-3.5 text-brand" />}
+                options={[
+                  { value: 'ALL', label: 'Todos os Projetos' },
+                  ...projects.map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                    color: p.color || '#0f766e',
+                  })),
+                ]}
+              />
             </div>
           )}
 
           {/* Status Filter */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value as TaskStatus | 'ALL')}
-            className="px-3.5 py-2 rounded-xl border border-border-soft bg-surface-raised/80 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand cursor-pointer"
-          >
-            <option value="ALL">Todos os Status</option>
-            <option value="NOT_STARTED">A Fazer</option>
-            <option value="IN_PROGRESS">Em Andamento</option>
-            <option value="COMPLETED">Concluído</option>
-            <option value="CANCELED">Cancelado</option>
-          </select>
+          <div className="w-44">
+            <CustomSelect
+              value={selectedStatus}
+              onChange={(val) => setSelectedStatus(val as TaskStatus | 'ALL')}
+              options={[
+                { value: 'ALL', label: 'Todos os Status' },
+                { value: 'NOT_STARTED', label: 'A Fazer', color: '#71717a' },
+                { value: 'IN_PROGRESS', label: 'Em Andamento', color: '#14b8a6' },
+                { value: 'COMPLETED', label: 'Concluído', color: '#10b981' },
+                { value: 'CANCELED', label: 'Cancelado', color: '#f43f5e' },
+              ]}
+            />
+          </div>
         </div>
       </div>
 

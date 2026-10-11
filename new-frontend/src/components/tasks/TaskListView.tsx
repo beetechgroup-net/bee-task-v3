@@ -2,6 +2,7 @@ import React from 'react'
 import { Play, Square, Clock, Folder, Tag, MoreHorizontal, CheckCircle2 } from 'lucide-react'
 import type { Task, TaskStatus } from '../../types/task'
 import { isTaskRunning, calculateTaskTotalSeconds, formatSecondsToTimer } from '../../lib/timeUtils'
+import { CustomSelect } from '../ui/Select'
 
 interface TaskListViewProps {
   tasks: Task[]
@@ -12,24 +13,6 @@ interface TaskListViewProps {
   activeTaskSeconds?: number
 }
 
-const statusBadge: Record<TaskStatus, { label: string; badgeClass: string }> = {
-  NOT_STARTED: {
-    label: 'A Fazer',
-    badgeClass: 'bg-zinc-800 text-zinc-300 border-zinc-700/60',
-  },
-  IN_PROGRESS: {
-    label: 'Em Andamento',
-    badgeClass: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
-  },
-  COMPLETED: {
-    label: 'Concluído',
-    badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  },
-  CANCELED: {
-    label: 'Cancelado',
-    badgeClass: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-  },
-}
 
 export const TaskListView: React.FC<TaskListViewProps> = ({
   tasks,
@@ -145,17 +128,19 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
 
                   {/* Status Dropdown */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <select
-                      value={task.status}
-                      onChange={(e) => onStatusChange(task, e.target.value as TaskStatus)}
-                      aria-label="Status da tarefa"
-                      className={`text-[11px] font-medium px-2 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand ${statusBadge[task.status].badgeClass}`}
-                    >
-                      <option value="NOT_STARTED" className="bg-surface-raised text-foreground">A Fazer</option>
-                      <option value="IN_PROGRESS" className="bg-surface-raised text-foreground">Em Andamento</option>
-                      <option value="COMPLETED" className="bg-surface-raised text-foreground">Concluído</option>
-                      <option value="CANCELED" className="bg-surface-raised text-foreground">Cancelado</option>
-                    </select>
+                    <div className="w-36">
+                      <CustomSelect
+                        size="sm"
+                        value={task.status}
+                        onChange={(newStatus) => onStatusChange(task, newStatus as TaskStatus)}
+                        options={[
+                          { value: 'NOT_STARTED', label: 'A Fazer', color: '#71717a' },
+                          { value: 'IN_PROGRESS', label: 'Em Andamento', color: '#14b8a6' },
+                          { value: 'COMPLETED', label: 'Concluído', color: '#10b981' },
+                          { value: 'CANCELED', label: 'Cancelado', color: '#f43f5e' },
+                        ]}
+                      />
+                    </div>
                   </td>
 
                   {/* Time Spent */}
