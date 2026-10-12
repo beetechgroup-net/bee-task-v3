@@ -28,9 +28,9 @@ const COLUMNS: ColumnDef[] = [
     status: 'NOT_STARTED',
     label: 'A Fazer',
     icon: CircleDot,
-    colorClass: 'text-zinc-400',
-    bgLightClass: 'bg-zinc-500/10',
-    borderColor: 'border-zinc-800',
+    colorClass: 'text-muted',
+    bgLightClass: 'bg-surface-sunken',
+    borderColor: 'border-border-soft',
   },
   {
     status: 'IN_PROGRESS',
@@ -119,7 +119,7 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
             }`}
           >
             {/* Column Header */}
-            <div className="flex items-center justify-between p-3.5 border-b border-border/80">
+            <div className="flex items-center justify-between p-3.5 border-b border-border-soft">
               <div className="flex items-center gap-2">
                 <div
                   className={`w-7 h-7 rounded-lg ${col.bgLightClass} flex items-center justify-center ${col.colorClass}`}
@@ -129,7 +129,7 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
                 <div>
                   <h3 className="font-semibold text-xs tracking-tight text-foreground flex items-center gap-2">
                     {col.label}
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-raised border border-border text-muted">
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-surface-raised border border-border-soft text-muted">
                       {columnTasks.length}
                     </span>
                   </h3>
@@ -145,7 +145,7 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
                 type="button"
                 onClick={() => onAddTaskToStatus(col.status)}
                 title={`Adicionar tarefa em ${col.label}`}
-                className="w-7 h-7 rounded-lg border border-border bg-surface flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+                className="w-7 h-7 rounded-lg border border-border-soft bg-surface flex items-center justify-center text-muted hover:text-foreground hover:bg-surface-raised transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -166,7 +166,7 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
               ))}
 
               {columnTasks.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-xl border border-dashed border-border/60">
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center rounded-xl border border-dashed border-border-soft">
                   <AlertCircle className="w-6 h-6 text-muted/60 mb-2" />
                   <p className="text-xs text-muted">Nenhuma tarefa nesta coluna</p>
                   <button

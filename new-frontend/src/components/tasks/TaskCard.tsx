@@ -15,7 +15,7 @@ interface TaskCardProps {
 const statusConfig: Record<TaskStatus, { label: string; badgeClass: string }> = {
   NOT_STARTED: {
     label: 'Não Iniciado',
-    badgeClass: 'bg-zinc-800 text-zinc-300 border-zinc-700/60',
+    badgeClass: 'bg-surface-sunken text-muted border-border-soft',
   },
   IN_PROGRESS: {
     label: 'Em Andamento',
@@ -191,7 +191,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </div>
           ) : (
             <div
-              className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] text-muted"
+              className="w-6 h-6 rounded-full bg-surface-raised border border-border-soft flex items-center justify-center text-[10px] text-muted"
               title="Sem responsável"
             >
               <CircleDot className="w-3 h-3" />
