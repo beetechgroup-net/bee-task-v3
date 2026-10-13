@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import type { Task } from '../types/task'
 import { taskService } from '../services/taskService'
-import { isTaskRunning, calculateTaskTotalSeconds } from '../lib/timeUtils'
+import { isTaskRunning, calculateBaseSeconds } from '../lib/timeUtils'
+import { useAuth } from './AuthContext'
 
 interface TimerContextType {
   activeTask: Task | null
@@ -14,35 +15,93 @@ interface TimerContextType {
 const TimerContext = createContext<TimerContextType | undefined>(undefined)
 
 export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { activeOrg } = useAuth()
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [activeSeconds, setActiveSeconds] = useState<number>(0)
+
+  // Track the baseline seconds and client-side timestamp when task data was fetched/started
+  const baseSecondsRef = useRef<number>(0)
+  const receivedAtRef = useRef<number>(Date.now())
 
   // Sync state whenever tasks list updates
   const syncWithTasks = useCallback((tasks: Task[]) => {
     const running = tasks.find((t) => isTaskRunning(t))
     if (running) {
       setActiveTask(running)
-      setActiveSeconds(calculateTaskTotalSeconds(running))
+      const base = calculateBaseSeconds(running)
+      baseSecondsRef.current = base
+      receivedAtRef.current = Date.now()
+      setActiveSeconds(base)
     } else {
       setActiveTask(null)
+      baseSecondsRef.current = 0
       setActiveSeconds(0)
     }
   }, [])
 
-  // Live timer interval
+  // Auto-fetch active running task on mount or workspace change
+  useEffect(() => {
+    if (!activeOrg?.id) return
+    let isMounted = true
+
+    taskService
+      .listMyTasks({ organizationId: activeOrg.id })
+      .then((tasks) => {
+        if (!isMounted) return
+        const running = tasks.find((t) => isTaskRunning(t))
+        if (running) {
+          syncWithTasks(tasks)
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not auto-fetch running task on init', err)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [activeOrg?.id, syncWithTasks])
+
+  // Live timer interval: uses wall-clock Date.now() and visibilitychange/focus
+  // This guarantees that switching tabs or minimizing the browser NEVER freezes or drifts the timer
   useEffect(() => {
     if (!activeTask) return
 
-    const interval = setInterval(() => {
-      setActiveSeconds((prev) => prev + 1)
-    }, 1000)
+    const updateSeconds = () => {
+      const elapsedSinceReceived = Math.max(0, Math.floor((Date.now() - receivedAtRef.current) / 1000))
+      setActiveSeconds(baseSecondsRef.current + elapsedSinceReceived)
+    }
 
-    return () => clearInterval(interval)
+    // Immediate initial sync
+    updateSeconds()
+
+    // 1-second interval
+    const interval = setInterval(updateSeconds, 1000)
+
+    // Instantly catch up when user returns from another tab or focuses window
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateSeconds()
+      }
+    }
+
+    const handleFocus = () => {
+      updateSeconds()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [activeTask])
 
   const startTimer = useCallback(
     async (task: Task): Promise<Task> => {
-      // If there was an active task running different from this one, stop it first or handle
+      // If there was an active task running different from this one, stop it first
       if (activeTask && activeTask.id !== task.id) {
         try {
           await taskService.stopTask(activeTask.id)
@@ -53,7 +112,10 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const updated = await taskService.startTask(task.id)
       setActiveTask(updated)
-      setActiveSeconds(calculateTaskTotalSeconds(updated))
+      const base = calculateBaseSeconds(updated)
+      baseSecondsRef.current = base
+      receivedAtRef.current = Date.now()
+      setActiveSeconds(base)
       return updated
     },
     [activeTask]
@@ -66,6 +128,7 @@ export const TimerProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       const updated = await taskService.stopTask(targetId)
       setActiveTask(null)
+      baseSecondsRef.current = 0
       setActiveSeconds(0)
       return updated
     },

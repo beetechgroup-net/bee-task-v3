@@ -100,7 +100,11 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
       {COLUMNS.map((col) => {
         const columnTasks = tasks.filter((t) => t.status === col.status)
         const colTotalSeconds = columnTasks.reduce(
-          (acc, t) => acc + calculateTaskTotalSeconds(t),
+          (acc, t) =>
+            acc +
+            (t.id === activeTaskId && activeTaskSeconds !== undefined
+              ? activeTaskSeconds
+              : calculateTaskTotalSeconds(t)),
           0
         )
         const Icon = col.icon

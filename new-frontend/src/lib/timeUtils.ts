@@ -10,13 +10,34 @@ export function calculateTaskTotalSeconds(task: Task): number {
 
   let total = 0
   for (const item of task.history) {
+    if (item.endAt) {
+      total += item.elapsedSeconds || 0
+    } else {
+      // Running interval: calculate based on start timestamp if available or elapsedSeconds
+      if (item.startAt) {
+        // Backend stores UTC LocalDateTime without timezone offset suffix. Append 'Z' to parse as UTC.
+        const utcDateStr = item.startAt.endsWith('Z') ? item.startAt : `${item.startAt}Z`
+        const start = new Date(utcDateStr).getTime()
+        if (!isNaN(start)) {
+          const diffSec = Math.max(0, Math.floor((Date.now() - start) / 1000))
+          total += Math.max(diffSec, item.elapsedSeconds || 0)
+        } else {
+          total += item.elapsedSeconds || 0
+        }
+      } else {
+        total += item.elapsedSeconds || 0
+      }
+    }
+  }
+  return total
+}
+
+export function calculateBaseSeconds(task: Task): number {
+  if (!task.history || task.history.length === 0) return 0
+  let total = 0
+  for (const item of task.history) {
     if (item.elapsedSeconds) {
       total += item.elapsedSeconds
-    } else if (item.startAt && !item.endAt) {
-      const start = new Date(item.startAt).getTime()
-      const now = Date.now()
-      const diffSec = Math.max(0, Math.floor((now - start) / 1000))
-      total += diffSec
     }
   }
   return total
