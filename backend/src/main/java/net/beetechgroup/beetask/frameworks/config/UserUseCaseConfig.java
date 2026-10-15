@@ -53,4 +53,14 @@ public class UserUseCaseConfig {
     public UploadUserPhotoUseCase uploadUserPhotoUseCase(UserRepository userRepository, StorageRepository storageRepository) {
         return new UploadUserPhotoUseCase(userRepository, storageRepository);
     }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.preferences.GetUserPreferencesUseCase getUserPreferencesUseCase(UserRepository userRepository) {
+        return new net.beetechgroup.beetask.usecase.user.preferences.GetUserPreferencesUseCase(userRepository);
+    }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.preferences.UpdateUserPreferencesUseCase updateUserPreferencesUseCase(UserRepository userRepository) {
+        return new net.beetechgroup.beetask.usecase.user.preferences.UpdateUserPreferencesUseCase(userRepository);
+    }
 }

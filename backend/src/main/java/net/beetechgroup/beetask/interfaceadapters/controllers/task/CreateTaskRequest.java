@@ -12,5 +12,6 @@ public record CreateTaskRequest(
                 Long projectId,
                 Long categoryId,
                 Long assigneeUserId,
-                List<TaskHistoryItemResponse> history) {
+                List<TaskHistoryItemResponse> history,
+                String externalUrl) {
 }

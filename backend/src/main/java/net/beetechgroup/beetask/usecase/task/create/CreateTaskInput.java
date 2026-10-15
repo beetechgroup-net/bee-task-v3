@@ -13,5 +13,6 @@ public record CreateTaskInput(
         Long categoryId,
         Long assigneeUserId,
         String userEmail,
-        List<TaskHistoryItemInput> history) {
+        List<TaskHistoryItemInput> history,
+        String externalUrl) {
 }

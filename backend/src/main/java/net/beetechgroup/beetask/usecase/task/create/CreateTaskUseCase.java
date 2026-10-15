@@ -39,6 +39,7 @@ public class CreateTaskUseCase {
         task.setTitle(input.title());
         task.setDescription(input.description());
         task.setStatus(input.status());
+        task.setExternalUrl(input.externalUrl());
 
         if (Objects.nonNull(input.projectId())) {
             Project project = projectRepository.findProjectById(input.projectId())

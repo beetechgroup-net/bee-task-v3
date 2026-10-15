@@ -37,11 +37,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.minio.rule=Host(`minio-task2.beetech.dev`)"
+      - "traefik.http.routers.minio.rule=Host(`minio-task.beetech.dev`) || Host(`minio-task2.beetech.dev`)"
       - "traefik.http.routers.minio.entrypoints=web"
       - "traefik.http.routers.minio.service=minio"
       - "traefik.http.services.minio.loadbalancer.server.port=9000"
-      - "traefik.http.routers.minio-console.rule=Host(`console-task2.beetech.dev`)"
+      - "traefik.http.routers.minio-console.rule=Host(`console-task.beetech.dev`) || Host(`console-task2.beetech.dev`)"
       - "traefik.http.routers.minio-console.entrypoints=web"
       - "traefik.http.routers.minio-console.service=minio-console"
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
@@ -76,7 +76,7 @@ services:
       DB_USER: beetask
       DB_PASSWORD: beetask
       DB_URL: jdbc:postgresql://postgres:5432/beetask
-      QUARKUS_HTTP_CORS_ORIGINS: "https://task2.beetech.dev,https://task3.beetech.dev"
+      QUARKUS_HTTP_CORS_ORIGINS: "https://task.beetech.dev,https://task2.beetech.dev,https://task3.beetech.dev"
       MP_JWT_VERIFY_ISSUER: ${MP_JWT_VERIFY_ISSUER}
       SMALLRYE_JWT_SIGN_KEY: ${SMALLRYE_JWT_SIGN_KEY}
       MP_JWT_VERIFY_PUBLICKEY: ${MP_JWT_VERIFY_PUBLICKEY}
@@ -94,7 +94,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.backend.rule=Host(`api-task2.beetech.dev`) || Host(`api-task3.beetech.dev`)"
+      - "traefik.http.routers.backend.rule=Host(`api-task.beetech.dev`) || Host(`api-task2.beetech.dev`) || Host(`api-task3.beetech.dev`)"
       - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=8081"
 
@@ -103,7 +103,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-https://api-task2.beetech.dev}
+        VITE_API_URL: ${VITE_API_URL:-https://api-task.beetech.dev}
     container_name: bee-task-frontend
     restart: unless-stopped
     expose:
@@ -116,31 +116,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.frontend.rule=Host(`task2.beetech.dev`)"
+      - "traefik.http.routers.frontend.rule=Host(`task.beetech.dev`) || Host(`task3.beetech.dev`) || Host(`task2.beetech.dev`)"
       - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
-
-  frontend2:
-    build:
-      context: ./new-frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-https://api-task2.beetech.dev}
-    container_name: bee-task-frontend2
-    restart: unless-stopped
-    expose:
-      - "80"
-    depends_on:
-      - backend
-    networks:
-      - proxy
-      - internal
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.frontend2.rule=Host(`task3.beetech.dev`)"
-      - "traefik.http.routers.frontend2.entrypoints=web"
-      - "traefik.http.services.frontend2.loadbalancer.server.port=80"
 
 volumes:
   postgres_data:

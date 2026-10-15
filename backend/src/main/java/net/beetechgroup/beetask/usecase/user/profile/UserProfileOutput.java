@@ -6,7 +6,8 @@ public record UserProfileOutput(
     String name,
     String email,
     String photo,
-    List<OrganizationProfileOutput> organizations
+    List<OrganizationProfileOutput> organizations,
+    String preferences
 ) {
     public record OrganizationProfileOutput(
         Long id,

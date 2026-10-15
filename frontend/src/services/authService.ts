@@ -1,5 +1,11 @@
 import { apiFetch } from '../lib/api'
 
+export type OrganizationMembership = {
+  id: number
+  name: string
+  roles: string[]
+}
+
 export type LoginResponse = {
   name: string
   email: string
@@ -8,11 +14,14 @@ export type LoginResponse = {
   refreshToken: string
   expiresIn: number // seconds
   issuedAt: string // ISO date
-  organizations: {
-    id: number
-    name: string
-    roles: string[]
-  }[]
+  organizations: OrganizationMembership[]
+  preferences?: string | null
+}
+
+export type CreateAccountResponse = {
+  id: number
+  name: string
+  email: string
 }
 
 export const authService = {
@@ -20,13 +29,15 @@ export const authService = {
     return apiFetch<LoginResponse>('/auth/login', {
       method: 'POST',
       body: { email, password },
+      skipAuth: true,
     })
   },
 
-  async register(name: string, email: string, password: string): Promise<{ id: number; name: string; email: string }> {
-    return apiFetch<{ id: number; name: string; email: string }>('/auth/register', {
+  async register(name: string, email: string, password: string): Promise<CreateAccountResponse> {
+    return apiFetch<CreateAccountResponse>('/auth/register', {
       method: 'POST',
       body: { name, email, password },
+      skipAuth: true,
     })
   },
 
@@ -34,10 +45,22 @@ export const authService = {
     return apiFetch<LoginResponse>('/auth/refresh', {
       method: 'POST',
       body: { refreshToken },
+      skipAuth: true,
     })
   },
 
   async me(): Promise<LoginResponse> {
     return apiFetch<LoginResponse>('/auth/me')
-  }
+  },
+
+  async getPreferences(): Promise<{ preferences: string | null }> {
+    return apiFetch<{ preferences: string | null }>('/auth/preferences')
+  },
+
+  async updatePreferences(preferences: string): Promise<{ preferences: string }> {
+    return apiFetch<{ preferences: string }>('/auth/preferences', {
+      method: 'PUT',
+      body: { preferences },
+    })
+  },
 }

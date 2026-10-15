@@ -1,21 +1,15 @@
 import { apiFetch } from '../lib/api'
-
-export interface Project {
-  id: number
-  name: string
-  color?: string | null
-  icon?: string | null
-}
+import type { Project } from '../types/task'
 
 export const projectService = {
-  listByOrganization: async (orgId: number): Promise<Project[]> => {
+  async listProjects(orgId: number): Promise<Project[]> {
     return apiFetch<Project[]>(`/organizations/${orgId}/projects`)
   },
 
-  create: async (orgId: number, payload: { name: string; color: string; icon: string }): Promise<Project> => {
+  async createProject(orgId: number, data: { name: string; color?: string; icon?: string }): Promise<Project> {
     return apiFetch<Project>(`/organizations/${orgId}/projects`, {
       method: 'POST',
-      body: payload,
+      body: data,
     })
   },
 }

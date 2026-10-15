@@ -30,6 +30,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
         } else {
             entity = getEntityManager().merge(entity);
         }
+        getEntityManager().flush();
         Task savedTask = TaskEntityMapper.toDomain(entity);
         LOGGER.infof("Persisted task %d with status %s", savedTask.getId(), savedTask.getStatus());
         return savedTask;

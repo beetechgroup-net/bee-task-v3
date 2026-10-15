@@ -1,157 +1,162 @@
-import React, {
+import {
   createContext,
   useContext,
   useState,
   useEffect,
   useCallback,
-} from "react";
-import { authService, type LoginResponse } from "../services/authService";
+  useMemo,
+  type ReactNode,
+} from 'react'
+import {
+  authService,
+  type LoginResponse,
+  type CreateAccountResponse,
+  type OrganizationMembership,
+} from '../services/authService'
 
 interface AuthContextType {
-  user: LoginResponse | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  activeOrg: LoginResponse["organizations"][number] | null;
-  login: (email: string, password: string) => Promise<LoginResponse>;
-  logout: () => void;
-  refreshUser: () => Promise<void>;
-  setActiveOrg: (id: number) => void;
+  user: LoginResponse | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  activeOrg: OrganizationMembership | null
+  login: (email: string, password: string) => Promise<LoginResponse>
+  register: (name: string, email: string, password: string) => Promise<CreateAccountResponse>
+  logout: () => void
+  refreshUser: () => Promise<void>
+  setActiveOrg: (id: number) => void
 }
 
 const STORAGE_KEYS = {
-  USER: "user",
-  ACTIVE_ORG_ID: "activeOrgId",
-} as const;
+  USER: 'user',
+  ACTIVE_ORG_ID: 'activeOrgId',
+} as const
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [user, setUser] = useState<LoginResponse | null>(null);
-  const [activeOrgId, setActiveOrgId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const setupActiveOrg = useCallback((organizations: LoginResponse["organizations"]) => {
-    const storedOrgId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ORG_ID);
-    const parsedStoredId = storedOrgId ? Number(storedOrgId) : null;
-    
-    const isValidOrg = organizations.some(org => org.id === parsedStoredId);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<LoginResponse | null>(null)
+  const [activeOrgId, setActiveOrgId] = useState<number | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const setupActiveOrg = useCallback((organizations: OrganizationMembership[]) => {
+    const storedOrgId = localStorage.getItem(STORAGE_KEYS.ACTIVE_ORG_ID)
+    const parsedStoredId = storedOrgId ? Number(storedOrgId) : null
+
+    const isValidOrg = organizations.some((org) => org.id === parsedStoredId)
 
     if (isValidOrg && parsedStoredId !== null) {
-      setActiveOrgId(parsedStoredId);
+      setActiveOrgId(parsedStoredId)
     } else if (organizations.length > 0) {
-      const firstOrgId = organizations[0].id;
-      setActiveOrgId(firstOrgId);
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_ORG_ID, firstOrgId.toString());
+      const firstOrgId = organizations[0].id
+      setActiveOrgId(firstOrgId)
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_ORG_ID, firstOrgId.toString())
     }
-  }, []);
+  }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEYS.USER);
-    setUser(null);
-    window.location.href = "/login";
-  }, []);
+    localStorage.removeItem(STORAGE_KEYS.USER)
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_ORG_ID)
+    setUser(null)
+    setActiveOrgId(null)
+  }, [])
+
+  const renewToken = useCallback(async (refreshToken: string) => {
+    try {
+      const response = await authService.refresh(refreshToken)
+      response.issuedAt = new Date().toISOString()
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response))
+      setUser(response)
+    } catch {
+      logout()
+    }
+  }, [logout])
 
   const checkTokenExpiration = useCallback(
     (userData: LoginResponse) => {
-      const issuedAt = new Date(userData.issuedAt).getTime();
-      const expiresAt = issuedAt + userData.expiresIn * 1000;
-      const now = Date.now();
+      const issuedAt = new Date(userData.issuedAt).getTime()
+      const expiresAt = issuedAt + userData.expiresIn * 1000
+      const now = Date.now()
 
-      // Se já expirou
       if (now >= expiresAt) {
-        logout();
-        return false;
+        logout()
+        return false
       }
 
-      // Se falta menos de 5 minutos para vencer, tenta renovar
-      const timeToExpire = expiresAt - now;
-      if (timeToExpire < 300000) {
-        // 5 min
-        renewToken(userData.refreshToken);
+      // Se expirar em menos de 5 min, renova
+      if (expiresAt - now < 300000) {
+        renewToken(userData.refreshToken)
       }
 
-      return true;
+      return true
     },
-    [logout],
-  );
-
-  const renewToken = async (refreshToken: string) => {
-    try {
-      const response = await authService.refresh(refreshToken);
-      response.issuedAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response));
-      setUser(response);
-    } catch (error) {
-      console.error("Failed to renew token", error);
-      logout();
-    }
-  };
+    [logout, renewToken]
+  )
 
   useEffect(() => {
-    const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+    const storedUser = localStorage.getItem(STORAGE_KEYS.USER)
     if (storedUser) {
       try {
-        const userData: LoginResponse = JSON.parse(storedUser);
+        const userData: LoginResponse = JSON.parse(storedUser)
         if (checkTokenExpiration(userData)) {
-          setUser(userData);
-          setupActiveOrg(userData.organizations);
+          setUser(userData)
+          setupActiveOrg(userData.organizations)
         }
-      } catch (e) {
-        localStorage.removeItem(STORAGE_KEYS.USER);
+      } catch {
+        localStorage.removeItem(STORAGE_KEYS.USER)
       }
     }
-    setIsLoading(false);
-  }, [checkTokenExpiration]);
+    setIsLoading(false)
+  }, [checkTokenExpiration, setupActiveOrg])
 
-  // Timer para verificar expiração periodicamente
+  // Verificação periódica a cada 60 segundos
   useEffect(() => {
-    if (!user) return;
+    if (!user) return
 
     const interval = setInterval(() => {
-      checkTokenExpiration(user);
-    }, 60000); // Verifica a cada minuto
+      checkTokenExpiration(user)
+    }, 60000)
 
-    return () => clearInterval(interval);
-  }, [user, checkTokenExpiration]);
+    return () => clearInterval(interval)
+  }, [user, checkTokenExpiration])
 
   const login = async (email: string, password: string) => {
-    const response = await authService.login(email, password);
-    response.issuedAt = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response));
-    setUser(response);
-    setupActiveOrg(response.organizations);
-    return response;
-  };
+    const response = await authService.login(email, password)
+    response.issuedAt = new Date().toISOString()
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response))
+    setUser(response)
+    setupActiveOrg(response.organizations)
+    return response
+  }
+
+  const register = async (name: string, email: string, password: string) => {
+    return authService.register(name, email, password)
+  }
 
   const refreshUser = async () => {
     try {
-      const response = await authService.me();
-      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+      const response = await authService.me()
+      const storedUser = localStorage.getItem(STORAGE_KEYS.USER)
       if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        const updatedUser = { ...userData, ...response };
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
-        setUser(updatedUser);
-
-        // Update active org if not set or if current active org is gone
-        setupActiveOrg(updatedUser.organizations);
+        const userData = JSON.parse(storedUser)
+        const updatedUser = { ...userData, ...response }
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser))
+        setUser(updatedUser)
+        setupActiveOrg(updatedUser.organizations)
       }
-    } catch (error) {
-      console.error("Failed to refresh user profile", error);
+    } catch {
+      // Ignora erro
     }
-  };
+  }
 
   const setActiveOrg = (id: number) => {
-    setActiveOrgId(id);
-    localStorage.setItem(STORAGE_KEYS.ACTIVE_ORG_ID, id.toString());
-  };
+    setActiveOrgId(id)
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_ORG_ID, id.toString())
+  }
 
-  const activeOrg = React.useMemo(
+  const activeOrg = useMemo(
     () => user?.organizations.find((org) => org.id === activeOrgId) || null,
-    [user, activeOrgId],
-  );
+    [user, activeOrgId]
+  )
 
   return (
     <AuthContext.Provider
@@ -161,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoading,
         activeOrg,
         login,
+        register,
         logout,
         refreshUser,
         setActiveOrg,
@@ -168,13 +174,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     >
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-  return context;
-};
+  return context
+}

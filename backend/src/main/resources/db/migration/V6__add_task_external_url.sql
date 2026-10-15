@@ -1,0 +1,1 @@
+ALTER TABLE tasks ADD COLUMN external_url VARCHAR(1000);

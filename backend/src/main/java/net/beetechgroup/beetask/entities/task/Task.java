@@ -19,6 +19,15 @@ public class Task {
     private User user;
     private LocalDateTime finishedAt;
     private List<TaskHistoryItem> history = new ArrayList<>();
+    private String externalUrl;
+
+    public String getExternalUrl() {
+        return externalUrl;
+    }
+
+    public void setExternalUrl(String externalUrl) {
+        this.externalUrl = externalUrl;
+    }
 
     public Long getId() {
         return id;

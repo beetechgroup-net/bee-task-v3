@@ -16,6 +16,7 @@ public class TaskEntityMapper {
         entity.setDescription(task.getDescription());
         entity.setStatus(task.getStatus());
         entity.setFinishedAt(task.getFinishedAt());
+        entity.setExternalUrl(task.getExternalUrl());
         entity.setProject(ProjectEntityMapper.toEntity(task.getProject()));
         entity.setCategory(CategoryEntityMapper.toEntity(task.getCategory()));
         entity.setUser(UserEntityMapper.toEntity(task.getUser()));
@@ -36,6 +37,7 @@ public class TaskEntityMapper {
         task.setDescription(entity.getDescription());
         task.setStatus(entity.getStatus());
         task.setFinishedAt(entity.getFinishedAt());
+        task.setExternalUrl(entity.getExternalUrl());
         task.setProject(ProjectEntityMapper.toDomain(entity.getProject()));
         task.setCategory(CategoryEntityMapper.toDomain(entity.getCategory()));
         task.setUser(UserEntityMapper.toDomain(entity.getUser()));

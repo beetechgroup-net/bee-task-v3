@@ -16,7 +16,10 @@ public class UserEntity {
     private String email;
     private String password;
     private String photo;
-    
+    @jakarta.persistence.Column(columnDefinition = "jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    private String preferences;
+
     public Long getId() {
         return id;
     }
@@ -55,5 +58,13 @@ public class UserEntity {
 
     public void setPhoto(String photo) {
         this.photo = photo;
+    }
+
+    public String getPreferences() {
+        return preferences;
+    }
+
+    public void setPreferences(String preferences) {
+        this.preferences = preferences;
     }
 }

@@ -28,6 +28,8 @@ public class TaskEntity {
     private TaskStatus status;
     @Column(name = "finished_at")
     private java.time.LocalDateTime finishedAt;
+    @Column(name = "external_url", length = 1000)
+    private String externalUrl;
 
     @ManyToOne
     @JoinColumn(name = "project_id")
@@ -111,5 +113,13 @@ public class TaskEntity {
 
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+
+    public String getExternalUrl() {
+        return externalUrl;
+    }
+
+    public void setExternalUrl(String externalUrl) {
+        this.externalUrl = externalUrl;
     }
 }

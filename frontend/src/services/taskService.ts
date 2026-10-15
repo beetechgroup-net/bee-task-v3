@@ -1,75 +1,78 @@
 import { apiFetch } from '../lib/api'
-import type { TaskResponse, TaskStatus } from '../types/task'
+import type { Task, TaskStatus, CreateTaskPayload, ListTasksFilter } from '../types/task'
 
-export interface GetTasksFilters {
-  organizationId: number
-  text?: string
-  projectIds?: number[]
-  statuses?: TaskStatus[]
-  categoryIds?: number[]
-  userIds?: number[]
+function buildQueryParams(filter?: ListTasksFilter): string {
+  if (!filter) return ''
+  const params = new URLSearchParams()
+
+  if (filter.organizationId !== undefined) {
+    params.set('organizationId', String(filter.organizationId))
+  }
+  if (filter.text && filter.text.trim()) {
+    params.set('text', filter.text.trim())
+  }
+  if (filter.status && filter.status.length > 0) {
+    filter.status.forEach((st) => params.append('status', st))
+  }
+  if (filter.projectId && filter.projectId.length > 0) {
+    filter.projectId.forEach((pid) => params.append('projectId', String(pid)))
+  }
+  if (filter.categoryId && filter.categoryId.length > 0) {
+    filter.categoryId.forEach((cid) => params.append('categoryId', String(cid)))
+  }
+  if (filter.userId && filter.userId.length > 0) {
+    filter.userId.forEach((uid) => params.append('userId', String(uid)))
+  }
+
+  const query = params.toString()
+  return query ? `?${query}` : ''
 }
 
 export const taskService = {
-  async getTasks(filters: GetTasksFilters): Promise<TaskResponse[]> {
-    const params = new URLSearchParams()
-    params.set('organizationId', String(filters.organizationId))
-    if (filters?.text) params.set('text', filters.text)
-    filters?.projectIds?.forEach((id) => params.append('projectId', String(id)))
-    filters?.statuses?.forEach((s) => params.append('status', s))
-    filters?.categoryIds?.forEach((id) => params.append('categoryId', String(id)))
-    filters?.userIds?.forEach((id) => params.append('userId', String(id)))
-    const query = params.toString()
-    return apiFetch<TaskResponse[]>(`/tasks${query ? `?${query}` : ''}`)
+  async listTasks(filter?: ListTasksFilter): Promise<Task[]> {
+    const qs = buildQueryParams(filter)
+    return apiFetch<Task[]>(`/tasks${qs}`)
   },
 
-  async createTask(task: {
-    title: string
-    description?: string
-    organizationId: number
-    projectId?: number | null
-    categoryId?: number | null
-    assigneeUserId?: number | null
-    status?: TaskStatus
-  }): Promise<TaskResponse> {
-    return apiFetch<TaskResponse>('/tasks', {
+  async listMyTasks(filter?: ListTasksFilter): Promise<Task[]> {
+    const qs = buildQueryParams(filter)
+    return apiFetch<Task[]>(`/tasks/mine${qs}`)
+  },
+
+  async getTask(id: number): Promise<Task> {
+    return apiFetch<Task>(`/tasks/${id}`)
+  },
+
+  async createTask(payload: CreateTaskPayload): Promise<Task> {
+    return apiFetch<Task>('/tasks', {
       method: 'POST',
-      body: task,
+      body: payload,
     })
   },
 
-  async updateTaskStatus(taskId: number, status: TaskStatus): Promise<void> {
-    await apiFetch(`/tasks/${taskId}/status`, {
+  async updateTask(id: number, payload: Partial<CreateTaskPayload>): Promise<Task> {
+    return apiFetch<Task>(`/tasks/${id}`, {
+      method: 'PUT',
+      body: payload,
+    })
+  },
+
+  async updateStatus(id: number, status: TaskStatus): Promise<Task> {
+    return apiFetch<Task>(`/tasks/${id}/status`, {
       method: 'PATCH',
       body: status,
     })
   },
 
-  async startTask(taskId: number): Promise<void> {
-    await apiFetch(`/tasks/${taskId}/start`, {
+  async startTask(id: number): Promise<Task> {
+    return apiFetch<Task>(`/tasks/${id}/start`, {
       method: 'PUT',
     })
   },
 
-  async stopTask(taskId: number): Promise<void> {
-    await apiFetch(`/tasks/${taskId}/stop`, {
+  async stopTask(id: number): Promise<Task> {
+    return apiFetch<Task>(`/tasks/${id}/stop`, {
       method: 'PUT',
-    })
-  },
-
-  async getTask(id: number): Promise<TaskResponse> {
-    return apiFetch<TaskResponse>(`/tasks/${id}`)
-  },
-
-  async updateTask(id: number, task: Partial<TaskResponse> & {
-    organizationId: number
-    projectId?: number | null
-    categoryId?: number | null
-    assigneeUserId?: number | null
-  }): Promise<TaskResponse> {
-    return apiFetch<TaskResponse>(`/tasks/${id}`, {
-      method: 'PUT',
-      body: task,
     })
   },
 }

@@ -1,65 +1,69 @@
-export const TASK_STATUS_OPTIONS = [
-  'NOT_STARTED',
-  'IN_PROGRESS',
-  'COMPLETED',
-  'CANCELED',
-] as const
+export type TaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 
-export type TaskStatus = (typeof TASK_STATUS_OPTIONS)[number]
-
-export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-  NOT_STARTED: 'Nao iniciada',
-  IN_PROGRESS: 'Em andamento',
-  COMPLETED: 'Concluida',
-  CANCELED: 'Cancelada',
+export interface TaskHistoryItem {
+  id: number;
+  startAt: string;
+  endAt: string | null;
+  elapsedSeconds: number | null;
 }
 
-export type CreateTaskPayload = {
-  title: string
-  description: string
-  status: TaskStatus
-  organizationId: number
-  projectId: number | null
-  categoryId: number | null
-  assigneeUserId: number | null
+export interface Project {
+  id: number;
+  name: string;
+  color?: string;
+  icon?: string;
 }
 
-export type TaskHistoryItem = {
-  id?: number
-  startAt: string
-  endAt: string | null
-  elapsedSeconds?: number
+export interface Category {
+  id: number;
+  name: string;
+  color?: string;
+  icon?: string;
 }
 
-export type TaskProject = {
-  id: number
-  name: string
-  color?: string | null
-  icon?: string | null
+export interface TaskUser {
+  id: number;
+  name: string;
+  email: string;
+  photo?: string;
 }
 
-export type TaskCategory = {
-  id: number
-  name: string
-  color: string
-  icon: string
+export interface Task {
+  id: number;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  project?: Project;
+  category?: Category;
+  user?: TaskUser;
+  finishedAt?: string;
+  history?: TaskHistoryItem[];
+  externalUrl?: string;
 }
 
-export type TaskAssignee = {
-  id: number
-  name: string
-  email: string
-  photo: string | null
+export interface TaskHistoryItemInput {
+  id?: number;
+  startAt: string;
+  endAt?: string | null;
 }
 
-export type TaskResponse = {
-  id: number
-  title: string
-  description: string
-  status: TaskStatus
-  project: TaskProject | null
-  category: TaskCategory | null
-  user: TaskAssignee | null
-  finishedAt?: string
-  history?: TaskHistoryItem[]
+export interface CreateTaskPayload {
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  organizationId: number;
+  projectId?: number;
+  categoryId?: number;
+  assigneeUserId?: number;
+  history?: TaskHistoryItemInput[];
+  externalUrl?: string;
+}
+
+export interface ListTasksFilter {
+  organizationId?: number;
+  text?: string;
+  status?: TaskStatus[];
+  projectId?: number[];
+  categoryId?: number[];
+  userId?: number[];
 }

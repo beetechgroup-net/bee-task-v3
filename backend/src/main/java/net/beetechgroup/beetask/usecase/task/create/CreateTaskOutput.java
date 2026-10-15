@@ -13,7 +13,8 @@ public record CreateTaskOutput(
                 CategoryOutput category,
                 UserOutput user,
                 LocalDateTime finishedAt,
-                List<TaskHistoryItemOutput> history) {
+                List<TaskHistoryItemOutput> history,
+                String externalUrl) {
 
     public record ProjectOutput(Long id, String name) {}
     public record CategoryOutput(Long id, String name, String color, String icon) {}

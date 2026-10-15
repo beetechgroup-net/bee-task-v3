@@ -1,376 +1,437 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   FolderKanban,
   Plus,
   Search,
+  RefreshCw,
+  Clock,
+  CheckCircle2,
+  ListTodo,
+  Sparkles,
   ArrowRight,
-  Loader2,
+  Folder,
   X,
-  Target,
-  Rocket,
-  ShieldCheck,
-} from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { projectService, type Project } from "../services/projectService";
-import { IconPicker } from "../components/IconPicker";
+  Loader2,
+  AlertCircle,
+} from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { projectService } from '../services/projectService'
+import { taskService } from '../services/taskService'
+import type { Project, Task } from '../types/task'
+import { calculateTaskTotalSeconds, formatSecondsToHuman } from '../lib/timeUtils'
+
+const COLOR_PRESETS = [
+  '#0f766e', // Teal / Brand
+  '#d97706', // Amber / Accent
+  '#10b981', // Emerald
+  '#3b82f6', // Blue
+  '#6366f1', // Indigo
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#f43f5e', // Rose
+  '#14b8a6', // Cyan
+  '#64748b', // Slate
+]
 
 export const ProjectsPage: React.FC = () => {
-  const { activeOrg } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [newProjectColor, setNewProjectColor] = useState("#6366f1");
-  const [newProjectIcon, setNewProjectIcon] = useState("Folder");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const { activeOrg } = useAuth()
+  const navigate = useNavigate()
 
-  const fetchProjects = async () => {
-    if (!activeOrg) return;
-    setIsLoading(true);
+  const [projects, setProjects] = useState<Project[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [color, setColor] = useState(COLOR_PRESETS[0])
+  const [submitting, setSubmitting] = useState(false)
+
+  const activeOrgId = activeOrg?.id
+
+  const loadData = useCallback(async () => {
+    if (!activeOrgId) return
     try {
-      const data = await projectService.listByOrganization(activeOrg.id);
-      setProjects(data);
-    } catch (err) {
-      console.error("Failed to fetch projects", err);
-      setError("Não foi possível carregar os projetos.");
+      setRefreshing(true)
+      const [projsRes, tasksRes] = await Promise.all([
+        projectService.listProjects(activeOrgId),
+        taskService.listTasks({ organizationId: activeOrgId }).catch(() => []),
+      ])
+      setProjects(projsRes || [])
+      setTasks(tasksRes || [])
+    } catch (err: unknown) {
+      console.error(err)
+      setError('Falha ao carregar projetos.')
     } finally {
-      setIsLoading(false);
+      setLoading(false)
+      setRefreshing(false)
     }
-  };
+  }, [activeOrgId])
 
   useEffect(() => {
-    fetchProjects();
-  }, [activeOrg]);
+    loadData()
+  }, [loadData])
+
+  // Aggregate project statistics
+  const projectStats = useMemo(() => {
+    const statsMap = new Map<
+      number,
+      { totalTasks: number; completedTasks: number; totalSeconds: number }
+    >()
+
+    tasks.forEach((task) => {
+      if (!task.project?.id) return
+      const pId = task.project.id
+      const current = statsMap.get(pId) || {
+        totalTasks: 0,
+        completedTasks: 0,
+        totalSeconds: 0,
+      }
+
+      current.totalTasks += 1
+      if (task.status === 'COMPLETED') {
+        current.completedTasks += 1
+      }
+      current.totalSeconds += calculateTaskTotalSeconds(task)
+      statsMap.set(pId, current)
+    })
+
+    return statsMap
+  }, [tasks])
+
+  const filteredProjects = useMemo(() => {
+    if (!searchQuery.trim()) return projects
+    const q = searchQuery.toLowerCase()
+    return projects.filter((p) => p.name.toLowerCase().includes(q))
+  }, [projects, searchQuery])
 
   const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeOrg || !newProjectName.trim()) return;
+    e.preventDefault()
+    if (!activeOrgId || !name.trim()) return
 
-    setIsCreating(true);
-    setError(null);
+    setSubmitting(true)
+    setError(null)
     try {
-      const newProject = await projectService.create(activeOrg.id, {
-        name: newProjectName,
-        color: newProjectColor,
-        icon: newProjectIcon,
-      });
-      setProjects((prev) => [...prev, newProject]);
-      setNewProjectName("");
-      setNewProjectColor("#6366f1");
-      setNewProjectIcon("Folder");
-      setShowCreateForm(false);
-    } catch (err) {
-      console.error("Failed to create project", err);
-      setError("Falha ao criar o projeto.");
+      const created = await projectService.createProject(activeOrgId, {
+        name: name.trim(),
+        color,
+        icon: 'folder',
+      })
+      setProjects((prev) => [...prev, created])
+      setIsModalOpen(false)
+      setName('')
+      setColor(COLOR_PRESETS[0])
+    } catch (err: unknown) {
+      console.error(err)
+      setError(err instanceof Error ? err.message : 'Falha ao criar projeto.')
     } finally {
-      setIsCreating(false);
+      setSubmitting(false)
     }
-  };
-
-  const filteredProjects = projects.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  }
 
   return (
-    <div className="space-y-12 pb-20">
-      {/* Header Section */}
-      <header className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-brand font-black uppercase tracking-widest text-[10px] mb-2">
-            <FolderKanban size={14} />
-            Workspace
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-brand via-brand-strong to-accent bg-clip-text text-transparent">
+              Projetos
+            </h1>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+              {activeOrg?.name || 'Workspace'}
+            </span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-text-main">
-            Projetos em{" "}
-            <span className="text-brand">{activeOrg?.name ?? "..."}</span>
-          </h1>
-          <p className="mt-2 text-lg text-text-muted">
-            Organize suas tarefas em fluxos de trabalho específicos.
+          <p className="text-xs text-muted">
+            Organize suas entregas em iniciativas, acompanhe o progresso e o tempo dedicado.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative hidden md:block">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-              size={16}
-            />
-            <input
-              type="text"
-              placeholder="Buscar projetos..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-surface border border-border-soft rounded-xl text-sm outline-none focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all w-48 font-medium"
-            />
-          </div>
+
+        <div className="flex items-center gap-2.5">
           <button
-            onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-dark active:scale-95"
+            type="button"
+            onClick={loadData}
+            disabled={refreshing}
+            title="Recarregar projetos"
+            className="p-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-muted hover:text-foreground hover:bg-surface-raised transition-all shadow-panel disabled:opacity-50"
           >
-            <Plus size={18} />
-            Novo Projeto
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-brand' : ''}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand text-white font-semibold text-xs hover:bg-brand-hover shadow-md shadow-brand/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Novo Projeto</span>
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Projects Grid */}
-      <section className="space-y-6">
-        <div className="flex items-center gap-2 px-2">
-          <Target size={20} className="text-brand" />
-          <h2 className="text-xl font-bold text-text-main">
-            Todos os Projetos
-          </h2>
+      {error && (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs shadow-panel backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-400" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-rose-400 hover:text-rose-200 text-xs font-bold"
+          >
+            Fechar
+          </button>
         </div>
+      )}
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence mode="popLayout">
-            {filteredProjects.map((project, index) => (
-              <motion.div
+      {/* Search Bar */}
+      <div className="p-4 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex items-center justify-between gap-3 shadow-panel">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar projeto por nome..."
+            className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-border-soft bg-surface-raised/80 text-xs text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand transition-all"
+          />
+        </div>
+        <div className="text-xs text-muted font-medium">
+          {filteredProjects.length} {filteredProjects.length === 1 ? 'projeto' : 'projetos'}
+        </div>
+      </div>
+
+      {/* Grid of Projects */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-52 rounded-3xl border border-border-soft bg-surface-sunken/40 animate-pulse p-6 space-y-4"
+            >
+              <div className="h-5 bg-surface-raised rounded-md w-1/2" />
+              <div className="h-3 bg-surface-raised rounded-md w-3/4" />
+              <div className="h-2 bg-surface-raised rounded-full w-full mt-4" />
+            </div>
+          ))}
+        </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-3xl border border-dashed border-border-soft bg-surface/60 backdrop-blur-md shadow-panel">
+          <div className="w-14 h-14 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand mb-4">
+            <FolderKanban className="w-7 h-7" />
+          </div>
+          <h3 className="text-base font-bold text-foreground mb-1">
+            Nenhum projeto cadastrado
+          </h3>
+          <p className="text-xs text-muted max-w-sm mb-5 leading-relaxed">
+            {searchQuery
+              ? 'Nenhum projeto encontrado com este termo de busca.'
+              : 'Projetos ajudam a agrupar demandas por produtos, clientes ou sprints.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-xs font-semibold hover:bg-brand-hover shadow-md shadow-brand/25 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Criar Primeiro Projeto</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredProjects.map((project) => {
+            const stats = projectStats.get(project.id) || {
+              totalTasks: 0,
+              completedTasks: 0,
+              totalSeconds: 0,
+            }
+            const progress =
+              stats.totalTasks > 0
+                ? Math.round((stats.completedTasks / stats.totalTasks) * 100)
+                : 0
+
+            return (
+              <div
                 key={project.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.05 }}
-                className="group relative overflow-hidden rounded-[2.5rem] border border-border-soft bg-surface p-8 transition-all hover:border-brand/30 hover:shadow-2xl hover:shadow-brand/5"
+                className="group rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-6 hover:border-brand/40 shadow-panel hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between"
               >
-                <div className="relative z-10">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-muted text-2xl font-black text-text-muted shadow-inner transition-all group-hover:bg-brand group-hover:text-white group-hover:scale-110">
-                    {project.name.substring(0, 2).toUpperCase()}
+                <div>
+                  {/* Top Bar with Icon & Color badge */}
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs"
+                        style={{
+                          backgroundColor: project.color ? `${project.color}18` : 'rgba(15,118,110,0.15)',
+                          borderColor: project.color ? `${project.color}40` : 'rgba(15,118,110,0.3)',
+                          color: project.color || '#0f766e',
+                        }}
+                      >
+                        <Folder className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-foreground group-hover:text-brand transition-colors">
+                          {project.name}
+                        </h3>
+                        <span className="text-[11px] text-muted font-medium">
+                          ID #{project.id}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <h3 className="mt-6 text-xl font-black text-text-main leading-tight group-hover:text-brand transition-colors">
-                    {project.name}
-                  </h3>
-
-                  <div className="mt-4 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-2 py-1 text-[10px] font-bold text-text-muted">
-                      ID #{project.id}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-brand/5 px-2 py-1 text-[10px] font-bold text-brand">
-                      Ativo
-                    </span>
+                  {/* Metrics Bar */}
+                  <div className="grid grid-cols-2 gap-2 p-3.5 rounded-2xl bg-surface-sunken/60 border border-border-soft mb-4">
+                    <div className="flex items-center gap-2">
+                      <ListTodo className="w-3.5 h-3.5 text-muted" />
+                      <div>
+                        <p className="text-[10px] text-muted">Tarefas</p>
+                        <p className="text-xs font-bold text-foreground">
+                          {stats.totalTasks} ({stats.completedTasks} concl.)
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
+                      <div>
+                        <p className="text-[10px] text-muted">Tempo Total</p>
+                        <p className="text-xs font-bold text-teal-700 dark:text-teal-400">
+                          {formatSecondsToHuman(stats.totalSeconds)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-8 flex items-center">
-                    <div className="flex -space-x-2">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="h-8 w-8 rounded-full border-2 border-surface bg-surface-muted flex items-center justify-center text-[10px] font-bold text-text-muted"
-                        >
-                          U{i}
-                        </div>
-                      ))}
+                  {/* Progress Bar */}
+                  <div className="space-y-1.5 mb-4">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted font-medium">Conclusão</span>
+                      <span className="font-bold text-foreground">{progress}%</span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-surface-sunken overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${progress}%`,
+                          backgroundColor: project.color || '#0f766e',
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
 
-                {/* Decorations */}
-                <div className="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-brand/5 blur-3xl group-hover:bg-brand/10 transition-colors" />
-              </motion.div>
-            ))}
-
-            {/* Quick Create Card */}
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 border-dashed border-border-soft bg-surface/50 p-8 text-center transition-all hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98] group"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-app-bg text-text-muted transition-colors group-hover:bg-brand group-hover:text-white">
-                <Plus size={32} />
+                {/* Footer Link */}
+                <div className="pt-3 border-t border-border-soft/60 flex items-center justify-between">
+                  <span className="text-[11px] text-muted flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
+                    {stats.completedTasks} entregues
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/tasks')}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+                  >
+                    <span>Ver Tarefas</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-text-main">Novo Projeto</h3>
-                <p className="text-sm text-text-muted">
-                  Crie um novo espaço de trabalho.
-                </p>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Modal Novo Projeto */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            onClick={() => setIsModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface-raised shadow-2xl z-10 overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-border bg-surface">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-brand/15 border border-brand/30 flex items-center justify-center text-brand">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-foreground">Novo Projeto</h2>
+                  <p className="text-xs text-muted">Crie um projeto para agrupar demandas.</p>
+                </div>
               </div>
-            </button>
-          </AnimatePresence>
-        </div>
-
-        {filteredProjects.length === 0 && !isLoading && (
-          <div className="text-center py-20 bg-surface/50 rounded-[3rem] border-2 border-dashed border-border-soft">
-            <div className="w-16 h-16 bg-surface-muted rounded-2xl flex items-center justify-center mx-auto mb-6 text-text-muted/30">
-              <FolderKanban size={32} />
-            </div>
-            <h3 className="text-xl font-bold text-text-main mb-2">
-              Nenhum projeto encontrado
-            </h3>
-            <p className="text-text-muted max-w-xs mx-auto font-medium">
-              Sua organização ainda não possui projetos para exibir.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* Discovery Section */}
-      <section className="rounded-[3rem] bg-accent p-8 md:p-12 text-white overflow-hidden relative shadow-2xl shadow-accent/20">
-        <div className="relative z-10 max-w-2xl">
-          <h2 className="text-3xl font-black tracking-tight leading-none">
-            Acelere sua Produtividade
-          </h2>
-          <p className="mt-4 text-white/80 font-medium text-lg">
-            Projetos ajudam a categorizar tarefas e manter o foco no que
-            realmente importa. Defina metas e acompanhe o progresso em tempo
-            real.
-          </p>
-          <div className="mt-10">
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-4 text-sm font-black text-accent shadow-xl transition-all hover:scale-105 active:scale-95"
-            >
-              <Rocket size={20} />
-              Começar novo projeto
-              <ArrowRight size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Abstract shapes */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand/20 blur-3xl rounded-full -translate-x-1/2 translate-y-1/2" />
-        <FolderKanban
-          size={200}
-          className="absolute -right-20 -bottom-20 text-white/5 rotate-12"
-        />
-      </section>
-
-      {/* Info Section */}
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="rounded-[2rem] border border-border-soft bg-surface p-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-soft text-brand mb-6">
-            <Target size={24} />
-          </div>
-          <h3 className="text-xl font-bold text-text-main">
-            Foco em Objetivos
-          </h3>
-          <p className="mt-3 text-text-muted leading-relaxed font-medium">
-            Cada projeto pode ser encarado como um objetivo específico. Use-os
-            para separar demandas de diferentes clientes ou departamentos da sua
-            organização.
-          </p>
-        </div>
-
-        <div className="rounded-[2rem] border border-border-soft bg-surface p-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft text-accent mb-6">
-            <ShieldCheck size={24} />
-          </div>
-          <h3 className="text-xl font-bold text-text-main">
-            Colaboração Segura
-          </h3>
-          <p className="mt-3 text-text-muted leading-relaxed font-medium">
-            Projetos herdam as permissões da organização. Apenas membros
-            autorizados podem visualizar e interagir com as tarefas de cada
-            projeto.
-          </p>
-        </div>
-      </div>
-
-      {/* Create Project Modal */}
-      <AnimatePresence>
-        {showCreateForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app-bg/80 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-lg bg-surface border border-border-soft rounded-[2.5rem] shadow-panel p-10 relative"
-            >
               <button
-                onClick={() => setShowCreateForm(false)}
-                className="absolute top-8 right-8 text-text-muted hover:text-brand transition-colors"
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-raised transition-colors"
               >
-                <X size={24} />
+                <X className="w-5 h-5" />
               </button>
+            </div>
 
-              <div className="text-center mb-10">
-                <div className="w-16 h-16 bg-brand text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-brand/20 mx-auto">
-                  <Plus size={32} />
-                </div>
-                <h2 className="text-3xl font-black text-text-main tracking-tight mb-3">
-                  Novo Projeto
-                </h2>
-                {activeOrg && (
-                  <p className="text-text-muted font-medium">
-                    Dê um nome ao seu novo espaço de trabalho em{" "}
-                    {activeOrg.name}.
-                  </p>
-                )}
+            <form onSubmit={handleCreateProject} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  Nome do Projeto <span className="text-brand">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Plataforma Web v3, App Mobile, API..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                />
               </div>
 
-              <form onSubmit={handleCreateProject} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-text-main ml-1">
-                    Nome do Projeto
-                  </label>
-                  <input
-                    type="text"
-                    autoFocus
-                    required
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    className="block w-full px-5 py-4 bg-surface-muted/50 border border-border-soft rounded-2xl text-text-main placeholder-text-muted/60 focus:outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand transition-all font-bold"
-                    placeholder="Ex: Redesign Mobile, Q4 Marketing..."
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-text-main ml-1">
-                    Cor
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={newProjectColor}
-                      onChange={(e) => setNewProjectColor(e.target.value)}
-                      className="h-14 w-14 cursor-pointer rounded-xl border border-border-soft"
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-2">
+                  Cor de Identificação
+                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {COLOR_PRESETS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setColor(c)}
+                      className={`w-7 h-7 rounded-full border-2 transition-transform ${
+                        color === c
+                          ? 'scale-115 border-white ring-2 ring-brand/50'
+                          : 'border-transparent hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: c }}
                     />
-                    <input
-                      type="text"
-                      value={newProjectColor}
-                      onChange={(e) => setNewProjectColor(e.target.value)}
-                      className="flex-1 px-4 py-3 bg-surface-muted/50 border border-border-soft rounded-xl text-text-main font-mono text-sm focus:outline-none focus:ring-4 focus:ring-brand/10 focus:border-brand transition-all"
-                      placeholder="#6366f1"
-                    />
-                  </div>
+                  ))}
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-text-main ml-1">
-                    Ícone
-                  </label>
-                  <IconPicker value={newProjectIcon} onChange={setNewProjectIcon} />
-                </div>
-
-                {error && (
-                  <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold flex items-center gap-3">
-                    <X size={16} />
-                    {error}
-                  </div>
-                )}
-
+              <div className="pt-4 border-t border-border flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-xl border border-border bg-surface text-xs font-medium text-foreground hover:bg-surface-raised"
+                >
+                  Cancelar
+                </button>
                 <button
                   type="submit"
-                  disabled={isCreating || !newProjectName.trim() || !newProjectColor || !newProjectIcon}
-                  className="w-full flex items-center justify-center gap-3 bg-brand hover:bg-brand-dark disabled:bg-brand/50 disabled:cursor-not-allowed text-white font-black py-4 px-6 rounded-2xl transition-all shadow-lg shadow-brand/20 active:scale-[0.98]"
+                  disabled={submitting || !name.trim()}
+                  className="px-5 py-2 rounded-xl bg-brand text-white text-xs font-semibold hover:bg-brand-hover shadow-xs flex items-center gap-2 disabled:opacity-50"
                 >
-                  {isCreating ? (
-                    <Loader2 className="animate-spin" size={20} />
-                  ) : (
-                    <>
-                      Criar Projeto
-                      <ArrowRight size={20} />
-                    </>
-                  )}
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Salvar Projeto
                 </button>
-              </form>
-            </motion.div>
+              </div>
+            </form>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
-  );
-};
+  )
+}

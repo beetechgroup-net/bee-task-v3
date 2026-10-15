@@ -1,63 +1,77 @@
 import { apiFetch } from '../lib/api'
 
-export interface Organization {
+export type CreateOrgResponse = {
+  id: number
+  name: string
+  ownerId: number
+}
+
+export type SearchOrgOutput = {
   id: number
   name: string
 }
 
-export interface JoinRequest {
+export type JoinRequestOutput = {
+  organizationId: number
+  organizationName: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  createdAt: string
+}
+
+export type OrganizationMember = {
+  userId: number
+  userName: string
+  userEmail: string
+  userPhoto?: string
+}
+
+export type PendingJoinRequest = {
   userId: number
   name: string
   email: string
   photo?: string
 }
 
-export interface UserJoinRequest {
-  organizationId: number
-  organizationName: string
-  status: 'PENDING' | 'ACTIVE' | 'REJECTED'
-}
-
-export interface OrganizationMember {
-  userId: number
-  userName: string
-  userEmail: string
-  userPhoto?: string | null
-}
-
 export const organizationService = {
-  create: async (name: string): Promise<Organization> => {
-    return apiFetch('/organizations', {
+  async create(name: string): Promise<CreateOrgResponse> {
+    return apiFetch<CreateOrgResponse>('/organizations', {
       method: 'POST',
       body: { name },
     })
   },
 
-  search: async (query: string): Promise<Organization[]> => {
-    return apiFetch<Organization[]>(`/organizations/search?q=${query}`)
+  async search(query: string): Promise<SearchOrgOutput[]> {
+    return apiFetch<SearchOrgOutput[]>(`/organizations/search?q=${encodeURIComponent(query)}`)
   },
 
-  requestJoin: async (id: number): Promise<void> => {
-    return apiFetch(`/organizations/${id}/join`, { method: 'POST' })
+  async requestJoin(organizationId: number): Promise<void> {
+    return apiFetch<void>(`/organizations/${organizationId}/join`, {
+      method: 'POST',
+    })
   },
 
-  listPendingRequests: async (organizationId: number): Promise<JoinRequest[]> => {
-    return apiFetch<JoinRequest[]>(`/organizations/${organizationId}/requests`)
+  async listMyRequests(): Promise<JoinRequestOutput[]> {
+    return apiFetch<JoinRequestOutput[]>('/organizations/my-requests')
   },
 
-  approveRequest: async (organizationId: number, userId: number): Promise<void> => {
-    return apiFetch(`/organizations/${organizationId}/requests/${userId}/approve`, { method: 'PATCH' })
-  },
-
-  rejectRequest: async (organizationId: number, userId: number): Promise<void> => {
-    return apiFetch(`/organizations/${organizationId}/requests/${userId}/reject`, { method: 'PATCH' })
-  },
-
-  listMembers: async (organizationId: number): Promise<OrganizationMember[]> => {
+  async listMembers(organizationId: number): Promise<OrganizationMember[]> {
     return apiFetch<OrganizationMember[]>(`/organizations/${organizationId}/members`)
   },
 
-  getUserRequests: async (): Promise<UserJoinRequest[]> => {
-    return apiFetch<UserJoinRequest[]>('/organizations/my-requests')
-  }
+  async listPendingRequests(organizationId: number): Promise<PendingJoinRequest[]> {
+    return apiFetch<PendingJoinRequest[]>(`/organizations/${organizationId}/requests`)
+  },
+
+  async approveRequest(organizationId: number, userId: number): Promise<void> {
+    return apiFetch<void>(`/organizations/${organizationId}/requests/${userId}/approve`, {
+      method: 'PATCH',
+    })
+  },
+
+  async rejectRequest(organizationId: number, userId: number): Promise<void> {
+    return apiFetch<void>(`/organizations/${organizationId}/requests/${userId}/reject`, {
+      method: 'PATCH',
+    })
+  },
 }
+

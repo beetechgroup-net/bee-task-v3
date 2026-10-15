@@ -29,14 +29,15 @@ public class CreateTaskMapper {
                                 getPhotoUrl(task.getUser().getName(), task.getUser().getPhoto()))
                         : null,
                 task.getFinishedAt(),
-                task.getHistory().stream().map(CreateTaskMapper::toTaskHistoryItemOutput).toList());
+                task.getHistory().stream().map(CreateTaskMapper::toTaskHistoryItemOutput).toList(),
+                task.getExternalUrl());
     }
 
     private static String getPhotoUrl(String name, String photo) {
         return (Objects.nonNull(photo) && !photo.isBlank()) ? photo : null;
     }
 
-    private static TaskHistoryItemOutput toTaskHistoryItemOutput(TaskHistoryItem taskHistoryItem) {
+    public static TaskHistoryItemOutput toTaskHistoryItemOutput(TaskHistoryItem taskHistoryItem) {
         return new TaskHistoryItemOutput(
                 taskHistoryItem.getId(),
                 taskHistoryItem.getStartAt(),

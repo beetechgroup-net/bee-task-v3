@@ -1,480 +1,778 @@
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
-  BarChart3,
-  Calendar,
   Clock,
   CheckCircle2,
-  ChevronRight,
+  FolderKanban,
+  Play,
+  Square,
   TrendingUp,
-  Layout,
-  FileText,
-  Filter,
-  Copy,
-  Check,
+  Plus,
+  Sparkles,
+  ArrowRight,
+  Flame,
+  RefreshCw,
+  Folder,
+  Tag,
+  Activity,
   AlertCircle,
-  Loader2,
-  History,
-  Briefcase,
-} from "lucide-react";
+  Zap,
+  Target,
+  Settings2,
+  BarChart3,
+  ExternalLink,
+} from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { useTimer } from '../contexts/TimerContext'
+import { taskService } from '../services/taskService'
+import { projectService } from '../services/projectService'
+import type { Task, Project } from '../types/task'
+import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer } from '../lib/timeUtils'
+import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
 import {
-  dashboardService,
-  type DashboardData,
-} from "../services/dashboardService";
-import { cn } from "../lib/utils";
-import { PieChart } from "../components/PieChart";
-import { CategoryIcon } from "../components/CategoryIcon";
-import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
+  getUserWorkGoal,
+  calculateUserPeriodWorkedSeconds,
+  type WorkGoal,
+} from '../lib/userGoals'
 
 export const DashboardPage: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [startDate, setStartDate] = useState(startOfMonth(new Date()));
-  const [endDate, setEndDate] = useState(endOfMonth(new Date()));
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const { user, activeOrg } = useAuth()
+  const { activeTask, activeSeconds, startTimer, stopTimer, syncWithTasks } = useTimer()
+  const navigate = useNavigate()
 
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
-    try {
-      const result = await dashboardService.getDashboard(
-        format(startDate, "yyyy-MM-dd'T'HH:mm:ss"),
-        format(endDate, "yyyy-MM-dd'T'HH:mm:ss"),
-      );
-      setData(result);
-    } catch (err) {
-      console.error("Dashboard error:", err);
-      setError("Falha ao carregar os dados do dashboard.");
-    } finally {
-      setIsLoading(false);
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Work Goal State (Global)
+  const [workGoal, setWorkGoal] = useState<WorkGoal>(() => getUserWorkGoal(user?.email))
+
+  // Listen to goal changes in localStorage or custom event
+  useEffect(() => {
+    if (user?.email) {
+      setWorkGoal(getUserWorkGoal(user.email))
     }
-  };
+    const handleGoalChange = (e: Event) => {
+      const custom = e as CustomEvent<WorkGoal>
+      if (custom.detail) {
+        setWorkGoal(custom.detail)
+      } else if (user?.email) {
+        setWorkGoal(getUserWorkGoal(user.email))
+      }
+    }
+    window.addEventListener('beetask_work_goal_changed', handleGoalChange)
+    return () => {
+      window.removeEventListener('beetask_work_goal_changed', handleGoalChange)
+    }
+  }, [user?.email])
+
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const activeOrgId = activeOrg?.id
+
+  const loadData = useCallback(async () => {
+    if (!activeOrgId) return
+    try {
+      setRefreshing(true)
+      const [tasksRes, projsRes] = await Promise.allSettled([
+        taskService.listTasks({ organizationId: activeOrgId }),
+        projectService.listProjects(activeOrgId),
+      ])
+
+      const loadedTasks = tasksRes.status === 'fulfilled' ? tasksRes.value || [] : []
+      setTasks(loadedTasks)
+      syncWithTasks(loadedTasks)
+
+      if (projsRes.status === 'fulfilled') {
+        setProjects(projsRes.value || [])
+      }
+    } catch (err: unknown) {
+      console.error(err)
+      setError('Falha ao atualizar dados do dashboard.')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [activeOrgId, syncWithTasks])
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [startDate, endDate]);
+    loadData()
+  }, [loadData])
 
-  const formatMinutes = (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h}h ${m}m`;
-  };
+  // KPIs
+  const stats = useMemo(() => {
+    const inProgress = tasks.filter((t) => t.status === 'IN_PROGRESS').length
+    const completed = tasks.filter((t) => t.status === 'COMPLETED').length
+    const notStarted = tasks.filter((t) => t.status === 'NOT_STARTED').length
+    const totalSeconds = tasks.reduce((acc, t) => acc + calculateTaskTotalSeconds(t), 0)
 
-  const handleCopyReport = () => {
-    if (!data) return;
-    const header = "Tarefa\tProjeto\tConcluída em\tStatus";
-    const rows = data.finishedTasksInPeriod.map((task) =>
-      [
-        task.title,
-        task.project?.name ?? "-",
-        task.finishedAt
-          ? format(new Date(task.finishedAt), "dd/MM/yyyy HH:mm")
-          : "-",
-        "Finalizado",
-      ].join("\t"),
-    );
-    navigator.clipboard.writeText([header, ...rows].join("\n"));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    return {
+      inProgress,
+      completed,
+      notStarted,
+      totalSeconds,
+      projectsCount: projects.length,
+    }
+  }, [tasks, projects])
+
+  // Work Goal Progress in Current Period
+  const goalProgress = useMemo(() => {
+    const targetSeconds = (workGoal?.targetHours || 8) * 3600
+    const workedSeconds = calculateUserPeriodWorkedSeconds(
+      tasks,
+      workGoal?.period || 'DAILY',
+      activeTask?.id,
+      activeSeconds
+    )
+    const percent = Math.min(100, Math.round((workedSeconds / targetSeconds) * 100))
+    const remainingSeconds = Math.max(0, targetSeconds - workedSeconds)
+
+    const periodLabels: Record<string, string> = {
+      DAILY: 'Meta Diária',
+      WEEKLY: 'Meta Semanal',
+      MONTHLY: 'Meta Mensal',
+    }
+
+    const periodSubtitles: Record<string, string> = {
+      DAILY: 'Progresso de hoje',
+      WEEKLY: 'Progresso desta semana',
+      MONTHLY: 'Progresso deste mês',
+    }
+
+    return {
+      title: periodLabels[workGoal?.period || 'DAILY'],
+      subtitle: periodSubtitles[workGoal?.period || 'DAILY'],
+      targetSeconds,
+      workedSeconds,
+      percent,
+      remainingSeconds,
+      targetHours: workGoal?.targetHours || 8,
+      isCompleted: workedSeconds >= targetSeconds,
+    }
+  }, [tasks, workGoal, activeTask?.id, activeSeconds])
+
+  // Recent 5 tasks
+  const recentTasks = useMemo(() => {
+    return [...tasks].slice(0, 5)
+  }, [tasks])
+
+  // Toggle timer on a task
+  const handleToggleTimer = async (task: Task) => {
+    try {
+      if (activeTask?.id === task.id) {
+        const stopped = await stopTimer(task)
+        if (stopped) {
+          setTasks((prev) => prev.map((t) => (t.id === stopped.id ? stopped : t)))
+        }
+      } else {
+        const started = await startTimer(task)
+        setTasks((prev) => prev.map((t) => (t.id === started.id ? started : t)))
+      }
+    } catch (err: unknown) {
+      console.error(err)
+      setError('Erro ao acionar cronômetro.')
+    }
+  }
+
+  const handleModalSubmit = async (taskData: {
+    title: string
+    description: string
+    status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED'
+    projectId?: number
+    categoryId?: number
+    assigneeUserId?: number
+    history?: import('../types/task').TaskHistoryItemInput[]
+    externalUrl?: string
+  }) => {
+    if (!activeOrgId) return
+    const created = await taskService.createTask({
+      title: taskData.title,
+      description: taskData.description,
+      status: taskData.status,
+      projectId: taskData.projectId,
+      categoryId: taskData.categoryId,
+      assigneeUserId: taskData.assigneeUserId,
+      organizationId: activeOrgId,
+      externalUrl: taskData.externalUrl,
+    })
+    setTasks((prev) => [created, ...prev])
+  }
+
+  // Priority task to focus on if none running
+  const suggestedTask = useMemo(() => {
+    return tasks.find((t) => t.status === 'IN_PROGRESS') || tasks.find((t) => t.status === 'NOT_STARTED') || tasks[0]
+  }, [tasks])
+
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Desenvolvedor'
 
   return (
-    <div className="space-y-10 pb-20">
-      {/* Header & Filters */}
-      <header className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-brand font-black uppercase tracking-widest text-[10px] mb-2">
-            <BarChart3 size={14} />
-            Visão Geral
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Top Banner with Landing Page aesthetic */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 pb-2">
+        <div className="space-y-1.5">
+          {/* Top pill badge with View Switcher */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface/90 backdrop-blur-md border border-border-soft shadow-xs text-xs font-semibold text-brand">
+              <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse" />
+              <span>Workspace: {activeOrg?.name || 'BeeTask'}</span>
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+            </div>
+
+            <Link
+              to="/dashboard-v2"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-soft/60 hover:bg-brand-soft border border-brand/25 text-xs font-bold text-brand transition-all shadow-xs"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Experimentar BI v2</span>
+            </Link>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-text-main">
-            Dashboard
+
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
+            Olá, {firstName}!{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand-strong to-accent">
+              Bom trabalho hoje.
+            </span>
           </h1>
-          <p className="mt-2 text-lg text-text-muted">
-            Acompanhe sua produtividade e tempo gasto.
+          <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed">
+            Acompanhe o ritmo de entregas da sua equipe, audite suas horas e mantenha o foco na próxima entrega.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-surface border border-border-soft p-2 rounded-2xl shadow-sm">
-          <div className="flex items-center gap-2 px-3 py-2 border-r border-border-soft">
-            <Calendar size={18} className="text-brand" />
-            <input
-              type="date"
-              value={format(startDate, "yyyy-MM-dd")}
-              onChange={(e) => setStartDate(new Date(e.target.value + 'T00:00:00'))}
-              className="bg-transparent border-none text-sm font-bold text-text-main focus:ring-0 outline-none"
-            />
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2">
-            <input
-              type="date"
-              value={format(endDate, "yyyy-MM-dd")}
-              onChange={(e) => setEndDate(new Date(e.target.value + 'T23:59:59'))}
-              className="bg-transparent border-none text-sm font-bold text-text-main focus:ring-0 outline-none"
-            />
-          </div>
+        <div className="flex items-center gap-3 flex-wrap">
           <button
-            onClick={fetchDashboardData}
-            className="p-2 bg-brand text-white rounded-xl hover:scale-105 transition-transform active:scale-95"
+            type="button"
+            onClick={loadData}
+            disabled={refreshing}
+            title="Recarregar dados"
+            className="p-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-muted hover:text-foreground hover:bg-surface-raised transition-all shadow-xs disabled:opacity-50"
           >
-            <Filter size={18} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-brand' : ''}`} />
+          </button>
+
+          <Link to="/tasks">
+            <button
+              type="button"
+              className="px-4 py-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-xs font-bold text-foreground hover:bg-surface-raised hover:border-brand/40 transition-all shadow-xs"
+            >
+              Quadro Kanban
+            </button>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs shadow-lg shadow-brand/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Tarefa</span>
           </button>
         </div>
-      </header>
+      </div>
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center min-h-[50vh]">
-          <Loader2 className="animate-spin text-brand mb-4" size={48} />
-          <p className="text-text-muted font-bold">Gerando estatísticas...</p>
-        </div>
-      ) : error ? (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6 bg-surface rounded-[2.5rem] border border-border-soft">
-          <AlertCircle size={48} className="text-rose-500 mb-4" />
-          <h3 className="text-xl font-bold text-text-main mb-2">
-            Ocorreu um erro
-          </h3>
-          <p className="text-text-muted max-w-sm mb-6">{error}</p>
+      {error && (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs backdrop-blur-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-400" />
+            <span>{error}</span>
+          </div>
           <button
-            onClick={fetchDashboardData}
-            className="px-6 py-3 bg-brand text-white rounded-xl font-bold hover:bg-brand-dark transition-all"
+            type="button"
+            onClick={() => setError(null)}
+            className="text-rose-400 hover:text-rose-200 text-xs font-bold"
           >
-            Tentar novamente
+            Fechar
           </button>
         </div>
-      ) : data ? (
-        <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-surface border border-border-soft p-8 rounded-[2.5rem] relative overflow-hidden group shadow-sm hover:shadow-xl transition-all"
-            >
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-brand/10 text-brand rounded-xl flex items-center justify-center mb-6">
-                  <Clock size={24} />
-                </div>
-                <div className="text-sm font-bold text-text-muted uppercase tracking-wider">
-                  Tempo Total
-                </div>
-                <div className="mt-2 text-4xl font-black text-text-main">
-                  {formatMinutes(data.totalMinutesWorked)}
-                </div>
-                <div className="mt-4 flex items-center gap-1.5 text-[10px] font-black text-brand bg-brand/5 w-fit px-2 py-1 rounded-full uppercase tracking-widest">
-                  <TrendingUp size={12} />
-                  Foco em alta
-                </div>
-              </div>
-              <Clock
-                size={120}
-                className="absolute -right-10 -bottom-10 text-brand/5 -rotate-12 transition-transform group-hover:rotate-0"
-              />
-            </motion.div>
+      )}
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-surface border border-border-soft p-8 rounded-[2.5rem] relative overflow-hidden group shadow-sm hover:shadow-xl transition-all"
-            >
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center mb-6">
-                  <CheckCircle2 size={24} />
-                </div>
-                <div className="text-sm font-bold text-text-muted uppercase tracking-wider">
-                  Tarefas Concluídas
-                </div>
-                <div className="mt-2 text-4xl font-black text-text-main">
-                  {data.finishedTasksInPeriod.length}
-                </div>
-                <div className="mt-4 flex items-center gap-1.5 text-[10px] font-black text-accent bg-accent/5 w-fit px-2 py-1 rounded-full uppercase tracking-widest">
-                  <CheckCircle2 size={12} />
-                  Periodo de Entrega
-                </div>
+      {/* 4 Premium KPI Cards with shadow-panel & backdrop-blur */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="h-32 rounded-3xl border border-border-soft bg-surface/60 backdrop-blur-md animate-pulse p-5"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* In Progress */}
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-muted">Tarefas em Andamento</span>
+              <div className="w-9 h-9 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-700 dark:text-teal-400 shadow-xs">
+                <Clock className="w-4 h-4" />
               </div>
-              <CheckCircle2
-                size={120}
-                className="absolute -right-10 -bottom-10 text-accent/5 -rotate-12 transition-transform group-hover:rotate-0"
-              />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-accent p-8 rounded-[2.5rem] relative overflow-hidden group shadow-xl shadow-accent/20 transition-all text-white"
-            >
-              <div className="relative z-10">
-                <div className="w-12 h-12 bg-white/20 text-white rounded-xl flex items-center justify-center mb-6">
-                  <FileText size={24} />
-                </div>
-                <div className="text-sm font-bold text-white/70 uppercase tracking-wider">
-                  Média por Projeto
-                </div>
-                <div className="mt-2 text-4xl font-black">
-                  {data.projectStats.length > 0
-                    ? formatMinutes(
-                        Math.round(
-                          data.totalMinutesWorked / data.projectStats.length,
-                        ),
-                      )
-                    : "0h 0m"}
-                </div>
-              </div>
-              <TrendingUp
-                size={160}
-                className="absolute -right-10 -bottom-10 text-white/10 -rotate-12 transition-transform group-hover:rotate-0"
-              />
-            </motion.div>
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-teal-700 dark:text-teal-400 tracking-tight font-mono">
+                {stats.inProgress}
+              </p>
+              <p className="text-[11px] text-muted font-medium mt-1">
+                {stats.notStarted} tarefas aguardando no backlog
+              </p>
+            </div>
           </div>
 
-          {/* Category Pie */}
-          {data.categoryStats.length > 0 && (
-            <section className="bg-surface border border-border-soft rounded-[2.5rem] p-8 shadow-sm">
-              <div className="flex items-center gap-2 mb-8">
-                <BarChart3 size={20} className="text-brand" />
-                <h2 className="text-xl font-black text-text-main">Tempo por Categoria</h2>
+          {/* Completed */}
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-muted">Entregas Concluídas</span>
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 shadow-xs">
+                <CheckCircle2 className="w-4 h-4" />
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-8">
-                <PieChart
-                  size={200}
-                  centerLabel="categorias"
-                  centerValue={data.categoryStats.length}
-                  slices={data.categoryStats.map((c) => ({
-                    key: c.categoryId,
-                    label: c.categoryName,
-                    value: c.totalMinutes,
-                    color: c.color,
-                  }))}
-                  formatTooltip={(s, pct) => `${s.label}: ${formatMinutes(s.value)} (${pct.toFixed(1)}%)`}
-                />
-                <div className="flex-1 space-y-3 w-full">
-                  {data.categoryStats
-                    .slice()
-                    .sort((a, b) => b.totalMinutes - a.totalMinutes)
-                    .map((c) => {
-                      const total = data.categoryStats.reduce((s, x) => s + x.totalMinutes, 0);
-                      const pct = total > 0 ? (c.totalMinutes / total) * 100 : 0;
-                      return (
-                        <div key={c.categoryId} className="flex items-center gap-3">
-                          <div
-                            className="flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
-                            style={{ background: `${c.color}1a`, color: c.color }}
-                          >
-                            <CategoryIcon iconName={c.icon} color={c.color} size={18} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-bold text-text-main truncate">{c.categoryName}</span>
-                              <span className="text-xs font-black text-text-muted ml-2 shrink-0">
-                                {formatMinutes(c.totalMinutes)} ({pct.toFixed(1)}%)
-                              </span>
-                            </div>
-                            <div className="h-1.5 w-full bg-surface-muted rounded-full overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${pct}%` }}
-                                className="h-full rounded-full"
-                                style={{ background: c.color }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            </section>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Project Breakdown */}
-            <section className="bg-surface border border-border-soft rounded-[2.5rem] p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-2">
-                  <Briefcase size={20} className="text-brand" />
-                  <h2 className="text-xl font-black text-text-main">
-                    Tempo por Projeto
-                  </h2>
-                </div>
-                <BarChart3 size={20} className="text-text-muted" />
-              </div>
-
-              <div className="space-y-6">
-                {data.projectStats.length > 0 ? (
-                  data.projectStats.map((stat, idx) => {
-                    const percentage =
-                      (stat.totalMinutes / data.totalMinutesWorked) * 100;
-                    return (
-                      <div key={stat.projectId} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-text-main flex items-center gap-2">
-                            <div
-                              className={cn(
-                                "w-2 h-2 rounded-full",
-                                idx % 2 === 0 ? "bg-brand" : "bg-accent",
-                              )}
-                            />
-                            {stat.projectName}
-                          </span>
-                          <span className="text-sm font-black text-text-muted">
-                            {formatMinutes(stat.totalMinutes)}
-                          </span>
-                        </div>
-                        <div className="h-3 w-full bg-surface-muted rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percentage}%` }}
-                            className={cn(
-                              "h-full rounded-full",
-                              idx % 2 === 0 ? "bg-brand" : "bg-accent",
-                            )}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-10 opacity-50 font-bold">
-                    Nenhum dado por projeto.
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Daily Section (Yesterday) */}
-            <section className="bg-surface border border-border-soft rounded-[2.5rem] p-8 shadow-sm overflow-hidden relative">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-2">
-                  <History size={20} className="text-accent" />
-                  <h2 className="text-xl font-black text-text-main">
-                    Daily (Ontem)
-                  </h2>
-                </div>
-                <div className="text-xs font-bold text-text-muted uppercase bg-surface-muted px-2 py-1 rounded-lg">
-                  {format(subDays(new Date(), 1), "dd MMM", { locale: ptBR })}
-                </div>
-              </div>
-
-              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                {data.yesterdayTasks.length > 0 ? (
-                  data.yesterdayTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center justify-between p-4 bg-app-bg rounded-2xl border border-border-soft group hover:border-brand/30 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-brand/10 text-brand rounded-xl flex items-center justify-center shrink-0">
-                          <Layout size={18} />
-                        </div>
-                        <div>
-                          <div className="font-bold text-text-main line-clamp-1">
-                            {task.title}
-                          </div>
-                          <div className="text-[10px] font-black uppercase text-brand tracking-widest">
-                            {task.project?.name}
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight
-                        size={16}
-                        className="text-text-muted group-hover:translate-x-1 transition-transform"
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-10 opacity-50 font-bold">
-                    Nenhuma atividade registrada ontem.
-                  </div>
-                )}
-              </div>
-            </section>
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight font-mono">
+                {stats.completed}
+              </p>
+              <p className="text-[11px] text-muted font-medium mt-1">
+                de {tasks.length} demandas cadastradas
+              </p>
+            </div>
           </div>
 
-          {/* Reporting Section (Finished Tasks) */}
-          <section className="bg-surface border border-border-soft rounded-[2.5rem] p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
+          {/* Time Tracked */}
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-muted">Tempo Total Dedicado</span>
+              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-xs">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-amber-400 tracking-tight font-mono">
+                {formatSecondsToTimer(stats.totalSeconds)}
+              </p>
+              <p className="text-[11px] text-muted font-medium mt-1">
+                {formatSecondsToHuman(stats.totalSeconds)} auditadas no time
+              </p>
+            </div>
+          </div>
+
+          {/* Projects */}
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-muted">Projetos Ativos</span>
+              <div className="w-9 h-9 rounded-xl bg-brand-soft text-brand border border-brand/25 flex items-center justify-center shadow-xs">
+                <FolderKanban className="w-4 h-4 text-brand" />
+              </div>
+            </div>
+            <div>
+              <p className="text-3xl font-extrabold text-foreground tracking-tight font-mono">
+                {stats.projectsCount}
+              </p>
+              <p className="text-[11px] text-muted font-medium mt-1">
+                Iniciativas ativas no workspace
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Grid: Focus Session (5 cols) + Recent Sprint Tasks (7 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Focus Session Hero Card (Left 5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-6 shadow-panel space-y-5 transition-all hover:shadow-2xl">
+            {/* Header with macOS style dots */}
+            <div className="flex items-center justify-between pb-4 border-b border-border-soft">
               <div className="flex items-center gap-2">
-                <FileText size={20} className="text-brand" />
-                <h2 className="text-xl font-black text-text-main">
-                  Relatório de Entregas
-                </h2>
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+                <span className="text-xs font-bold text-foreground ml-1.5 flex items-center gap-1.5">
+                  <Flame className="w-3.5 h-3.5 text-accent" />
+                  Sessão em Foco
+                </span>
               </div>
+
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${
+                    activeTask ? 'bg-emerald-500 animate-ping' : 'bg-zinc-400'
+                  }`}
+                />
+                <span
+                  className={`text-xs font-bold ${
+                    activeTask ? 'text-teal-700 dark:text-teal-400' : 'text-muted'
+                  }`}
+                >
+                  {activeTask ? 'CRONOMETRANDO' : 'EM ESPERA'}
+                </span>
+              </div>
+            </div>
+
+            {/* Active or Suggested Task Info Box */}
+            {activeTask ? (
+              <div className="p-4 rounded-2xl bg-surface-raised border border-border-soft space-y-2 shadow-xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {activeTask.project && (
+                    <span
+                      className="px-2 py-0.5 rounded-md text-[10px] font-semibold border"
+                      style={{
+                        backgroundColor: activeTask.project.color ? `${activeTask.project.color}15` : 'rgba(15,118,110,0.1)',
+                        color: activeTask.project.color || '#0f766e',
+                        borderColor: activeTask.project.color ? `${activeTask.project.color}35` : 'rgba(15,118,110,0.25)',
+                      }}
+                    >
+                      {activeTask.project.name}
+                    </span>
+                  )}
+                  {activeTask.category && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-accent-soft text-accent border border-accent/25">
+                      {activeTask.category.name}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-sm font-bold text-foreground line-clamp-2 leading-snug">
+                  {activeTask.title}
+                </h3>
+              </div>
+            ) : suggestedTask ? (
+              <div className="p-4 rounded-2xl bg-surface-muted/60 border border-border-soft space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
+                    Sugerida para Focar
+                  </span>
+                  {suggestedTask.project && (
+                    <span className="text-[11px] text-muted font-medium truncate max-w-[140px]">
+                      {suggestedTask.project.name}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-sm font-bold text-foreground line-clamp-2 leading-snug">
+                  {suggestedTask.title}
+                </h3>
+              </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-surface-muted/40 border border-dashed border-border-soft text-center text-xs text-muted">
+                Nenhuma tarefa ativa. Crie uma demanda para iniciar sua sessão produtiva!
+              </div>
+            )}
+
+            {/* Big Bold Timer Display */}
+            <div className="text-center py-5 rounded-2xl bg-surface border border-border-soft shadow-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                {activeTask ? 'Tempo Decorrido na Tarefa' : 'Pronto para Iniciar'}
+              </span>
+              <p className="text-4xl sm:text-5xl font-extrabold font-mono text-foreground mt-1.5 tracking-tight">
+                {activeTask ? formatSecondsToTimer(activeSeconds) : '00:00:00'}
+              </p>
+            </div>
+
+            {/* Timer Actions */}
+            {activeTask ? (
               <button
-                onClick={handleCopyReport}
-                className="flex items-center gap-2 text-sm font-bold text-brand bg-brand/5 px-4 py-2 rounded-xl transition-all hover:bg-brand/10 active:scale-95"
+                type="button"
+                onClick={() => stopTimer(activeTask)}
+                className="w-full py-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs"
               >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? "Copiado!" : "Copiar Relatório"}
+                <Square className="w-4 h-4 fill-rose-300" />
+                <span>Pausar Cronômetro</span>
+              </button>
+            ) : suggestedTask ? (
+              <button
+                type="button"
+                onClick={() => handleToggleTimer(suggestedTask)}
+                className="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-lg shadow-brand/25 transition-all flex items-center justify-center gap-2 duration-200 hover:scale-[1.01] active:scale-[0.99]"
+              >
+                <Play className="w-4 h-4 fill-white" />
+                <span>Iniciar Tempo nesta Tarefa</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-lg shadow-brand/25 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Criar Tarefa para Focar</span>
+              </button>
+            )}
+
+            <div className="pt-2 border-t border-border-soft flex items-center justify-between text-[11px] text-muted">
+              <span>Usuário conectado</span>
+              <span className="font-bold text-foreground truncate max-w-[160px]">
+                {user?.name || user?.email}
+              </span>
+            </div>
+          </div>
+
+          {/* Workload Goal Progress Card */}
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel space-y-4 transition-all hover:shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-600/20 dark:border-amber-500/25 flex items-center justify-center shadow-xs">
+                  <Target className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    {goalProgress.title}
+                    <span className="text-[10px] text-muted font-normal">
+                      ({goalProgress.subtitle})
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-muted font-medium">
+                    Planejado: {goalProgress.targetHours}h {workGoal.period === 'DAILY' ? '/ dia' : workGoal.period === 'WEEKLY' ? '/ semana' : '/ mês'}
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                to="/profile"
+                title="Ajustar jornada e meta no Perfil"
+                className="p-1.5 rounded-lg border border-border-soft bg-surface hover:bg-surface-sunken text-muted hover:text-foreground text-xs transition-colors flex items-center gap-1"
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-semibold hidden sm:inline">Ajustar</span>
+              </Link>
+            </div>
+
+            {/* Time progress values */}
+            <div className="flex items-baseline justify-between pt-1">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-extrabold text-foreground font-mono tracking-tight">
+                  {formatSecondsToTimer(goalProgress.workedSeconds)}
+                </span>
+                <span className="text-xs text-muted font-medium">
+                  / {goalProgress.targetHours}h
+                </span>
+              </div>
+              <span
+                className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${
+                  goalProgress.isCompleted
+                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-600/25'
+                    : 'bg-brand/10 text-brand border-brand/20'
+                }`}
+              >
+                {goalProgress.percent}%
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-1.5">
+              <div className="w-full h-2.5 rounded-full bg-surface-sunken overflow-hidden p-0.5 border border-border-soft/60">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    goalProgress.isCompleted
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                      : 'bg-gradient-to-r from-brand to-teal-400'
+                  }`}
+                  style={{ width: `${goalProgress.percent}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-muted font-medium">
+                <span>
+                  {goalProgress.isCompleted
+                    ? '🎉 Meta da jornada concluída!'
+                    : `Faltam ${formatSecondsToHuman(goalProgress.remainingSeconds)}`}
+                </span>
+                <span>{goalProgress.percent}% da meta</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Shortcuts Card */}
+          <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel space-y-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted block">
+              Acesso Rápido ao Workspace
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+              <Link
+                to="/projects"
+                className="p-3.5 rounded-xl bg-surface-muted/60 hover:bg-brand-soft/50 hover:text-brand border border-border-soft transition-all flex items-center gap-2.5 text-foreground shadow-xs"
+              >
+                <FolderKanban className="w-4 h-4 text-brand" />
+                <span>Ver Projetos</span>
+              </Link>
+              <Link
+                to="/analytics"
+                className="p-3.5 rounded-xl bg-surface-muted/60 hover:bg-accent-soft/50 hover:text-accent border border-border-soft transition-all flex items-center gap-2.5 text-foreground shadow-xs"
+              >
+                <TrendingUp className="w-4 h-4 text-accent" />
+                <span>Analytics da Org</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Sprint Tasks (Right 7 cols) */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Zap className="w-4 h-4 text-accent" />
+              Tarefas Recentes da Equipe
+            </h2>
+            <Link
+              to="/tasks"
+              className="text-xs font-bold text-brand hover:underline flex items-center gap-1"
+            >
+              <span>Ver todas</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-20 rounded-2xl border border-border-soft bg-surface/60 backdrop-blur-md animate-pulse p-4"
+                />
+              ))}
+            </div>
+          ) : recentTasks.length === 0 ? (
+            <div className="text-center py-20 rounded-3xl border border-dashed border-border-soft bg-surface/60 backdrop-blur-md">
+              <Activity className="w-8 h-8 text-muted mx-auto mb-2" />
+              <p className="text-xs text-muted mb-4 font-medium">
+                Nenhuma tarefa encontrada neste workspace.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-strong shadow-md shadow-brand/20 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Criar Primeira Tarefa</span>
               </button>
             </div>
+          ) : (
+            <div className="space-y-3">
+              {recentTasks.map((task) => {
+                const isTracking = activeTask?.id === task.id
+                const taskSec = isTracking ? activeSeconds : calculateTaskTotalSeconds(task)
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-border-soft">
-                    <th className="pb-4 text-xs font-black uppercase text-text-muted tracking-widest pl-4">
-                      Tarefa
-                    </th>
-                    <th className="pb-4 text-xs font-black uppercase text-text-muted tracking-widest">
-                      Projeto
-                    </th>
-                    <th className="pb-4 text-xs font-black uppercase text-text-muted tracking-widest">
-                      Concluída em
-                    </th>
-                    <th className="pb-4 text-xs font-black uppercase text-text-muted tracking-widest text-right pr-4">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-soft/50">
-                  {data.finishedTasksInPeriod.length > 0 ? (
-                    data.finishedTasksInPeriod.map((task) => (
-                      <tr
-                        key={task.id}
-                        className="group hover:bg-app-bg transition-colors"
-                      >
-                        <td className="py-4 pl-4 font-bold text-text-main">
+                return (
+                  <div
+                    key={task.id}
+                    className={`rounded-2xl border p-4 transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-panel ${
+                      isTracking
+                        ? 'border-brand/60 bg-brand/5 ring-1 ring-brand/30 shadow-lg'
+                        : 'border-border-soft bg-surface/90 backdrop-blur-md hover:border-brand/30 hover:shadow-xl'
+                    }`}
+                  >
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {task.project && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border"
+                            style={{
+                              backgroundColor: task.project.color ? `${task.project.color}15` : 'rgba(255,255,255,0.05)',
+                              color: task.project.color || '#94a3b8',
+                              borderColor: task.project.color ? `${task.project.color}30` : 'rgba(255,255,255,0.1)',
+                            }}
+                          >
+                            <Folder className="w-3 h-3" />
+                            {task.project.name}
+                          </span>
+                        )}
+                        {task.category && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border"
+                            style={{
+                              backgroundColor: task.category.color ? `${task.category.color}15` : 'rgba(217,119,6,0.1)',
+                              color: task.category.color || '#d97706',
+                              borderColor: task.category.color ? `${task.category.color}30` : 'rgba(217,119,6,0.2)',
+                            }}
+                          >
+                            <Tag className="w-3 h-3" />
+                            {task.category.name}
+                          </span>
+                        )}
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                            task.status === 'COMPLETED'
+                              ? 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 border-emerald-600/20 dark:border-emerald-500/25'
+                              : task.status === 'IN_PROGRESS'
+                              ? 'bg-teal-500/10 text-teal-700 dark:bg-teal-500/15 dark:text-teal-400 border-teal-600/20 dark:border-teal-500/25'
+                              : 'bg-surface-muted text-muted border-border-soft'
+                          }`}
+                        >
+                          {task.status === 'COMPLETED'
+                            ? 'Concluído'
+                            : task.status === 'IN_PROGRESS'
+                            ? 'Em Andamento'
+                            : task.status === 'CANCELED'
+                            ? 'Cancelado'
+                            : 'A Fazer'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <h3
+                          onClick={() => navigate('/tasks')}
+                          className="text-sm font-bold text-foreground hover:text-brand cursor-pointer truncate transition-colors"
+                        >
                           {task.title}
-                        </td>
-                        <td className="py-4 text-sm font-medium text-text-muted">
-                          <span className="px-2 py-1 bg-surface-muted rounded-lg border border-border-soft">
-                            {task.project?.name}
-                          </span>
-                        </td>
-                        <td className="py-4 text-sm font-bold text-text-main">
-                          {task.finishedAt
-                            ? format(
-                                new Date(task.finishedAt),
-                                "dd/MM/yyyy HH:mm",
-                              )
-                            : "-"}
-                        </td>
-                        <td className="py-4 text-right pr-4">
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-green-500/10 px-2 py-1 text-[10px] font-black uppercase text-green-600 tracking-tighter">
-                            <CheckCircle2 size={12} />
-                            Finalizado
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="py-10 text-center opacity-50 font-bold"
+                        </h3>
+                        {task.externalUrl && (
+                          <a
+                            href={task.externalUrl.startsWith('http') ? task.externalUrl : `https://${task.externalUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            title={`Link externo: ${task.externalUrl}`}
+                            className="inline-flex items-center text-muted hover:text-brand transition-colors shrink-0 cursor-pointer"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                      <div
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-mono text-[11px] font-bold ${
+                          isTracking
+                            ? 'bg-teal-500/15 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300'
+                            : 'bg-surface-muted text-muted'
+                        }`}
                       >
-                        Nenhuma tarefa finalizada neste período.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        <Clock className={`w-3.5 h-3.5 ${isTracking ? 'animate-pulse text-teal-700 dark:text-brand' : ''}`} />
+                        <span>{formatSecondsToTimer(taskSec)}</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleTimer(task)}
+                        title={isTracking ? 'Pausar cronômetro' : 'Iniciar cronômetro'}
+                        className={`p-2 rounded-xl transition-all shadow-xs ${
+                          isTracking
+                            ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 ring-1 ring-rose-500/40'
+                            : 'bg-teal-500/10 text-teal-700 hover:bg-teal-500/20 dark:bg-brand/15 dark:text-teal-300 dark:hover:bg-brand/25 ring-1 ring-teal-600/20 dark:ring-brand/30'
+                        }`}
+                      >
+                        {isTracking ? (
+                          <Square className="w-3.5 h-3.5 fill-rose-300" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 fill-teal-700 dark:fill-teal-300" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          </section>
-        </>
-      ) : null}
+          )}
+        </div>
+      </div>
+
+      {/* Task Creation Modal */}
+      {activeOrgId && (
+        <CreateTaskModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleModalSubmit}
+          organizationId={activeOrgId}
+          initialStatus="NOT_STARTED"
+        />
+      )}
     </div>
-  );
-};
+  )
+}

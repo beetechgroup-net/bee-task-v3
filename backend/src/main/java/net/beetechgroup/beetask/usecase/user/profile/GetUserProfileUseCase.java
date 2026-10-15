@@ -48,7 +48,8 @@ public class GetUserProfileUseCase {
                 user.getName(),
                 user.getEmail(),
                 user.getPhoto(),
-                orgs
+                orgs,
+                user.getPreferences()
         );
     }
 }

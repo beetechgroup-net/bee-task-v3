@@ -1,294 +1,447 @@
-import React, { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Loader2, Pencil, Plus, Search, Tag, X } from 'lucide-react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Tag,
+  Plus,
+  Search,
+  RefreshCw,
+  Clock,
+  ListTodo,
+  Sparkles,
+  ArrowRight,
+  Edit2,
+  X,
+  Loader2,
+  AlertCircle,
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { categoryService } from '../services/categoryService'
-import type { Category, CategoryPayload } from '../types/category'
-import { CategoryIcon } from '../components/CategoryIcon'
-import { IconPicker } from '../components/IconPicker'
+import { taskService } from '../services/taskService'
+import type { Category, Task } from '../types/task'
+import { calculateTaskTotalSeconds, formatSecondsToHuman } from '../lib/timeUtils'
 
-const DEFAULT_COLOR = '#7C3AED'
-const DEFAULT_ICON = 'Tag'
+const COLOR_PRESETS = [
+  '#d97706', // Amber / Accent
+  '#0f766e', // Teal / Brand
+  '#10b981', // Emerald
+  '#3b82f6', // Blue
+  '#6366f1', // Indigo
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#f43f5e', // Rose
+  '#f59e0b', // Yellow
+  '#64748b', // Slate
+]
 
 export const CategoriesPage: React.FC = () => {
   const { activeOrg } = useAuth()
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState<Category | null>(null)
-  const [form, setForm] = useState<CategoryPayload>({ name: '', color: DEFAULT_COLOR, icon: DEFAULT_ICON })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const navigate = useNavigate()
 
-  const fetchCategories = async () => {
-    if (!activeOrg) return
-    setIsLoading(true)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [name, setName] = useState('')
+  const [color, setColor] = useState(COLOR_PRESETS[0])
+  const [submitting, setSubmitting] = useState(false)
+
+  const activeOrgId = activeOrg?.id
+
+  const loadData = useCallback(async () => {
+    if (!activeOrgId) return
     try {
-      const data = await categoryService.listByOrganization(activeOrg.id)
-      setCategories(data)
-    } catch (err) {
-      console.error('Falha ao carregar categorias', err)
-      setError('Não foi possível carregar as categorias.')
+      setRefreshing(true)
+      const [catsRes, tasksRes] = await Promise.all([
+        categoryService.listCategories(activeOrgId),
+        taskService.listTasks({ organizationId: activeOrgId }).catch(() => []),
+      ])
+      setCategories(catsRes || [])
+      setTasks(tasksRes || [])
+    } catch (err: unknown) {
+      console.error(err)
+      setError('Falha ao carregar categorias.')
     } finally {
-      setIsLoading(false)
+      setLoading(false)
+      setRefreshing(false)
     }
-  }
+  }, [activeOrgId])
 
   useEffect(() => {
-    fetchCategories()
-  }, [activeOrg])
+    loadData()
+  }, [loadData])
 
-  const openCreate = () => {
-    setEditing(null)
-    setForm({ name: '', color: DEFAULT_COLOR, icon: DEFAULT_ICON })
-    setError(null)
-    setShowForm(true)
+  // Aggregate category statistics
+  const categoryStats = useMemo(() => {
+    const statsMap = new Map<
+      number,
+      { totalTasks: number; totalSeconds: number }
+    >()
+
+    tasks.forEach((task) => {
+      if (!task.category?.id) return
+      const cId = task.category.id
+      const current = statsMap.get(cId) || {
+        totalTasks: 0,
+        totalSeconds: 0,
+      }
+
+      current.totalTasks += 1
+      current.totalSeconds += calculateTaskTotalSeconds(task)
+      statsMap.set(cId, current)
+    })
+
+    return statsMap
+  }, [tasks])
+
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories
+    const q = searchQuery.toLowerCase()
+    return categories.filter((c) => c.name.toLowerCase().includes(q))
+  }, [categories, searchQuery])
+
+  const handleOpenCreateModal = () => {
+    setEditingCategory(null)
+    setName('')
+    setColor(COLOR_PRESETS[0])
+    setIsModalOpen(true)
   }
 
-  const openEdit = (category: Category) => {
-    setEditing(category)
-    setForm({ name: category.name, color: category.color, icon: category.icon })
-    setError(null)
-    setShowForm(true)
+  const handleOpenEditModal = (cat: Category) => {
+    setEditingCategory(cat)
+    setName(cat.name)
+    setColor(cat.color || COLOR_PRESETS[0])
+    setIsModalOpen(true)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!activeOrg) return
-    setIsSubmitting(true)
+    if (!activeOrgId || !name.trim()) return
+
+    setSubmitting(true)
     setError(null)
     try {
-      if (editing) {
-        const updated = await categoryService.update(activeOrg.id, editing.id, form)
-        setCategories((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+      if (editingCategory) {
+        const updated = await categoryService.updateCategory(activeOrgId, editingCategory.id, {
+          name: name.trim(),
+          color,
+          icon: 'tag',
+        })
+        setCategories((prev) =>
+          prev.map((c) => (c.id === updated.id ? updated : c))
+        )
       } else {
-        const created = await categoryService.create(activeOrg.id, form)
+        const created = await categoryService.createCategory(activeOrgId, {
+          name: name.trim(),
+          color,
+          icon: 'tag',
+        })
         setCategories((prev) => [...prev, created])
       }
-      setShowForm(false)
-    } catch (err) {
-      console.error('Falha ao salvar categoria', err)
+      setIsModalOpen(false)
+    } catch (err: unknown) {
+      console.error(err)
       setError(err instanceof Error ? err.message : 'Falha ao salvar categoria.')
     } finally {
-      setIsSubmitting(false)
+      setSubmitting(false)
     }
   }
 
-  const filtered = categories.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
-
   return (
-    <div className="space-y-10 pb-20">
-      <header className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-brand font-black uppercase tracking-widest text-[10px] mb-2">
-            <Tag size={14} />
-            Workspace
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-accent via-amber-400 to-brand bg-clip-text text-transparent">
+              Categorias & Tags
+            </h1>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/25 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+              {activeOrg?.name || 'Workspace'}
+            </span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-text-main">
-            Categorias em <span className="text-brand">{activeOrg?.name ?? '...'}</span>
-          </h1>
-          <p className="mt-2 text-lg text-text-muted">
-            Crie categorias para classificar e medir o tempo das suas tarefas.
+          <p className="text-xs text-muted">
+            Classifique suas tarefas por tipos de trabalho (Bug, Feature, Reunião, Design) para métricas precisas.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
-            <input
-              type="text"
-              placeholder="Buscar categorias..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-surface border border-border-soft rounded-xl text-sm outline-none focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all w-56 font-medium"
-            />
-          </div>
+
+        <div className="flex items-center gap-2.5">
           <button
-            onClick={openCreate}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-dark active:scale-95"
+            type="button"
+            onClick={loadData}
+            disabled={refreshing}
+            title="Recarregar categorias"
+            className="p-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-muted hover:text-foreground hover:bg-surface-raised transition-all shadow-panel disabled:opacity-50"
           >
-            <Plus size={18} />
-            Nova Categoria
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-accent' : ''}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent text-white font-semibold text-xs hover:bg-accent-hover shadow-md shadow-accent/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Categoria</span>
           </button>
         </div>
-      </header>
+      </div>
 
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-32 animate-pulse rounded-[2rem] border border-border-soft bg-surface-muted" />
+      {error && (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs shadow-panel backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-400" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-rose-400 hover:text-rose-200 text-xs font-bold"
+          >
+            Fechar
+          </button>
+        </div>
+      )}
+
+      {/* Search Bar */}
+      <div className="p-4 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex items-center justify-between gap-3 shadow-panel">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar categoria por nome..."
+            className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-border-soft bg-surface-raised/80 text-xs text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all"
+          />
+        </div>
+        <div className="text-xs text-muted font-medium">
+          {filteredCategories.length} {filteredCategories.length === 1 ? 'categoria' : 'categorias'}
+        </div>
+      </div>
+
+      {/* Grid of Categories */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-44 rounded-3xl border border-border-soft bg-surface-sunken/40 animate-pulse p-6 space-y-3"
+            >
+              <div className="h-5 bg-surface-raised rounded-md w-1/2" />
+              <div className="h-3 bg-surface-raised rounded-md w-3/4" />
+            </div>
           ))}
         </div>
-      ) : (
-        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence mode="popLayout">
-            {filtered.map((category, index) => (
-              <motion.div
-                key={category.id}
-                layout
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ delay: index * 0.04 }}
-                className="group relative flex items-center gap-4 rounded-[2rem] border border-border-soft bg-surface p-6 transition-all hover:shadow-xl hover:shadow-brand/5"
-              >
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl shrink-0"
-                  style={{ background: `${category.color}1a`, color: category.color }}
-                >
-                  <CategoryIcon iconName={category.icon} color={category.color} size={26} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-black text-text-main truncate">{category.name}</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mt-1">
-                    {category.icon} · {category.color}
-                  </p>
-                </div>
-                <button
-                  onClick={() => openEdit(category)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-app-bg text-text-muted transition-all hover:bg-brand hover:text-white"
-                  title="Editar categoria"
-                >
-                  <Pencil size={16} />
-                </button>
-              </motion.div>
-            ))}
-            <button
-              onClick={openCreate}
-              className="flex min-h-[7rem] flex-col items-center justify-center gap-2 rounded-[2rem] border-2 border-dashed border-border-soft bg-surface/50 p-6 text-center transition-all hover:border-brand/30 hover:bg-brand/5 active:scale-[0.98] group"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-app-bg text-text-muted transition-colors group-hover:bg-brand group-hover:text-white">
-                <Plus size={24} />
-              </div>
-              <span className="text-sm font-bold text-text-main">Nova categoria</span>
-            </button>
-          </AnimatePresence>
-        </section>
-      )}
-
-      {!isLoading && filtered.length === 0 && categories.length === 0 && (
-        <div className="text-center py-16 bg-surface/50 rounded-[3rem] border-2 border-dashed border-border-soft">
-          <div className="w-16 h-16 bg-surface-muted rounded-2xl flex items-center justify-center mx-auto mb-6 text-text-muted/40">
-            <Tag size={32} />
+      ) : filteredCategories.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 px-4 text-center rounded-3xl border border-dashed border-border-soft bg-surface/60 backdrop-blur-md shadow-panel">
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent mb-4">
+            <Tag className="w-7 h-7" />
           </div>
-          <h3 className="text-xl font-bold text-text-main mb-2">Nenhuma categoria cadastrada</h3>
-          <p className="text-text-muted max-w-xs mx-auto font-medium">
-            Crie sua primeira categoria para começar a classificar tarefas e medir tempo.
+          <h3 className="text-base font-bold text-foreground mb-1">
+            Nenhum categoria cadastrada
+          </h3>
+          <p className="text-xs text-muted max-w-sm mb-5 leading-relaxed">
+            {searchQuery
+              ? 'Nenhuma categoria encontrada com este termo.'
+              : 'Categorias permitem segmentar seus fluxos de trabalho e auditar onde o tempo é consumido.'}
           </p>
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white text-xs font-semibold hover:bg-accent-hover shadow-md shadow-accent/25 transition-all hover:-translate-y-0.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Criar Primeira Categoria</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredCategories.map((category) => {
+            const stats = categoryStats.get(category.id) || {
+              totalTasks: 0,
+              totalSeconds: 0,
+            }
+
+            return (
+              <div
+                key={category.id}
+                className="group rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-6 hover:border-accent/40 shadow-panel hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center border shadow-xs"
+                        style={{
+                          backgroundColor: category.color ? `${category.color}18` : 'rgba(217,119,6,0.15)',
+                          borderColor: category.color ? `${category.color}40` : 'rgba(217,119,6,0.3)',
+                          color: category.color || '#d97706',
+                        }}
+                      >
+                        <Tag className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-foreground group-hover:text-accent transition-colors">
+                          {category.name}
+                        </h3>
+                        <span className="text-[11px] text-muted font-medium">
+                          ID #{category.id}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditModal(category)}
+                      className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+                      title="Editar categoria"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Metrics Bar */}
+                  <div className="grid grid-cols-2 gap-2 p-3.5 rounded-2xl bg-surface-sunken/60 border border-border-soft mb-4">
+                    <div className="flex items-center gap-2">
+                      <ListTodo className="w-3.5 h-3.5 text-muted" />
+                      <div>
+                        <p className="text-[10px] text-muted">Tarefas</p>
+                        <p className="text-xs font-bold text-foreground">
+                          {stats.totalTasks} associadas
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                      <div>
+                        <p className="text-[10px] text-muted">Tempo Total</p>
+                        <p className="text-xs font-bold text-amber-400">
+                          {formatSecondsToHuman(stats.totalSeconds)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Link */}
+                <div className="pt-3 border-t border-border-soft/60 flex items-center justify-between">
+                  <span
+                    className="inline-block w-3 h-3 rounded-full"
+                    style={{ backgroundColor: category.color || '#d97706' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => navigate('/tasks')}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
+                  >
+                    <span>Ver no Quadro</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
-      <AnimatePresence>
-        {showForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app-bg/80 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-2xl bg-surface border border-border-soft rounded-[2.5rem] shadow-panel p-8 relative"
-            >
-              <button
-                onClick={() => setShowForm(false)}
-                className="absolute top-6 right-6 text-text-muted hover:text-brand transition-colors"
-              >
-                <X size={22} />
-              </button>
-
-              <div className="mb-8 flex items-center gap-3">
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl"
-                  style={{ background: `${form.color}1a`, color: form.color }}
-                >
-                  <CategoryIcon iconName={form.icon} color={form.color} size={24} />
+      {/* Modal Criar/Editar Categoria */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            onClick={() => setIsModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-surface-raised shadow-2xl z-10 overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-border bg-surface">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
+                  <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-text-main">
-                    {editing ? 'Editar categoria' : 'Nova categoria'}
+                  <h2 className="text-base font-bold text-foreground">
+                    {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
                   </h2>
-                  <p className="text-sm text-text-muted">
-                    Defina nome, cor e ícone para identificar suas tarefas.
+                  <p className="text-xs text-muted">
+                    {editingCategory
+                      ? 'Atualize o nome ou cor da tag.'
+                      : 'Crie uma categoria para agrupar tipos de trabalho.'}
                   </p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-raised transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  <label className="block space-y-2">
-                    <span className="text-sm font-bold text-text-main">Nome</span>
-                    <input
-                      autoFocus
-                      required
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="Ex.: Bug, Feature, Reunião"
-                      className="block w-full h-12 px-4 bg-app-bg border border-border-soft rounded-xl text-sm font-medium outline-none focus:border-brand focus:ring-4 focus:ring-brand/10"
+            <form onSubmit={handleSaveCategory} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  Nome da Categoria <span className="text-accent">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Bugfix, Feature, Reunião, Documentação..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-2">
+                  Cor da Tag
+                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {COLOR_PRESETS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setColor(c)}
+                      className={`w-7 h-7 rounded-full border-2 transition-transform ${
+                        color === c
+                          ? 'scale-115 border-white ring-2 ring-accent/50'
+                          : 'border-transparent hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: c }}
                     />
-                  </label>
-                  <label className="block space-y-2">
-                    <span className="text-sm font-bold text-text-main">Cor</span>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={form.color}
-                        onChange={(e) => setForm({ ...form, color: e.target.value })}
-                        className="h-12 w-16 cursor-pointer rounded-xl border border-border-soft bg-app-bg"
-                      />
-                      <input
-                        type="text"
-                        value={form.color}
-                        onChange={(e) => setForm({ ...form, color: e.target.value })}
-                        className="flex-1 h-12 px-4 bg-app-bg border border-border-soft rounded-xl text-sm font-mono outline-none focus:border-brand"
-                      />
-                    </div>
-                  </label>
+                  ))}
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <span className="text-sm font-bold text-text-main">Ícone</span>
-                  <IconPicker
-                    value={form.icon}
-                    onChange={(icon) => setForm({ ...form, icon })}
-                    color={form.color}
-                  />
-                </div>
-
-                {error && (
-                  <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold flex items-center gap-3">
-                    <X size={16} />
-                    {error}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="px-5 py-3 text-sm font-bold text-text-muted hover:text-text-main"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !form.name.trim() || !form.icon}
-                    className="inline-flex min-w-44 items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-black text-white shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] hover:bg-brand-dark active:scale-95 disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="animate-spin" size={18} />
-                    ) : (
-                      <>
-                        {editing ? 'Salvar' : 'Criar categoria'}
-                        <ArrowRight size={18} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
+              <div className="pt-4 border-t border-border flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-xl border border-border bg-surface text-xs font-medium text-foreground hover:bg-surface-raised"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || !name.trim()}
+                  className="px-5 py-2 rounded-xl bg-accent text-white text-xs font-semibold hover:bg-accent-hover shadow-xs flex items-center gap-2 disabled:opacity-50"
+                >
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {editingCategory ? 'Salvar Alterações' : 'Criar Categoria'}
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   )
 }

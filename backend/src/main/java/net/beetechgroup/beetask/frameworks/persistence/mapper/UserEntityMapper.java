@@ -14,6 +14,7 @@ public class UserEntityMapper {
         entity.setEmail(user.getEmail());
         entity.setPassword(user.getPassword());
         entity.setPhoto(user.getPhoto());
+        entity.setPreferences(user.getPreferences());
         return entity;
     }
 
@@ -25,6 +26,7 @@ public class UserEntityMapper {
         user.setEmail(entity.getEmail());
         user.setPassword(entity.getPassword());
         user.setPhoto(entity.getPhoto());
+        user.setPreferences(entity.getPreferences());
         return user;
     }
 }

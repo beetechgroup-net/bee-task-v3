@@ -40,7 +40,8 @@ public class TaskControllerMapper {
                 userEmail,
                 Objects.nonNull(request.history()) ? request.history().stream()
                         .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
-                        .toList() : null
+                        .toList() : null,
+                request.externalUrl()
         );
     }
 
@@ -69,7 +70,8 @@ public class TaskControllerMapper {
                         : null,
                 output.finishedAt(),
                 output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(
-                        taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt(), taskHistoryItemOutput.elapsedSeconds())).toList()
+                        taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt(), taskHistoryItemOutput.elapsedSeconds())).toList(),
+                output.externalUrl()
         );
     }
 
@@ -94,7 +96,8 @@ public class TaskControllerMapper {
                 userEmail,
                 Objects.nonNull(request.history()) ? request.history().stream()
                         .map(h -> new TaskHistoryItemInput(h.id(), h.startAt(), h.endAt()))
-                        .toList() : null
+                        .toList() : null,
+                request.externalUrl()
         );
     }
 }

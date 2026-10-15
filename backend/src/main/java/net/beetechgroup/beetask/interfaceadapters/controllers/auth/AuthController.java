@@ -60,6 +60,12 @@ public class AuthController {
     UploadUserPhotoUseCase uploadUserPhotoUseCase;
 
     @Inject
+    net.beetechgroup.beetask.usecase.user.preferences.GetUserPreferencesUseCase getUserPreferencesUseCase;
+
+    @Inject
+    net.beetechgroup.beetask.usecase.user.preferences.UpdateUserPreferencesUseCase updateUserPreferencesUseCase;
+
+    @Inject
     SecurityIdentity securityIdentity;
 
     @Path("/me")
@@ -97,6 +103,28 @@ public class AuthController {
         UpdateUserProfileOutput output = updateUserProfileUseCase.execute(input);
         LOGGER.infof("Profile updated successfully for user, new email: %s", output.email());
         return AuthControllerMapper.toUpdateProfileResponse(output);
+    }
+
+    @Path("/preferences")
+    @GET
+    @Authenticated
+    @Operation(summary = "Get current user preferences", description = "Returns preferences JSON for authenticated user")
+    public PreferencesResponse getPreferences() {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Preferences requested for user %s", email);
+        String prefs = getUserPreferencesUseCase.execute(email);
+        return new PreferencesResponse(prefs);
+    }
+
+    @Path("/preferences")
+    @PUT
+    @Authenticated
+    @Operation(summary = "Update current user preferences", description = "Updates preferences JSON for authenticated user")
+    public PreferencesResponse updatePreferences(PreferencesRequest request) {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Preferences update requested for user %s", email);
+        String prefs = updateUserPreferencesUseCase.execute(email, request != null ? request.preferences() : null);
+        return new PreferencesResponse(prefs);
     }
 
     @Path("/register")

@@ -1,22 +1,26 @@
 import { apiFetch } from '../lib/api'
-import type { Category, CategoryPayload } from '../types/category'
+import type { Category } from '../types/task'
 
 export const categoryService = {
-  listByOrganization: async (orgId: number): Promise<Category[]> => {
+  async listCategories(orgId: number): Promise<Category[]> {
     return apiFetch<Category[]>(`/organizations/${orgId}/categories`)
   },
 
-  create: async (orgId: number, payload: CategoryPayload): Promise<Category> => {
+  async createCategory(orgId: number, data: { name: string; color?: string; icon?: string }): Promise<Category> {
     return apiFetch<Category>(`/organizations/${orgId}/categories`, {
       method: 'POST',
-      body: payload,
+      body: data,
     })
   },
 
-  update: async (orgId: number, categoryId: number, payload: CategoryPayload): Promise<Category> => {
-    return apiFetch<Category>(`/organizations/${orgId}/categories/${categoryId}`, {
+  async updateCategory(
+    orgId: number,
+    id: number,
+    data: { name: string; color?: string; icon?: string }
+  ): Promise<Category> {
+    return apiFetch<Category>(`/organizations/${orgId}/categories/${id}`, {
       method: 'PUT',
-      body: payload,
+      body: data,
     })
   },
 }
