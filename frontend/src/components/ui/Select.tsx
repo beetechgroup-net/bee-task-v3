@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Check } from 'lucide-react'
 
 export interface SelectOption<T = string | number> {
@@ -29,6 +30,8 @@ export interface CustomSelectProps<T = string | number> {
  * - Foco dinâmico com ring colorido e leve elevação
  * - Popover em glassmorphism com animação de zoom/fade
  * - Itens com highlight de hover e seleção com checkmark
+ * - Renderização via Portal (document.body) com z-index de nível superior (z-[9999]),
+ *   evitando que o menu fique atrás de outros componentes, cards, modais ou tabelas.
  */
 export function CustomSelect<T extends string | number>({
   value,
@@ -44,14 +47,96 @@ export function CustomSelect<T extends string | number>({
 }: CustomSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
+  const [coords, setCoords] = useState<{
+    top?: number
+    bottom?: number
+    left: number
+    width: number
+    openUpwards: boolean
+  } | null>(null)
 
   // Opção atualmente selecionada
   const selectedOption = options.find((opt) => opt.value === value)
 
-  // Fechar ao clicar fora
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+
+    // Elemento oculto ou desmontado
+    if (rect.width === 0 && rect.height === 0) return
+
+    // Se saiu completamente da viewport ao rolar
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setIsOpen(false)
+      return
+    }
+
+    const estimatedHeight = Math.min(options.length * 44 + 20, 260)
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+
+    const openUpwards = spaceBelow < estimatedHeight && spaceAbove > spaceBelow
+
+    const width = Math.max(rect.width, 180)
+    let left = rect.left
+
+    // Evitar transbordar para fora da tela no mobile / resoluções estreitas
+    if (left + width > window.innerWidth - 8) {
+      left = Math.max(8, window.innerWidth - width - 8)
+    }
+
+    if (openUpwards) {
+      setCoords({
+        bottom: window.innerHeight - rect.top + 6,
+        left,
+        width,
+        openUpwards: true,
+      })
+    } else {
+      setCoords({
+        top: rect.bottom + 6,
+        left,
+        width,
+        openUpwards: false,
+      })
+    }
+  }, [options.length])
+
+  // Atualizar posição antes do primeiro paint ao abrir
+  useLayoutEffect(() => {
+    if (isOpen) {
+      updatePosition()
+    }
+  }, [isOpen, updatePosition])
+
+  // Acompanhar resize e scroll de qualquer elemento pai (modal, window, tabela)
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleScrollOrResize = () => {
+      updatePosition()
+    }
+
+    window.addEventListener('resize', handleScrollOrResize)
+    window.addEventListener('scroll', handleScrollOrResize, true)
+
+    return () => {
+      window.removeEventListener('resize', handleScrollOrResize)
+      window.removeEventListener('scroll', handleScrollOrResize, true)
+    }
+  }, [isOpen, updatePosition])
+
+  // Fechar ao clicar fora (verificando tanto o container quanto o portal)
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(target)
+      ) {
         setIsOpen(false)
       }
     }
@@ -83,7 +168,10 @@ export function CustomSelect<T extends string | number>({
   const isSmall = size === 'sm'
 
   return (
-    <div ref={containerRef} className={`relative w-full text-left ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative w-full text-left ${isOpen ? 'z-30' : ''} ${className}`}
+    >
       {/* Label opcional no estilo HeroUI */}
       {label && (
         <label className="block text-xs font-bold text-foreground mb-1.5 tracking-tight">
@@ -141,64 +229,79 @@ export function CustomSelect<T extends string | number>({
         </div>
       </button>
 
-      {/* Popover ListBox - Estilo HeroUI v3 Dropdown */}
-      {isOpen && (
-        <div
-          role="listbox"
-          tabIndex={-1}
-          className="absolute left-0 right-0 mt-1.5 z-50 min-w-[200px] max-h-64 overflow-y-auto rounded-2xl border border-border-soft bg-surface/95 dark:bg-zinc-900/95 backdrop-blur-xl p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ease-out"
-        >
-          <div className="space-y-0.5">
-            {options.map((option) => {
-              const isSelected = option.value === value
-              return (
-                <button
-                  key={String(option.value)}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  onClick={() => handleSelect(option.value)}
-                  className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-left text-xs sm:text-sm transition-all duration-150 cursor-pointer ${
-                    isSelected
-                      ? 'bg-brand/15 text-brand font-bold shadow-xs'
-                      : 'text-foreground hover:bg-brand/10 hover:text-brand'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
-                    {/* Colored dot */}
-                    {option.color && (
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs ring-1 ring-surface"
-                        style={{ backgroundColor: option.color }}
-                      />
-                    )}
-
-                    {/* Icon */}
-                    {option.icon && (
-                      <span className="shrink-0 flex items-center">{option.icon}</span>
-                    )}
-
-                    {/* Label and description */}
-                    <div className="truncate flex-1 min-w-0">
-                      <p className="truncate leading-tight">{option.label}</p>
-                      {option.description && (
-                        <p className="text-[10px] text-muted truncate mt-0.5 font-normal">
-                          {option.description}
-                        </p>
+      {/* Popover ListBox - Renderizado no body via createPortal para z-index absoluto */}
+      {isOpen &&
+        coords &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            role="listbox"
+            tabIndex={-1}
+            style={{
+              position: 'fixed',
+              top: coords.top !== undefined ? `${coords.top}px` : 'auto',
+              bottom: coords.bottom !== undefined ? `${coords.bottom}px` : 'auto',
+              left: `${coords.left}px`,
+              width: `${coords.width}px`,
+              zIndex: 9999,
+            }}
+            className={`max-h-64 overflow-y-auto rounded-2xl border border-border-soft bg-surface/95 dark:bg-zinc-900/95 backdrop-blur-xl p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ease-out ${
+              coords.openUpwards ? 'origin-bottom' : 'origin-top'
+            }`}
+          >
+            <div className="space-y-0.5">
+              {options.map((option) => {
+                const isSelected = option.value === value
+                return (
+                  <button
+                    key={String(option.value)}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelect(option.value)}
+                    className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-left text-xs sm:text-sm transition-all duration-150 cursor-pointer ${
+                      isSelected
+                        ? 'bg-brand/15 text-brand font-bold shadow-xs'
+                        : 'text-foreground hover:bg-brand/10 hover:text-brand'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 truncate flex-1 min-w-0">
+                      {/* Colored dot */}
+                      {option.color && (
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs ring-1 ring-surface"
+                          style={{ backgroundColor: option.color }}
+                        />
                       )}
-                    </div>
-                  </div>
 
-                  {/* Checkmark indicator for selected item */}
-                  {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-brand shrink-0 ml-1.5" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+                      {/* Icon */}
+                      {option.icon && (
+                        <span className="shrink-0 flex items-center">{option.icon}</span>
+                      )}
+
+                      {/* Label and description */}
+                      <div className="truncate flex-1 min-w-0">
+                        <p className="truncate leading-tight">{option.label}</p>
+                        {option.description && (
+                          <p className="text-[10px] text-muted truncate mt-0.5 font-normal">
+                            {option.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Checkmark indicator for selected item */}
+                    {isSelected && (
+                      <Check className="w-3.5 h-3.5 text-brand shrink-0 ml-1.5" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
