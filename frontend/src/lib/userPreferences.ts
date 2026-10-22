@@ -27,6 +27,8 @@ export type BiMetricType =
 
 export type BiPeriodFilter = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH'
 
+export type BiCardScope = 'INHERIT' | 'MINE' | 'TEAM'
+
 export interface DashboardV2Card {
   id: string
   title: string
@@ -36,6 +38,7 @@ export interface DashboardV2Card {
   categoryId?: number
   statusFilter?: 'ALL' | 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED'
   colorTheme?: 'brand' | 'accent' | 'emerald' | 'indigo' | 'rose' | 'cyan'
+  scope?: BiCardScope
 }
 
 export const DEFAULT_V2_CARDS: DashboardV2Card[] = [

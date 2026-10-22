@@ -10,6 +10,7 @@ interface TaskKanbanViewProps {
   onStatusChange: (task: Task, newStatus: TaskStatus) => void
   onEditTask: (task: Task) => void
   onOpenHistory?: (task: Task) => void
+  onDeleteTask?: (task: Task) => void
   onAddTaskToStatus: (status: TaskStatus) => void
   activeTaskId?: number | null
   activeTaskSeconds?: number
@@ -69,6 +70,7 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
   onStatusChange,
   onEditTask,
   onOpenHistory,
+  onDeleteTask,
   onAddTaskToStatus,
   activeTaskId,
   activeTaskSeconds,
@@ -267,6 +269,7 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
                   onToggleTimer={onToggleTimer}
                   onEdit={onEditTask}
                   onOpenHistory={onOpenHistory}
+                  onDelete={onDeleteTask}
                   isTrackingThis={activeTaskId === task.id}
                   currentSeconds={activeTaskId === task.id ? activeTaskSeconds : undefined}
                 />

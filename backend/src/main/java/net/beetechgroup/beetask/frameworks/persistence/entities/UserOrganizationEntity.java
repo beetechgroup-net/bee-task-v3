@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.frameworks.persistence.entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -11,9 +12,15 @@ import net.beetechgroup.beetask.entities.organization.UserOrganizationRole;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_organizations")
+@SQLDelete(sql = "UPDATE user_organizations SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class UserOrganizationEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,6 +35,16 @@ public class UserOrganizationEntity {
     private UserOrganizationRole role;
     @Enumerated(EnumType.STRING)
     private UserOrganizationStatus status;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public UserEntity getUser() {
         return user;
@@ -59,5 +76,13 @@ public class UserOrganizationEntity {
 
     public void setStatus(UserOrganizationStatus status) {
         this.status = status;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

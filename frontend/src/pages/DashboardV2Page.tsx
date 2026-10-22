@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   Plus,
   RefreshCw,
@@ -9,6 +9,8 @@ import {
   LayoutDashboard,
   AlertCircle,
   Check,
+  User,
+  Users,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTimer } from '../contexts/TimerContext'
@@ -50,6 +52,29 @@ export const DashboardV2Page: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCard, setEditingCard] = useState<DashboardV2Card | null>(null)
   const [saveToast, setSaveToast] = useState(false)
+
+  // Scope Toggle State (Individual vs Equipe)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialScope =
+    (searchParams.get('scope') as 'mine' | 'team') ||
+    (localStorage.getItem('beetask_bi_scope') as 'mine' | 'team') ||
+    'team'
+  const [viewScope, setViewScope] = useState<'mine' | 'team'>(initialScope)
+
+  const handleScopeChange = (newScope: 'mine' | 'team') => {
+    setViewScope(newScope)
+    try {
+      localStorage.setItem('beetask_bi_scope', newScope)
+    } catch (_) {}
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('scope', newScope)
+        return next
+      },
+      { replace: true }
+    )
+  }
 
   const activeOrgId = activeOrg?.id
 
@@ -341,6 +366,50 @@ export const DashboardV2Page: React.FC = () => {
         </div>
       )}
 
+      {/* Scope Selector: Individual vs Equipe */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 sm:p-4 rounded-2xl bg-surface/90 border border-border-soft backdrop-blur-md shadow-panel">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider hidden sm:inline">
+            Escopo do Painel:
+          </span>
+          <div className="inline-flex p-1 rounded-xl bg-surface-sunken border border-border-soft shadow-inner">
+            <button
+              type="button"
+              onClick={() => handleScopeChange('mine')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewScope === 'mine'
+                  ? 'bg-brand text-white shadow-md shadow-brand/25'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Minha Visão (Individual)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleScopeChange('team')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewScope === 'team'
+                  ? 'bg-brand text-white shadow-md shadow-brand/25'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Visão da Equipe (Workspace)</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="text-[11px] truncate">
+            {viewScope === 'mine'
+              ? 'Exibindo cards com dados das suas tarefas atribuídas'
+              : 'Exibindo cards com métricas consolidadas de todo o workspace'}
+          </span>
+        </div>
+      </div>
+
       {/* Uniform Modular Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -393,6 +462,7 @@ export const DashboardV2Page: React.FC = () => {
               activeTask={activeTask}
               activeSeconds={activeSeconds}
               workGoal={workGoal}
+              globalScope={viewScope}
               isBeingDragged={draggedCardId === card.id}
               isDragOver={dragOverCardId === card.id}
               onToggleTimer={handleToggleTimer}

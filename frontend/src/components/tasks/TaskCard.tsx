@@ -1,13 +1,16 @@
 import React from 'react'
-import { Play, Square, Clock, Folder, Tag, MoreVertical, CircleDot, ExternalLink } from 'lucide-react'
+import { Play, Square, Clock, Folder, Tag, MoreVertical, CircleDot, ExternalLink, Trash2 } from 'lucide-react'
 import type { Task } from '../../types/task'
 import { isTaskRunning, calculateTaskTotalSeconds, formatSecondsToTimer } from '../../lib/timeUtils'
+import { useAuth } from '../../contexts/AuthContext'
+import { canDeleteTask } from '../../lib/taskPermissions'
 
 interface TaskCardProps {
   task: Task
   onToggleTimer: (task: Task) => void
   onEdit?: (task: Task) => void
   onOpenHistory?: (task: Task) => void
+  onDelete?: (task: Task) => void
   isTrackingThis?: boolean
   currentSeconds?: number
 }
@@ -17,9 +20,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onToggleTimer,
   onEdit,
   onOpenHistory,
+  onDelete,
   isTrackingThis,
   currentSeconds,
 }) => {
+  const { user, activeOrg } = useAuth()
   const running = isTrackingThis ?? isTaskRunning(task)
   const totalSeconds = currentSeconds !== undefined ? currentSeconds : calculateTaskTotalSeconds(task)
   const [menuOpen, setMenuOpen] = React.useState(false)
@@ -90,7 +95,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
 
         {/* More Actions Menu */}
-        {(onEdit || onOpenHistory) && (
+        {(onEdit || onOpenHistory || (onDelete && canDeleteTask(task, user, activeOrg))) && (
           <div className="relative">
             <button
               type="button"
@@ -140,6 +145,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     >
                       <span>Histórico de Tempo</span>
                       <Clock className="w-3.5 h-3.5 text-muted" />
+                    </button>
+                  )}
+
+                  {onDelete && canDeleteTask(task, user, activeOrg) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMenuOpen(false)
+                        if (window.confirm(`Tem certeza que deseja excluir a tarefa "${task.title}"?`)) {
+                          onDelete(task)
+                        }
+                      }}
+                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs text-left text-rose-500 hover:bg-rose-500/10 transition-colors"
+                    >
+                      <span>Excluir Tarefa</span>
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>

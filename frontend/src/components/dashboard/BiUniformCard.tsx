@@ -31,6 +31,7 @@ import {
   isSameMonth,
   type WorkGoal,
 } from '../../lib/userGoals'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface BiUniformCardProps {
   card: DashboardV2Card
@@ -42,6 +43,7 @@ interface BiUniformCardProps {
   activeTask: Task | null
   activeSeconds: number
   workGoal: WorkGoal
+  globalScope?: 'mine' | 'team'
   isBeingDragged?: boolean
   isDragOver?: boolean
   onToggleTimer: (task: Task) => void
@@ -119,6 +121,7 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
   activeTask,
   activeSeconds,
   workGoal,
+  globalScope = 'team',
   isBeingDragged = false,
   isDragOver = false,
   onToggleTimer,
@@ -131,11 +134,30 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
   onDrop,
   onDragEnd,
 }) => {
+  const { user } = useAuth()
   const theme = THEME_STYLES[card.colorTheme || 'brand']
   const now = new Date()
 
-  // 1. Filter Tasks based on card's combined dimensions
+  // Resolve scope: Card's specific scope takes precedence, otherwise fallback to page's globalScope
+  const effectiveScope: 'mine' | 'team' =
+    card.scope && card.scope !== 'INHERIT'
+      ? card.scope === 'MINE'
+        ? 'mine'
+        : 'team'
+      : globalScope
+
+  // 1. Filter Tasks based on scope and card's combined dimensions
   const filteredTasks = tasks.filter((t) => {
+    // Scope filter (if 'mine', only user's tasks)
+    if (effectiveScope === 'mine') {
+      const isMine = Boolean(
+        t.user?.email &&
+          user?.email &&
+          t.user.email.toLowerCase() === user.email.toLowerCase()
+      )
+      if (!isMine) return false
+    }
+
     if (card.projectId && t.project?.id !== card.projectId) return false
     if (card.categoryId && t.category?.id !== card.categoryId) return false
     if (card.statusFilter && card.statusFilter !== 'ALL') {
@@ -351,24 +373,35 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
       }
 
       case 'ACTIVE_TIMER': {
-        const targetTask = activeTask || tasks[0]
+        const isMyActiveTask = Boolean(
+          activeTask &&
+          user?.email &&
+          activeTask.user?.email &&
+          activeTask.user.email.toLowerCase() === user.email.toLowerCase()
+        )
+        const currentActive = isMyActiveTask ? activeTask : null
+        const myTasks = tasks.filter((t) => {
+          if (!user?.email || !t.user?.email) return false
+          return t.user.email.toLowerCase() === user.email.toLowerCase()
+        })
+        const targetTask = currentActive || myTasks.find((t) => t.status === 'IN_PROGRESS') || myTasks.find((t) => t.status === 'NOT_STARTED') || myTasks[0]
         return (
           <div className="space-y-1 my-auto">
             <div className="flex items-center justify-between">
               <span className="text-xl sm:text-2xl font-extrabold font-mono text-foreground">
-                {activeTask ? formatSecondsToTimer(activeSeconds) : '00:00:00'}
+                {currentActive ? formatSecondsToTimer(activeSeconds) : '00:00:00'}
               </span>
               {targetTask && (
                 <button
                   type="button"
                   onClick={() => onToggleTimer(targetTask)}
-                  className={`p-1.5 rounded-lg transition-all shadow-xs ${
-                    activeTask
+                  className={`p-1.5 rounded-lg transition-all shadow-xs cursor-pointer ${
+                    currentActive
                       ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/40'
                       : 'bg-teal-500/10 text-teal-700 hover:bg-teal-500/20'
                   }`}
                 >
-                  {activeTask ? (
+                  {currentActive ? (
                     <Square className="w-3 h-3 fill-rose-300" />
                   ) : (
                     <Play className="w-3 h-3 fill-teal-700 dark:fill-teal-300" />
@@ -377,7 +410,7 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
               )}
             </div>
             <p className="text-[10px] text-muted truncate">
-              {activeTask ? activeTask.title : targetTask ? targetTask.title : 'Nenhuma tarefa pronta'}
+              {currentActive ? currentActive.title : targetTask ? targetTask.title : 'Nenhuma tarefa pronta'}
             </p>
           </div>
         )
@@ -524,6 +557,23 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
 
       {/* Footer: Compact Dimension Tags */}
       <div className="pt-1.5 border-t border-border-soft/60 flex items-center gap-1.5 flex-wrap text-[9px] truncate">
+        {/* Scope Tag */}
+        <span
+          className={`px-1.5 py-0.2 rounded font-semibold border ${
+            effectiveScope === 'mine'
+              ? 'bg-brand/10 text-brand border-brand/25'
+              : 'bg-zinc-500/10 text-muted border-zinc-500/20'
+          }`}
+          title={
+            card.scope && card.scope !== 'INHERIT'
+              ? 'Escopo fixado nas configurações deste card'
+              : 'Escopo herdado do filtro global da página'
+          }
+        >
+          {effectiveScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+          {card.scope && card.scope !== 'INHERIT' && ' • fixo'}
+        </span>
+
         <span className={`px-1.5 py-0.2 rounded font-semibold border ${theme.badge}`}>
           {periodLabels[card.period]}
         </span>

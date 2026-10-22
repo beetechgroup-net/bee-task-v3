@@ -71,6 +71,13 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
     navigate('/login')
   }
 
+  const isMyActiveTask = Boolean(
+    activeTask &&
+    user?.email &&
+    ((activeTask.user?.email && activeTask.user.email.toLowerCase() === user.email.toLowerCase()) ||
+     (activeTask.createdBy?.email && activeTask.createdBy.email.toLowerCase() === user.email.toLowerCase()))
+  )
+
   // All navigation items strictly formatted with a SINGLE WORD
   const navItems = [
     {
@@ -232,7 +239,7 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
       </div>
 
       {/* Active Running Task Activity Status Banner */}
-      {activeTask && (
+      {isMyActiveTask && activeTask && (
         <div className="px-4 py-2 shrink-0">
           <div className="p-3 rounded-2xl bg-teal-500/10 border border-teal-600/25 dark:border-teal-500/30 shadow-xs relative overflow-hidden">
             <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -416,7 +423,7 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
   return (
     <>
       {/* Desktop Sidebar (Permanent) */}
-      <aside className="hidden lg:block w-64 h-screen sticky top-0 shrink-0 z-30">
+      <aside className="hidden lg:block w-64 h-full shrink-0 z-30">
         {navContent}
       </aside>
 

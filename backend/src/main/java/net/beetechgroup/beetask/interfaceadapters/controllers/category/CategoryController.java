@@ -45,10 +45,11 @@ public class CategoryController {
     @Operation(summary = "List categories", description = "Lists all categories for the given organization")
     @APIResponse(responseCode = "200", description = "Categories listed successfully")
     public List<CategoryResponse> listCategories(@PathParam("orgId") Long orgId) {
-        List<CategoryResponse> categories = listCategoriesUseCase.execute(orgId).stream()
+        String email = securityIdentity.getPrincipal().getName();
+        List<CategoryResponse> categories = listCategoriesUseCase.execute(email, orgId).stream()
                 .map(CategoryControllerMapper::toResponse)
                 .toList();
-        LOGGER.infof("Listed %d categories for organization %d", categories.size(), orgId);
+        LOGGER.infof("Listed %d categories for organization %d by user %s", categories.size(), orgId, email);
         return categories;
     }
 

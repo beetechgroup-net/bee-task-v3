@@ -33,17 +33,24 @@ public class DashboardUseCase {
         LOGGER.infof("Calculating dashboard for user %s in period %s to %s",
                 input.userEmail(), input.startDate(), input.endDate());
         List<Task> workedTasks = taskRepository.findTasksWorkedByUserInPeriod(
-            input.userEmail(), input.startDate(), input.endDate()
+            input.userEmail(), input.startDate(), input.endDate(), input.organizationId()
         );
 
         List<Task> finishedTasks = taskRepository.findTasksFinishedByUserInPeriod(
             input.userEmail(), input.startDate(), input.endDate()
         );
+        if (input.organizationId() != null) {
+            finishedTasks = finishedTasks.stream().filter(t ->
+                (t.getOrganization() != null && input.organizationId().equals(t.getOrganization().getId())) ||
+                (t.getProject() != null && t.getProject().getOrganization() != null && input.organizationId().equals(t.getProject().getOrganization().getId())) ||
+                (t.getCategory() != null && t.getCategory().getOrganization() != null && input.organizationId().equals(t.getCategory().getOrganization().getId()))
+            ).toList();
+        }
 
         LocalDateTime startOfYesterday = LocalDateTime.now().minusDays(1).with(LocalTime.MIN);
         LocalDateTime endOfYesterday = LocalDateTime.now().minusDays(1).with(LocalTime.MAX);
         List<Task> yesterdayTasks = taskRepository.findTasksWorkedByUserInPeriod(
-            input.userEmail(), startOfYesterday, endOfYesterday
+            input.userEmail(), startOfYesterday, endOfYesterday, input.organizationId()
         );
 
         long totalMinutes = 0;

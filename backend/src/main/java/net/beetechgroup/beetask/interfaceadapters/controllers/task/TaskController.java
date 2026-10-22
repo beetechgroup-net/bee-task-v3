@@ -3,6 +3,7 @@ package net.beetechgroup.beetask.interfaceadapters.controllers.task;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
@@ -11,6 +12,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskInput;
 
@@ -25,6 +28,7 @@ import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
+import net.beetechgroup.beetask.usecase.task.delete.DeleteTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.listall.ListAllTasksUseCase;
 import net.beetechgroup.beetask.usecase.task.listall.ListMyTasksUseCase;
 import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
@@ -36,6 +40,7 @@ import net.beetechgroup.beetask.usecase.task.get.GetTaskUseCase;
 @Path("/tasks")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Authenticated
 @Tag(name = "Tasks", description = "Task management operations")
 public class TaskController {
     private static final Logger LOGGER = Logger.getLogger(TaskController.class);
@@ -63,6 +68,9 @@ public class TaskController {
 
     @Inject
     GetTaskUseCase getTaskUseCase;
+
+    @Inject
+    DeleteTaskUseCase deleteTaskUseCase;
 
     @Inject
     SecurityIdentity securityIdentity;
@@ -96,8 +104,9 @@ public class TaskController {
     @Operation(summary = "Get a task", description = "Gets a specific task by ID")
     @APIResponse(responseCode = "200", description = "Task retrieved successfully")
     public CreateTaskResponse getTask(@PathParam("id") Long id) {
-        LOGGER.infof("Task details requested for task %d", id);
-        return TaskControllerMapper.toCreateTaskResponse(getTaskUseCase.execute(id));
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Task details requested for task %d by %s", id, email);
+        return TaskControllerMapper.toCreateTaskResponse(getTaskUseCase.execute(id, email));
     }
 
     @PUT
@@ -129,10 +138,22 @@ public class TaskController {
     @Operation(summary = "Update task status", description = "Updates the status of a task")
     @APIResponse(responseCode = "200", description = "Task status updated successfully")
     public CreateTaskResponse updateTaskStatus(@PathParam("id") Long id, TaskStatus status) {
-        LOGGER.infof("Status update requested for task %d to %s", id, status);
-        CreateTaskOutput output = updateTaskStatusUseCase.execute(id, status);
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Status update requested for task %d to %s by %s", id, status, email);
+        CreateTaskOutput output = updateTaskStatusUseCase.execute(id, status, email);
         LOGGER.infof("Task %d status updated successfully to %s", id, status);
         return TaskControllerMapper.toCreateTaskResponse(output);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Operation(summary = "Delete a task", description = "Deletes a task if requester is admin of the organization or the owner/creator")
+    @APIResponse(responseCode = "204", description = "Task deleted successfully")
+    public Response deleteTask(@PathParam("id") Long id) {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("User %s requested deletion of task %d", email, id);
+        deleteTaskUseCase.execute(id, email);
+        return Response.noContent().build();
     }
 
     @GET

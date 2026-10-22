@@ -11,7 +11,7 @@ import {
   ListOrdered,
   Layers,
 } from 'lucide-react'
-import type { DashboardV2Card, BiMetricType, BiPeriodFilter } from '../../lib/userPreferences'
+import type { DashboardV2Card, BiMetricType, BiPeriodFilter, BiCardScope } from '../../lib/userPreferences'
 import type { Project, Category } from '../../types/task'
 
 interface CreateBiCardModalProps {
@@ -103,6 +103,7 @@ export const CreateBiCardModal: React.FC<CreateBiCardModalProps> = ({
   const [categoryId, setCategoryId] = useState<number | undefined>(undefined)
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'IN_PROGRESS' | 'NOT_STARTED'>('ALL')
   const [colorTheme, setColorTheme] = useState<DashboardV2Card['colorTheme']>('brand')
+  const [scope, setScope] = useState<BiCardScope>('INHERIT')
 
   useEffect(() => {
     if (editingCard) {
@@ -113,6 +114,7 @@ export const CreateBiCardModal: React.FC<CreateBiCardModalProps> = ({
       setCategoryId(editingCard.categoryId)
       setStatusFilter(editingCard.statusFilter || 'ALL')
       setColorTheme(editingCard.colorTheme || 'brand')
+      setScope(editingCard.scope || 'INHERIT')
     } else {
       setTitle('')
       setMetricType('HOURS_TRACKED')
@@ -121,6 +123,7 @@ export const CreateBiCardModal: React.FC<CreateBiCardModalProps> = ({
       setCategoryId(undefined)
       setStatusFilter('ALL')
       setColorTheme('brand')
+      setScope('INHERIT')
     }
   }, [editingCard, isOpen])
 
@@ -138,6 +141,7 @@ export const CreateBiCardModal: React.FC<CreateBiCardModalProps> = ({
       categoryId,
       statusFilter,
       colorTheme,
+      scope,
     }
     onSave(card)
     onClose()
@@ -311,6 +315,23 @@ export const CreateBiCardModal: React.FC<CreateBiCardModalProps> = ({
                       {c.name}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              {/* Data Scope Filter */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                  <span>Escopo dos Dados (Atribuição)</span>
+                  <span className="text-[11px] text-muted font-normal">Individual vs Equipe</span>
+                </label>
+                <select
+                  value={scope}
+                  onChange={(e) => setScope(e.target.value as BiCardScope)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+                >
+                  <option value="INHERIT">🔗 Seguir filtro global da página (Padrão)</option>
+                  <option value="MINE">👤 Sempre Apenas Minhas Tarefas (Individual)</option>
+                  <option value="TEAM">👥 Sempre Toda a Equipe (Workspace Geral)</option>
                 </select>
               </div>
             </div>

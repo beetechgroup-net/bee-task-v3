@@ -9,6 +9,7 @@ import net.beetechgroup.beetask.usecase.organization.requests.ListPendingRequest
 import net.beetechgroup.beetask.usecase.organization.requests.ListUserJoinRequestsUseCase;
 import net.beetechgroup.beetask.usecase.organization.requests.HandleJoinRequestUseCase;
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationAdminUseCase;
+import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationMemberUseCase;
 import net.beetechgroup.beetask.usecase.organization.members.ListOrganizationMembersUseCase;
 import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
@@ -21,6 +22,12 @@ public class OrganizationUseCaseConfig {
     public AuthorizeOrganizationAdminUseCase authorizeOrganizationAdminUseCase(UserRepository userRepository,
                                                                              UserOrganizationRepository userOrganizationRepository) {
         return new AuthorizeOrganizationAdminUseCase(userRepository, userOrganizationRepository);
+    }
+
+    @Produces
+    public AuthorizeOrganizationMemberUseCase authorizeOrganizationMemberUseCase(UserRepository userRepository,
+                                                                                 UserOrganizationRepository userOrganizationRepository) {
+        return new AuthorizeOrganizationMemberUseCase(userRepository, userOrganizationRepository);
     }
 
     @Produces
@@ -64,5 +71,25 @@ public class OrganizationUseCaseConfig {
     public ListOrganizationMembersUseCase listOrganizationMembersUseCase(UserRepository userRepository,
                                                                          UserOrganizationRepository userOrganizationRepository) {
         return new ListOrganizationMembersUseCase(userRepository, userOrganizationRepository);
+    }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.organization.members.RemoveOrganizationMemberUseCase removeOrganizationMemberUseCase(
+            UserOrganizationRepository userOrganizationRepository,
+            UserRepository userRepository,
+            AuthorizeOrganizationAdminUseCase adminAuthorizer,
+            jakarta.persistence.EntityManager entityManager) {
+        return new net.beetechgroup.beetask.usecase.organization.members.RemoveOrganizationMemberUseCase(
+                userOrganizationRepository, userRepository, adminAuthorizer, entityManager);
+    }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.organization.members.LeaveOrganizationUseCase leaveOrganizationUseCase(
+            UserOrganizationRepository userOrganizationRepository,
+            UserRepository userRepository,
+            AuthorizeOrganizationMemberUseCase memberAuthorizer,
+            jakarta.persistence.EntityManager entityManager) {
+        return new net.beetechgroup.beetask.usecase.organization.members.LeaveOrganizationUseCase(
+                userOrganizationRepository, userRepository, memberAuthorizer, entityManager);
     }
 }

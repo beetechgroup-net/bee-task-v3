@@ -6,6 +6,7 @@ import net.beetechgroup.beetask.frameworks.persistence.entities.OrganizationEnti
 
 public class OrganizationEntityMapper {
     public static OrganizationEntity toEntity(Organization organization) {
+        if (Objects.isNull(organization)) return null;
         OrganizationEntity entity = new OrganizationEntity();
         entity.setId(organization.getId());
         entity.setName(organization.getName());

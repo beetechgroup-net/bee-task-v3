@@ -23,6 +23,7 @@ import { categoryService } from '../../services/categoryService'
 import { organizationService } from '../../services/organizationService'
 import { CustomSelect } from '../ui/Select'
 import { useAuth } from '../../contexts/AuthContext'
+import { canDeleteTask } from '../../lib/taskPermissions'
 import {
   calculateTaskTotalSeconds,
   formatSecondsToTimer,
@@ -46,6 +47,7 @@ interface CreateTaskModalProps {
     history?: TaskHistoryItemInput[]
     externalUrl?: string
   }) => Promise<void>
+  onDelete?: (task: Task) => void
   organizationId: number
   initialStatus?: TaskStatus
   initialTask?: Task | null
@@ -56,12 +58,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onDelete,
   organizationId,
   initialStatus = 'NOT_STARTED',
   initialTask = null,
   initialTab = 'details',
 }) => {
-  const { user } = useAuth()
+  const { user, activeOrg } = useAuth()
   const [activeTab, setActiveTab] = useState<'details' | 'history'>('details')
 
   // Task details
@@ -343,13 +346,24 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         endAt: item.endAt,
       }))
 
+      let effectiveAssigneeUserId = assigneeUserId
+      if (!initialTask && effectiveAssigneeUserId === undefined) {
+        const myMember = members.find((m) => m.userEmail?.toLowerCase() === user?.email?.toLowerCase())
+        if (myMember) {
+          effectiveAssigneeUserId = myMember.userId
+        }
+      }
+      if (effectiveAssigneeUserId === -1) {
+        effectiveAssigneeUserId = undefined
+      }
+
       await onSubmit({
         title: title.trim(),
         description: description.trim(),
         status,
         projectId,
         categoryId,
-        assigneeUserId,
+        assigneeUserId: effectiveAssigneeUserId,
         history: initialTask ? mappedHistory : undefined,
         externalUrl: externalUrl.trim() || undefined,
       })
@@ -585,15 +599,19 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                     Responsável
                   </label>
                   <CustomSelect
-                    value={assigneeUserId ?? 0}
-                    onChange={(val) => setAssigneeUserId(Number(val) === 0 ? undefined : Number(val))}
-                    placeholder="Atribuir a mim mesmo / Sem responsável"
+                    value={
+                      assigneeUserId !== undefined
+                        ? assigneeUserId
+                        : (members.find((m) => m.userEmail?.toLowerCase() === user?.email?.toLowerCase())?.userId ?? -1)
+                    }
+                    onChange={(val) => setAssigneeUserId(Number(val) === -1 ? -1 : Number(val))}
+                    placeholder="Selecione o responsável"
                     leftIcon={<User className="w-3.5 h-3.5 text-muted" />}
                     options={[
-                      { value: 0, label: 'Sem responsável (atribuir a mim)' },
+                      { value: -1, label: 'Sem responsável (Livre)' },
                       ...members.map((m) => ({
                         value: m.userId,
-                        label: m.userName,
+                        label: `${m.userName}${m.userEmail?.toLowerCase() === user?.email?.toLowerCase() ? ' (Você)' : ''}`,
                         description: m.userEmail,
                       })),
                     ]}
@@ -922,9 +940,25 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
           {/* Footer Controls */}
           <div className="pt-4 border-t border-border flex items-center justify-between gap-2.5">
-            <div className="text-[11px] text-muted">
+            <div className="flex items-center gap-3">
+              {initialTask && onDelete && canDeleteTask(initialTask, user, activeOrg) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`Tem certeza que deseja excluir a tarefa "${initialTask.title}"?`)) {
+                      onDelete(initialTask)
+                      onClose()
+                    }
+                  }}
+                  disabled={submitting}
+                  className="px-3 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-rose-500 hover:bg-rose-500/20 transition-colors inline-flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Excluir</span>
+                </button>
+              )}
               {initialTask && (
-                <span>
+                <span className="text-[11px] text-muted">
                   Tempo total: <strong className="text-foreground font-mono">{formatSecondsToHuman(totalCalculatedSeconds)}</strong>
                 </span>
               )}

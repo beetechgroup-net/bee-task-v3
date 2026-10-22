@@ -14,10 +14,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import net.beetechgroup.beetask.entities.task.TaskStatus;
 
 @Entity
 @Table(name = "tasks")
+@SQLDelete(sql = "UPDATE tasks SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class TaskEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +34,12 @@ public class TaskEntity {
     private java.time.LocalDateTime finishedAt;
     @Column(name = "external_url", length = 1000)
     private String externalUrl;
+    @Column(name = "deleted_at")
+    private java.time.LocalDateTime deletedAt;
 
+    @ManyToOne
+    @JoinColumn(name = "organization_id")
+    private OrganizationEntity organization;
     @ManyToOne
     @JoinColumn(name = "project_id")
     private ProjectEntity project;
@@ -40,8 +49,27 @@ public class TaskEntity {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private UserEntity user;
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToOne
+    @JoinColumn(name = "created_by_id")
+    private UserEntity createdBy;
+    @OneToMany(mappedBy = "task", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<TaskHistoryItemEntity> history;
+
+    public OrganizationEntity getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(OrganizationEntity organization) {
+        this.organization = organization;
+    }
+
+    public UserEntity getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(UserEntity createdBy) {
+        this.createdBy = createdBy;
+    }
 
     public void setHistory(List<TaskHistoryItemEntity> history) {
         this.history = history;
@@ -121,5 +149,13 @@ public class TaskEntity {
 
     public void setExternalUrl(String externalUrl) {
         this.externalUrl = externalUrl;
+    }
+
+    public java.time.LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(java.time.LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

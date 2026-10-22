@@ -12,6 +12,7 @@ public record CreateTaskOutput(
                 ProjectOutput project,
                 CategoryOutput category,
                 UserOutput user,
+                UserOutput createdBy,
                 LocalDateTime finishedAt,
                 List<TaskHistoryItemOutput> history,
                 String externalUrl) {

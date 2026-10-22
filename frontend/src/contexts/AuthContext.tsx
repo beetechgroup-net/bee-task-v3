@@ -23,6 +23,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<CreateAccountResponse>
   logout: () => void
   refreshUser: () => Promise<void>
+  updateUser: (updated: Partial<LoginResponse>) => void
   setActiveOrg: (id: number) => void
 }
 
@@ -148,6 +149,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const updateUser = useCallback((updated: Partial<LoginResponse>) => {
+    setUser((prev) => {
+      if (!prev) return null
+      const next = { ...prev, ...updated }
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(next))
+      return next
+    })
+  }, [])
+
   const setActiveOrg = (id: number) => {
     setActiveOrgId(id)
     localStorage.setItem(STORAGE_KEYS.ACTIVE_ORG_ID, id.toString())
@@ -169,6 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         register,
         logout,
         refreshUser,
+        updateUser,
         setActiveOrg,
       }}
     >

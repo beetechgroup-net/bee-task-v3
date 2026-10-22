@@ -77,4 +77,14 @@ public class UserOrganizationRepositoryImpl implements UserOrganizationRepositor
         LOGGER.infof("Created membership for user %d in organization %d with role %s and status %s",
                 entity.getUser().getId(), entity.getOrganization().getId(), entity.getRole(), entity.getStatus());
     }
+
+    @Override
+    @Transactional
+    public void deleteByUserAndOrganization(Long userId, Long organizationId) {
+        Optional<UserOrganizationEntity> existing = find("user.id = ?1 and organization.id = ?2", userId, organizationId).firstResultOptional();
+        existing.ifPresent(entity -> {
+            delete(entity);
+            LOGGER.infof("Soft deleted membership for user %d in organization %d", userId, organizationId);
+        });
+    }
 }

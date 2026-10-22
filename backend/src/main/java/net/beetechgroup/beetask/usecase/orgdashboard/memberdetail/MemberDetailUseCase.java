@@ -54,8 +54,8 @@ public class MemberDetailUseCase {
         long daySpan = ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate());
         boolean groupByDay = daySpan <= 30;
 
-        List<Task> workedTasks = taskRepository.findTasksWorkedByUserIdInPeriod(input.memberId(), start, end);
-        List<Task> finishedTasks = taskRepository.findTasksFinishedByUserIdInPeriod(input.memberId(), start, end);
+        List<Task> workedTasks = taskRepository.findTasksWorkedByUserIdInPeriod(input.organizationId(), input.memberId(), start, end);
+        List<Task> finishedTasks = taskRepository.findTasksFinishedByUserIdInPeriod(input.organizationId(), input.memberId(), start, end);
 
         Map<Long, MemberDetailOutput.ProjectStats> projectStatsMap = new HashMap<>();
         Map<Long, MemberDetailOutput.CategoryStats> categoryStatsMap = new HashMap<>();

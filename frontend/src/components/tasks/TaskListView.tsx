@@ -1,8 +1,10 @@
 import React from 'react'
-import { Play, Square, Clock, Folder, Tag, MoreHorizontal, CheckCircle2, ExternalLink } from 'lucide-react'
+import { Play, Square, Clock, Folder, Tag, MoreHorizontal, CheckCircle2, ExternalLink, Trash2 } from 'lucide-react'
 import type { Task, TaskStatus } from '../../types/task'
-import { isTaskRunning, calculateTaskTotalSeconds, formatSecondsToTimer } from '../../lib/timeUtils'
+import { calculateTaskTotalSeconds, formatSecondsToTimer } from '../../lib/timeUtils'
 import { CustomSelect } from '../ui/Select'
+import { useAuth } from '../../contexts/AuthContext'
+import { canDeleteTask } from '../../lib/taskPermissions'
 
 interface TaskListViewProps {
   tasks: Task[]
@@ -10,6 +12,7 @@ interface TaskListViewProps {
   onStatusChange: (task: Task, newStatus: TaskStatus) => void
   onEditTask: (task: Task) => void
   onOpenHistory?: (task: Task) => void
+  onDeleteTask?: (task: Task) => void
   activeTaskId?: number | null
   activeTaskSeconds?: number
 }
@@ -21,9 +24,11 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
   onStatusChange,
   onEditTask,
   onOpenHistory,
+  onDeleteTask,
   activeTaskId,
   activeTaskSeconds,
 }) => {
+  const { user, activeOrg } = useAuth()
   const [activeMenuId, setActiveMenuId] = React.useState<number | null>(null)
 
   return (
@@ -43,10 +48,9 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
           </thead>
           <tbody className="divide-y divide-border/60">
             {tasks.map((task) => {
-              const isRunning =
-                activeTaskId === task.id || (activeTaskId === undefined && isTaskRunning(task))
+              const isRunning = Boolean(activeTaskId && activeTaskId === task.id)
               const totalSec =
-                activeTaskId === task.id && activeTaskSeconds !== undefined
+                isRunning && activeTaskSeconds !== undefined
                   ? activeTaskSeconds
                   : calculateTaskTotalSeconds(task)
 
@@ -247,6 +251,19 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                                 <span>Concluir</span>
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                               </button>
+                              {onDeleteTask && canDeleteTask(task, user, activeOrg) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveMenuId(null)
+                                    onDeleteTask(task)
+                                  }}
+                                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-rose-500 hover:bg-rose-500/10 transition-colors"
+                                >
+                                  <span>Excluir Tarefa</span>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                           </>
                         )}

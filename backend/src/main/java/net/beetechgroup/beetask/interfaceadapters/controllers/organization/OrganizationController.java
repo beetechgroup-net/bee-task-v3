@@ -53,6 +53,12 @@ public class OrganizationController {
     ListOrganizationMembersUseCase listOrganizationMembersUseCase;
 
     @Inject
+    net.beetechgroup.beetask.usecase.organization.members.RemoveOrganizationMemberUseCase removeOrganizationMemberUseCase;
+
+    @Inject
+    net.beetechgroup.beetask.usecase.organization.members.LeaveOrganizationUseCase leaveOrganizationUseCase;
+
+    @Inject
     SecurityIdentity securityIdentity;
 
     @POST
@@ -141,5 +147,27 @@ public class OrganizationController {
         List<UserJoinRequestOutput> requests = listUserJoinRequestsUseCase.execute(userEmail);
         LOGGER.infof("User %s listed %d organization join requests", userEmail, requests.size());
         return requests;
+    }
+
+    @jakarta.ws.rs.DELETE
+    @Path("/{id}/members/{userId}")
+    @Authenticated
+    @Operation(summary = "Remove organization member", description = "Removes a member from the organization (Admin/Owner only)")
+    public jakarta.ws.rs.core.Response removeMember(@PathParam("id") Long organizationId, @PathParam("userId") Long userId) {
+        String requesterEmail = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Admin %s requested removal of member %d from organization %d", requesterEmail, userId, organizationId);
+        removeOrganizationMemberUseCase.execute(requesterEmail, organizationId, userId);
+        return jakarta.ws.rs.core.Response.noContent().build();
+    }
+
+    @POST
+    @Path("/{id}/leave")
+    @Authenticated
+    @Operation(summary = "Leave organization", description = "Allows the current user to leave an organization")
+    public jakarta.ws.rs.core.Response leaveOrganization(@PathParam("id") Long organizationId) {
+        String userEmail = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("User %s requested to leave organization %d", userEmail, organizationId);
+        leaveOrganizationUseCase.execute(userEmail, organizationId);
+        return jakarta.ws.rs.core.Response.noContent().build();
     }
 }

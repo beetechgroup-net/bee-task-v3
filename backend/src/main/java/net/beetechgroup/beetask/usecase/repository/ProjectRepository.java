@@ -8,4 +8,6 @@ public interface ProjectRepository {
     Project saveProject(Project project);
     Optional<Project> findProjectById(Long id);
     List<Project> findByOrganizationId(Long organizationId);
+    Optional<Project> findByNameAndOrganizationId(String name, Long organizationId);
+    void deleteProject(Long id);
 }

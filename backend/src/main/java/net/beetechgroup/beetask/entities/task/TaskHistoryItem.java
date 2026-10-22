@@ -8,6 +8,15 @@ public class TaskHistoryItem {
     private Long id;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
+    private net.beetechgroup.beetask.entities.User user;
+
+    public net.beetechgroup.beetask.entities.User getUser() {
+        return user;
+    }
+
+    public void setUser(net.beetechgroup.beetask.entities.User user) {
+        this.user = user;
+    }
 
     public Long getId() {
         return id;

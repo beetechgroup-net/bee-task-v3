@@ -6,6 +6,7 @@ import net.beetechgroup.beetask.usecase.category.create.CreateCategoryUseCase;
 import net.beetechgroup.beetask.usecase.category.list.ListCategoriesUseCase;
 import net.beetechgroup.beetask.usecase.category.update.UpdateCategoryUseCase;
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationAdminUseCase;
+import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationMemberUseCase;
 import net.beetechgroup.beetask.usecase.repository.CategoryRepository;
 import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
 
@@ -26,7 +27,9 @@ public class CategoryUseCaseConfig {
     }
 
     @Produces
-    public ListCategoriesUseCase listCategoriesUseCase(CategoryRepository categoryRepository) {
-        return new ListCategoriesUseCase(categoryRepository);
+    public ListCategoriesUseCase listCategoriesUseCase(CategoryRepository categoryRepository,
+                                                       AuthorizeOrganizationMemberUseCase authorizer) {
+        return new ListCategoriesUseCase(categoryRepository, authorizer);
     }
 }
+

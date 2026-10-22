@@ -75,4 +75,10 @@ export const taskService = {
       method: 'PUT',
     })
   },
+
+  async deleteTask(id: number): Promise<void> {
+    return apiFetch<void>(`/tasks/${id}`, {
+      method: 'DELETE',
+    })
+  },
 }

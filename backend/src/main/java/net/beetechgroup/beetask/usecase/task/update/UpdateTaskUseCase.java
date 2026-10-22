@@ -24,20 +24,35 @@ public class UpdateTaskUseCase {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final UserOrganizationRepository userOrganizationRepository;
+    private final net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository;
 
     public UpdateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
                               CategoryRepository categoryRepository, UserRepository userRepository,
-                              UserOrganizationRepository userOrganizationRepository) {
+                              UserOrganizationRepository userOrganizationRepository,
+                              net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository) {
         this.taskRepository = taskRepository;
         this.projectRepository = projectRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.userOrganizationRepository = userOrganizationRepository;
+        this.organizationRepository = organizationRepository;
     }
 
     public CreateTaskOutput execute(UpdateTaskInput input) {
         LOGGER.infof("Updating task %d requested by user %s", input.id(), input.userEmail());
         Task task = taskRepository.findTaskById(input.id());
+
+        Long currentOrgId = null;
+        if (task.getOrganization() != null) {
+            currentOrgId = task.getOrganization().getId();
+        } else if (task.getProject() != null && task.getProject().getOrganization() != null) {
+            currentOrgId = task.getProject().getOrganization().getId();
+        } else if (task.getCategory() != null && task.getCategory().getOrganization() != null) {
+            currentOrgId = task.getCategory().getOrganization().getId();
+        }
+        if (currentOrgId != null && !currentOrgId.equals(input.organizationId())) {
+            validateRequesterMembership(currentOrgId, input.userEmail());
+        }
 
         validateRequesterMembership(input.organizationId(), input.userEmail());
 
@@ -45,6 +60,10 @@ public class UpdateTaskUseCase {
         task.setDescription(input.description());
         task.setStatus(input.status());
         task.setExternalUrl(input.externalUrl());
+
+        if (Objects.nonNull(input.organizationId())) {
+            organizationRepository.findOrganizationById(input.organizationId()).ifPresent(task::setOrganization);
+        }
 
         if (Objects.nonNull(input.projectId())) {
             Project project = projectRepository.findProjectById(input.projectId())
@@ -71,6 +90,18 @@ public class UpdateTaskUseCase {
         task.setUser(resolveAssignee(input.organizationId(), input.assigneeUserId()));
 
         if (Objects.nonNull(input.history())) {
+            long openIntervalCount = input.history().stream().filter(h -> h.endAt() == null).count();
+            if (openIntervalCount > 1) {
+                throw new IllegalArgumentException("Não é permitido mais de um intervalo em andamento ao mesmo tempo.");
+            }
+
+            for (var hInput : input.history()) {
+                if (hInput.startAt() != null && hInput.endAt() != null && hInput.endAt().isBefore(hInput.startAt())) {
+                    throw new IllegalArgumentException("Data final do intervalo não pode ser anterior à data inicial.");
+                }
+            }
+
+            User defaultWorker = task.getUser();
             List<TaskHistoryItem> updatedHistory = input.history().stream().map(hInput -> {
                 if (Objects.nonNull(hInput.id())) {
                     return task.getHistory().stream()
@@ -79,18 +110,23 @@ public class UpdateTaskUseCase {
                             .map(existing -> {
                                 existing.setStartAt(hInput.startAt());
                                 existing.setEndAt(hInput.endAt());
+                                if (existing.getUser() == null) {
+                                    existing.setUser(defaultWorker);
+                                }
                                 return existing;
                             })
                             .orElseGet(() -> {
                                 TaskHistoryItem newItem = new TaskHistoryItem();
                                 newItem.setStartAt(hInput.startAt());
                                 newItem.setEndAt(hInput.endAt());
+                                newItem.setUser(defaultWorker);
                                 return newItem;
                             });
                 } else {
                     TaskHistoryItem newItem = new TaskHistoryItem();
                     newItem.setStartAt(hInput.startAt());
                     newItem.setEndAt(hInput.endAt());
+                    newItem.setUser(defaultWorker);
                     return newItem;
                 }
             }).toList();

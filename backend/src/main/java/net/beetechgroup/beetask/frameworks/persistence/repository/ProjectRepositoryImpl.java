@@ -49,4 +49,24 @@ public class ProjectRepositoryImpl implements ProjectRepository, PanacheReposito
         LOGGER.infof("Loaded %d projects for organization %d from database", projects.size(), organizationId);
         return projects;
     }
+
+    @Override
+    public Optional<Project> findByNameAndOrganizationId(String name, Long organizationId) {
+        return find("lower(name) = lower(?1) and organization.id = ?2", name.trim(), organizationId)
+                .firstResultOptional()
+                .map(ProjectEntityMapper::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProject(Long id) {
+        ProjectEntity entity = findByIdOptional(id).orElse(null);
+        if (entity != null) {
+            getEntityManager().createQuery("UPDATE TaskEntity t SET t.project = NULL WHERE t.project.id = :pid")
+                    .setParameter("pid", id)
+                    .executeUpdate();
+            delete(entity);
+            LOGGER.infof("Project %d soft deleted and unlinked from tasks", id);
+        }
+    }
 }

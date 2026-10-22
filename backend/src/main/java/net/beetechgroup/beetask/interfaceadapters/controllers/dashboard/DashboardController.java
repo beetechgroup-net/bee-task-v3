@@ -31,7 +31,8 @@ public class DashboardController {
     @GET
     public DashboardOutput getDashboard(
             @QueryParam("startDate") String startDateStr,
-            @QueryParam("endDate") String endDateStr) {
+            @QueryParam("endDate") String endDateStr,
+            @QueryParam("organizationId") Long organizationId) {
 
         String email = securityIdentity.getPrincipal().getName();
         
@@ -47,8 +48,8 @@ public class DashboardController {
             end = end.with(java.time.LocalTime.MAX);
         }
 
-        DashboardInput input = new DashboardInput(email, start, end);
-        LOGGER.infof("Dashboard requested by user %s for period %s to %s", email, start, end);
+        DashboardInput input = new DashboardInput(email, start, end, organizationId);
+        LOGGER.infof("Dashboard requested by user %s for period %s to %s with orgId %s", email, start, end, organizationId);
         return dashboardUseCase.execute(input);
     }
 }

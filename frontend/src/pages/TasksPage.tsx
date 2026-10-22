@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   LayoutGrid,
   List as ListIcon,
@@ -37,6 +37,11 @@ import {
 export const TasksPage: React.FC = () => {
   const { activeOrg, user } = useAuth()
   const { activeTask, activeSeconds, startTimer, stopTimer, syncWithTasks } = useTimer()
+
+  const syncWithTasksRef = useRef(syncWithTasks)
+  useEffect(() => {
+    syncWithTasksRef.current = syncWithTasks
+  }, [syncWithTasks])
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [projects, setProjects] = useState<Project[]>([])
@@ -135,7 +140,7 @@ export const TasksPage: React.FC = () => {
 
       setTasks(tasksRes || [])
       setProjects(projsRes || [])
-      syncWithTasks(tasksRes || [])
+      syncWithTasksRef.current(tasksRes || [])
     } catch (err) {
       console.error('Failed to load tasks', err)
       setActionError('Falha ao carregar tarefas. Tente atualizar a página.')
@@ -143,7 +148,7 @@ export const TasksPage: React.FC = () => {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [activeOrgId, onlyMyTasks, syncWithTasks])
+  }, [activeOrgId, onlyMyTasks])
 
   useEffect(() => {
     loadData()
@@ -276,6 +281,29 @@ export const TasksPage: React.FC = () => {
     setModalInitialTab('history')
     setIsModalOpen(true)
   }, [])
+
+  const handleDeleteTask = useCallback(
+    async (task: Task) => {
+      setActionError(null)
+      try {
+        if (activeTask?.id === task.id) {
+          await stopTimer(task)
+        }
+        await taskService.deleteTask(task.id)
+        setTasks((prev) => prev.filter((t) => t.id !== task.id))
+        if (editingTask?.id === task.id) {
+          setEditingTask(null)
+          setIsModalOpen(false)
+        }
+      } catch (err: unknown) {
+        console.error('Failed to delete task', err)
+        setActionError(
+          err instanceof Error ? err.message : 'Falha ao excluir a tarefa.'
+        )
+      }
+    },
+    [activeTask, stopTimer, editingTask]
+  )
 
   // Summary counts
   const notStartedCount = tasks.filter((t) => t.status === 'NOT_STARTED').length
@@ -682,6 +710,7 @@ export const TasksPage: React.FC = () => {
           onStatusChange={handleStatusChange}
           onEditTask={handleOpenEditModal}
           onOpenHistory={handleOpenHistoryModal}
+          onDeleteTask={handleDeleteTask}
           onAddTaskToStatus={handleOpenCreateModal}
           activeTaskId={activeTask?.id}
           activeTaskSeconds={activeSeconds}
@@ -697,6 +726,7 @@ export const TasksPage: React.FC = () => {
           onStatusChange={handleStatusChange}
           onEditTask={handleOpenEditModal}
           onOpenHistory={handleOpenHistoryModal}
+          onDeleteTask={handleDeleteTask}
           activeTaskId={activeTask?.id}
           activeTaskSeconds={activeSeconds}
         />
@@ -711,6 +741,7 @@ export const TasksPage: React.FC = () => {
             setEditingTask(null)
           }}
           onSubmit={handleModalSubmit}
+          onDelete={handleDeleteTask}
           organizationId={activeOrgId}
           initialStatus={modalInitialStatus}
           initialTask={editingTask}

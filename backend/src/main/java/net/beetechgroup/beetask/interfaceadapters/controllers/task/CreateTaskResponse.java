@@ -13,6 +13,7 @@ public record CreateTaskResponse(
                 ProjectResponse project,
                 CategoryResponse category,
                 UserResponse user,
+                UserResponse createdBy,
                 LocalDateTime finishedAt,
                 List<TaskHistoryItemResponse> history,
                 String externalUrl) {

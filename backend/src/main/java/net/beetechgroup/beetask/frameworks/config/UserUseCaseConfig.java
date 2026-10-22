@@ -63,4 +63,9 @@ public class UserUseCaseConfig {
     public net.beetechgroup.beetask.usecase.user.preferences.UpdateUserPreferencesUseCase updateUserPreferencesUseCase(UserRepository userRepository) {
         return new net.beetechgroup.beetask.usecase.user.preferences.UpdateUserPreferencesUseCase(userRepository);
     }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.list.ListAllUsersUseCase listAllUsersUseCase(UserRepository userRepository) {
+        return new net.beetechgroup.beetask.usecase.user.list.ListAllUsersUseCase(userRepository);
+    }
 }

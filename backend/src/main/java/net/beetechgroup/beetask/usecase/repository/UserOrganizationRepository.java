@@ -11,4 +11,5 @@ public interface UserOrganizationRepository {
     List<UserOrganization> findByOrganizationIdAndStatus(Long organizationId, UserOrganizationStatus status);
     Optional<UserOrganization> findByUserAndOrganization(Long userId, Long organizationId);
     void save(UserOrganization userOrganization);
+    void deleteByUserAndOrganization(Long userId, Long organizationId);
 }

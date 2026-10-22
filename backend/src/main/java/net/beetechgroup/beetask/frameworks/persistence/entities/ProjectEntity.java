@@ -11,9 +11,14 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "projects")
+@SQLDelete(sql = "UPDATE projects SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class ProjectEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +26,8 @@ public class ProjectEntity {
     private String name;
     private String color;
     private String icon;
+    @Column(name = "deleted_at")
+    private java.time.LocalDateTime deletedAt;
     @ManyToOne
     @JoinColumn(name = "organization_id")
     private OrganizationEntity organization;
@@ -75,5 +82,13 @@ public class ProjectEntity {
 
     public void setUsers(List<UserEntity> users) {
         this.users = users;
+    }
+
+    public java.time.LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(java.time.LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

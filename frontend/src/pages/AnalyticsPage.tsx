@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Clock,
   CheckCircle2,
@@ -10,6 +11,7 @@ import {
   Sparkles,
   Activity,
   AlertCircle,
+  User,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { taskService } from '../services/taskService'
@@ -20,7 +22,7 @@ import type { Task, Project, Category } from '../types/task'
 import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer } from '../lib/timeUtils'
 
 export const AnalyticsPage: React.FC = () => {
-  const { activeOrg } = useAuth()
+  const { user, activeOrg } = useAuth()
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [projects, setProjects] = useState<Project[]>([])
@@ -30,6 +32,24 @@ export const AnalyticsPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Scope Filter: 'ALL' | 'MINE' | email do membro
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialScope = searchParams.get('member') || 'ALL'
+  const [selectedMember, setSelectedMember] = useState<string>(initialScope)
+
+  const handleMemberChange = (value: string) => {
+    setSelectedMember(value)
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (value === 'ALL') next.delete('member')
+        else next.set('member', value)
+        return next
+      },
+      { replace: true }
+    )
+  }
 
   const activeOrgId = activeOrg?.id
 
@@ -61,15 +81,25 @@ export const AnalyticsPage: React.FC = () => {
     loadData()
   }, [loadData])
 
-  // Aggregate high-level KPIs
-  const kpis = useMemo(() => {
-    const totalTasks = tasks.length
-    const completedTasks = tasks.filter((t) => t.status === 'COMPLETED').length
-    const inProgressTasks = tasks.filter((t) => t.status === 'IN_PROGRESS').length
-    const notStartedTasks = tasks.filter((t) => t.status === 'NOT_STARTED').length
-    const canceledTasks = tasks.filter((t) => t.status === 'CANCELED').length
+  // Filter tasks based on selected member scope
+  const scopedTasks = useMemo(() => {
+    if (selectedMember === 'ALL') return tasks
+    const targetEmail = selectedMember === 'MINE' ? user?.email : selectedMember
+    if (!targetEmail) return tasks
+    return tasks.filter(
+      (t) => t.user?.email && t.user.email.toLowerCase() === targetEmail.toLowerCase()
+    )
+  }, [tasks, selectedMember, user?.email])
 
-    const totalSecondsTracked = tasks.reduce(
+  // Aggregate high-level KPIs based on scopedTasks
+  const kpis = useMemo(() => {
+    const totalTasks = scopedTasks.length
+    const completedTasks = scopedTasks.filter((t) => t.status === 'COMPLETED').length
+    const inProgressTasks = scopedTasks.filter((t) => t.status === 'IN_PROGRESS').length
+    const notStartedTasks = scopedTasks.filter((t) => t.status === 'NOT_STARTED').length
+    const canceledTasks = scopedTasks.filter((t) => t.status === 'CANCELED').length
+
+    const totalSecondsTracked = scopedTasks.reduce(
       (acc, t) => acc + calculateTaskTotalSeconds(t),
       0
     )
@@ -80,7 +110,7 @@ export const AnalyticsPage: React.FC = () => {
     const avgSecondsPerCompletedTask =
       completedTasks > 0
         ? Math.round(
-            tasks
+            scopedTasks
               .filter((t) => t.status === 'COMPLETED')
               .reduce((acc, t) => acc + calculateTaskTotalSeconds(t), 0) / completedTasks
           )
@@ -96,7 +126,7 @@ export const AnalyticsPage: React.FC = () => {
       completionRate,
       avgSecondsPerCompletedTask,
     }
-  }, [tasks])
+  }, [scopedTasks])
 
   // Project breakdown
   const projectBreakdown = useMemo(() => {
@@ -109,7 +139,7 @@ export const AnalyticsPage: React.FC = () => {
     let unassignedSeconds = 0
     let unassignedTasks = 0
 
-    tasks.forEach((t) => {
+    scopedTasks.forEach((t) => {
       const sec = calculateTaskTotalSeconds(t)
       if (t.project?.id && map.has(t.project.id)) {
         const item = map.get(t.project.id)!
@@ -131,7 +161,7 @@ export const AnalyticsPage: React.FC = () => {
     }
 
     return list.sort((a, b) => b.seconds - a.seconds)
-  }, [projects, tasks])
+  }, [projects, scopedTasks])
 
   // Category breakdown
   const categoryBreakdown = useMemo(() => {
@@ -144,7 +174,7 @@ export const AnalyticsPage: React.FC = () => {
     let unassignedSeconds = 0
     let unassignedTasks = 0
 
-    tasks.forEach((t) => {
+    scopedTasks.forEach((t) => {
       const sec = calculateTaskTotalSeconds(t)
       if (t.category?.id && map.has(t.category.id)) {
         const item = map.get(t.category.id)!
@@ -166,7 +196,7 @@ export const AnalyticsPage: React.FC = () => {
     }
 
     return list.sort((a, b) => b.seconds - a.seconds)
-  }, [categories, tasks])
+  }, [categories, scopedTasks])
 
   // Member breakdown
   const memberBreakdown = useMemo(() => {
@@ -252,6 +282,68 @@ export const AnalyticsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Scope Selector: Equipe Completa vs Apenas Minhas vs Membro Específico */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-3xl bg-surface/90 border border-border-soft backdrop-blur-md shadow-panel">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider hidden sm:inline">
+            Filtro de Membro:
+          </span>
+          <div className="inline-flex p-1 rounded-xl bg-surface-sunken border border-border-soft shadow-inner">
+            <button
+              type="button"
+              onClick={() => handleMemberChange('ALL')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                selectedMember === 'ALL'
+                  ? 'bg-brand text-white shadow-md shadow-brand/25'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Toda a Equipe</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMemberChange('MINE')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                selectedMember === 'MINE'
+                  ? 'bg-brand text-white shadow-md shadow-brand/25'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Apenas Minhas</span>
+            </button>
+          </div>
+
+          {/* Specific Member Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <select
+              value={selectedMember === 'ALL' || selectedMember === 'MINE' ? '' : selectedMember}
+              onChange={(e) => handleMemberChange(e.target.value || 'ALL')}
+              className="px-3 py-1.5 rounded-xl border border-border-soft bg-surface text-xs font-medium text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+            >
+              <option value="">Outro Membro...</option>
+              {members.map((m) => (
+                <option key={m.userId} value={m.userEmail}>
+                  {m.userName} ({m.userEmail})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="text-[11px] truncate">
+            {selectedMember === 'ALL'
+              ? 'Calculando métricas globais consolidadas do workspace'
+              : selectedMember === 'MINE'
+              ? 'Calculando métricas estritamente do seu perfil'
+              : `Filtrando métricas para o membro selecionado`}
+          </span>
+        </div>
+      </div>
+
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-8">
           {[1, 2, 3, 4].map((i) => (
@@ -274,9 +366,14 @@ export const AnalyticsPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight font-mono">
-                  {formatSecondsToTimer(kpis.totalSecondsTracked)}
-                </p>
+                <div className="flex items-baseline justify-between">
+                  <p className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight font-mono">
+                    {formatSecondsToTimer(kpis.totalSecondsTracked)}
+                  </p>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
+                    {selectedMember === 'ALL' ? '👥 Equipe' : '👤 Individual'}
+                  </span>
+                </div>
                 <p className="text-[11px] text-muted mt-1">
                   Equivalente a {formatSecondsToHuman(kpis.totalSecondsTracked)}
                 </p>
@@ -292,9 +389,14 @@ export const AnalyticsPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight">
-                  {kpis.completionRate}%
-                </p>
+                <div className="flex items-baseline justify-between">
+                  <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight">
+                    {kpis.completionRate}%
+                  </p>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
+                    {selectedMember === 'ALL' ? '👥 Equipe' : '👤 Individual'}
+                  </span>
+                </div>
                 <p className="text-[11px] text-muted mt-1">
                   {kpis.completedTasks} de {kpis.totalTasks} demandas finalizadas
                 </p>
@@ -310,9 +412,14 @@ export const AnalyticsPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-extrabold text-teal-700 dark:text-teal-300 tracking-tight">
-                  {kpis.inProgressTasks} tarefas
-                </p>
+                <div className="flex items-baseline justify-between">
+                  <p className="text-2xl sm:text-3xl font-extrabold text-teal-700 dark:text-teal-300 tracking-tight">
+                    {kpis.inProgressTasks} tarefas
+                  </p>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
+                    {selectedMember === 'ALL' ? '👥 Equipe' : '👤 Individual'}
+                  </span>
+                </div>
                 <p className="text-[11px] text-muted mt-1">
                   {kpis.notStartedTasks} no backlog aguardando início
                 </p>
@@ -328,9 +435,14 @@ export const AnalyticsPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight font-mono">
-                  {formatSecondsToHuman(kpis.avgSecondsPerCompletedTask)}
-                </p>
+                <div className="flex items-baseline justify-between">
+                  <p className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight font-mono">
+                    {formatSecondsToHuman(kpis.avgSecondsPerCompletedTask)}
+                  </p>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
+                    {selectedMember === 'ALL' ? '👥 Equipe' : '👤 Individual'}
+                  </span>
+                </div>
                 <p className="text-[11px] text-muted mt-1">
                   Tempo médio gasto em cada entrega concluída
                 </p>

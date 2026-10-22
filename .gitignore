@@ -3,4 +3,6 @@
 .vscode
 .env
 *.pem
+*.sql
+*.sql.gz
 

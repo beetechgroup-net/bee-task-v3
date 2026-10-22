@@ -11,4 +11,5 @@ public interface UserRepository {
     Optional<User> findUserById(Long id);
     List<UserOrganization> findUserOrganizations(Long userId);
     long countAll();
+    List<User> findAllUsers();
 }

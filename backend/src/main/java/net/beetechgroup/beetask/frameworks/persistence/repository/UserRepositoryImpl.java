@@ -69,4 +69,13 @@ public class UserRepositoryImpl implements UserRepository, PanacheRepository<Use
     public long countAll() {
         return count();
     }
+
+    @Override
+    public List<User> findAllUsers() {
+        List<User> users = list("ORDER BY id ASC").stream()
+                .map(UserEntityMapper::toDomain)
+                .toList();
+        LOGGER.infof("Loaded %d users", users.size());
+        return users;
+    }
 }

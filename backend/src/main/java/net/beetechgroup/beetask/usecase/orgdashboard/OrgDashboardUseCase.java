@@ -48,10 +48,10 @@ public class OrgDashboardUseCase {
             .toList();
 
         List<Task> workedTasks = taskRepository.findTasksWorkedByUserEmailsInPeriod(
-            memberEmails, input.startDate(), input.endDate()
+            input.organizationId(), memberEmails, input.startDate(), input.endDate()
         );
         List<Task> finishedTasks = taskRepository.findTasksFinishedByUserEmailsInPeriod(
-            memberEmails, input.startDate(), input.endDate()
+            input.organizationId(), memberEmails, input.startDate(), input.endDate()
         );
 
         Map<Long, OrgProjectStats> projectStatsMap = new HashMap<>();

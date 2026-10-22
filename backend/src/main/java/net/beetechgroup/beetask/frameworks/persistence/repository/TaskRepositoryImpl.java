@@ -57,8 +57,8 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     public List<Task> findAccessibleTasksFiltered(Long organizationId, String text, List<Long> projectIds,
                                                   List<TaskStatus> statuses, List<Long> categoryIds, List<Long> userIds) {
         StringBuilder query = new StringBuilder(
-                "select distinct t from TaskEntity t join t.project p " +
-                        "where p.organization.id = ?1"
+                "select distinct t from TaskEntity t left join t.project p left join t.category c " +
+                        "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1)"
         );
         List<Object> params = new ArrayList<>();
         params.add(organizationId);
@@ -100,7 +100,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     @Override
     public List<Task> findTasksByUserFiltered(String email, String text, List<Long> projectIds,
                                               List<TaskStatus> statuses, List<Long> categoryIds) {
-        StringBuilder query = new StringBuilder("user.email = ?1");
+        StringBuilder query = new StringBuilder("(user.email = ?1 or (user is null and createdBy.email = ?1))");
         List<Object> params = new ArrayList<>();
         params.add(email);
 
@@ -135,8 +135,28 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     }
 
     @Override
+    public List<Task> findRunningTasksByUserEmail(String email) {
+        return find("select distinct t from TaskEntity t left join t.user tu join t.history h left join h.user hu " +
+                "where (tu.email = ?1 or hu.email = ?1) and h.endAt is null", email)
+                .list().stream().map(TaskEntityMapper::toDomain).toList();
+    }
+
+    @Override
     public List<Task> findTasksWorkedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end) {
-        return find("user.email = ?1", email).list().stream()
+        return findTasksWorkedByUserInPeriod(email, start, end, null);
+    }
+
+    @Override
+    public List<Task> findTasksWorkedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end, Long organizationId) {
+        StringBuilder query = new StringBuilder("select distinct t from TaskEntity t " +
+                "left join t.project p left join t.category c where (t.user.email = ?1 or (t.user is null and t.createdBy.email = ?1))");
+        List<Object> params = new ArrayList<>();
+        params.add(email);
+        if (organizationId != null) {
+            query.append(" and (t.organization.id = ?2 or p.organization.id = ?2 or c.organization.id = ?2)");
+            params.add(organizationId);
+        }
+        return find(query.toString(), params.toArray()).list().stream()
                 .filter(entity -> entity.getHistory().stream().anyMatch(h ->
                         Objects.nonNull(h.getStartAt()) &&
                         !h.getStartAt().isAfter(end) &&
@@ -161,15 +181,18 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksWorkedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end) {
-        return find("select distinct t from TaskEntity t join t.history h " +
-                "where t.project.organization.id = ?1 " +
+        return find("select distinct t from TaskEntity t " +
+                "left join t.project p left join t.category c join t.history h " +
+                "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) " +
                 "and h.startAt <= ?3 and (h.endAt is null or h.endAt >= ?2)",
                 orgId, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
     @Override
     public List<Task> findTasksFinishedByOrgInPeriod(Long orgId, LocalDateTime start, LocalDateTime end) {
-        return find("select distinct t from TaskEntity t where t.project.organization.id = ?1 " +
+        return find("select distinct t from TaskEntity t " +
+                "left join t.project p left join t.category c " +
+                "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) " +
                 "and t.status = net.beetechgroup.beetask.entities.task.TaskStatus.COMPLETED " +
                 "and t.finishedAt >= ?2 and t.finishedAt <= ?3",
                 orgId, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
@@ -187,9 +210,33 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     }
 
     @Override
+    public List<Task> findTasksWorkedByUserIdInPeriod(Long orgId, Long userId, LocalDateTime start, LocalDateTime end) {
+        return find("select distinct t from TaskEntity t " +
+                "left join t.project p left join t.category c " +
+                "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) and t.user.id = ?2",
+                orgId, userId).list().stream()
+                .filter(entity -> entity.getHistory().stream().anyMatch(h ->
+                        Objects.nonNull(h.getStartAt()) &&
+                        !h.getStartAt().isAfter(end) &&
+                        (Objects.isNull(h.getEndAt()) || !h.getEndAt().isBefore(start))))
+                .map(TaskEntityMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<Task> findTasksFinishedByUserIdInPeriod(Long userId, LocalDateTime start, LocalDateTime end) {
         return find("user.id = ?1 and status = ?2 and finishedAt >= ?3 and finishedAt <= ?4",
                 userId, TaskStatus.COMPLETED, start, end)
+                .list().stream().map(TaskEntityMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<Task> findTasksFinishedByUserIdInPeriod(Long orgId, Long userId, LocalDateTime start, LocalDateTime end) {
+        return find("select distinct t from TaskEntity t " +
+                "left join t.project p left join t.category c " +
+                "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) " +
+                "and t.user.id = ?2 and t.status = ?3 and t.finishedAt >= ?4 and t.finishedAt <= ?5",
+                orgId, userId, TaskStatus.COMPLETED, start, end)
                 .list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
@@ -200,6 +247,24 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
             return List.of();
         }
         return find("user.email in ?1", emails).list().stream()
+                .filter(entity -> entity.getHistory().stream().anyMatch(h ->
+                        Objects.nonNull(h.getStartAt()) &&
+                        !h.getStartAt().isAfter(end) &&
+                        (Objects.isNull(h.getEndAt()) || !h.getEndAt().isBefore(start))))
+                .map(TaskEntityMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Task> findTasksWorkedByUserEmailsInPeriod(Long orgId, List<String> emails, LocalDateTime start, LocalDateTime end) {
+        if (emails.isEmpty()) {
+            LOGGER.warn("Task search by user emails skipped because the email list is empty");
+            return List.of();
+        }
+        return find("select distinct t from TaskEntity t " +
+                "left join t.project p left join t.category c " +
+                "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) and t.user.email in ?2",
+                orgId, emails).list().stream()
                 .filter(entity -> entity.getHistory().stream().anyMatch(h ->
                         Objects.nonNull(h.getStartAt()) &&
                         !h.getStartAt().isAfter(end) &&
@@ -220,16 +285,52 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
     }
 
     @Override
+    public List<Task> findTasksFinishedByUserEmailsInPeriod(Long orgId, List<String> emails, LocalDateTime start, LocalDateTime end) {
+        if (emails.isEmpty()) {
+            LOGGER.warn("Finished task search by user emails skipped because the email list is empty");
+            return List.of();
+        }
+        return find("select distinct t from TaskEntity t " +
+                "left join t.project p left join t.category c " +
+                "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) " +
+                "and t.user.email in ?2 and t.status = ?3 and t.finishedAt >= ?4 and t.finishedAt <= ?5",
+                orgId, emails, TaskStatus.COMPLETED, start, end)
+                .list().stream().map(TaskEntityMapper::toDomain).toList();
+    }
+
+    @Override
     public long countByStatus(TaskStatus status) {
         return count("status", status);
     }
 
     @Override
     public long sumAllCompletedTrackedMinutes() {
-        return findAllTasks().stream()
-                .flatMap(task -> task.getHistory().stream())
-                .filter(h -> Objects.nonNull(h.getEndAt()))
-                .mapToLong(h -> Duration.between(h.getStartAt(), h.getEndAt()).toMinutes())
-                .sum();
+        Object result = getEntityManager().createNativeQuery(
+                "SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (h.end_at - h.start_at)) / 60), 0) " +
+                "FROM task_history h JOIN tasks t ON t.id = h.task_id " +
+                "WHERE h.end_at IS NOT NULL AND t.deleted_at IS NULL"
+        ).getSingleResult();
+        return ((Number) result).longValue();
+    }
+
+    @Override
+    @Transactional
+    public void deleteTask(Long id) {
+        TaskEntity entity = find("id = ?1", id).firstResultOptional()
+                .orElseThrow(() -> {
+                    LOGGER.warnf("Task %d was not found for deletion", id);
+                    return new TaskNotFoundException(id);
+                });
+        if (entity.getHistory() != null) {
+            for (var h : entity.getHistory()) {
+                if (h.getEndAt() == null) {
+                    h.setEndAt(LocalDateTime.now());
+                }
+            }
+        }
+        entity.setDeletedAt(LocalDateTime.now());
+        getEntityManager().merge(entity);
+        getEntityManager().flush();
+        LOGGER.infof("Task %d soft deleted from database", id);
     }
 }

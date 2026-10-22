@@ -47,10 +47,9 @@ public class RequestJoinOrganizationUseCase {
                 LOGGER.warnf("Join request ignored because user %s already has a pending request for organization %d", userEmail, organizationId);
                 throw new RuntimeException("A join request is already pending for this organization");
             }
-            // If REJECTED, we allow a new request (or we could just update the existing one to PENDING)
         }
 
-        UserOrganization request = new UserOrganization();
+        UserOrganization request = existing.orElseGet(UserOrganization::new);
         request.setUser(user);
         request.setOrganization(organization);
         request.setRole(UserOrganizationRole.MEMBER);

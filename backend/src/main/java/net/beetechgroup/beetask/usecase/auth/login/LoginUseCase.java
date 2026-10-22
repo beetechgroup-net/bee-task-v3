@@ -36,8 +36,25 @@ public class LoginUseCase {
 
         User user = userOptional.get();
 
-        // Simple password check for now (should use Bcrypt)
-        if (!user.getPassword().equals(input.password())) {
+        boolean passwordMatches = false;
+        String storedPassword = user.getPassword();
+        if (storedPassword != null) {
+            if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
+                try {
+                    passwordMatches = org.mindrot.jbcrypt.BCrypt.checkpw(input.password(), storedPassword);
+                } catch (Exception e) {
+                    passwordMatches = false;
+                }
+            } else {
+                passwordMatches = storedPassword.equals(input.password());
+                if (passwordMatches) {
+                    user.setPassword(org.mindrot.jbcrypt.BCrypt.hashpw(input.password(), org.mindrot.jbcrypt.BCrypt.gensalt(10)));
+                    userRepository.save(user);
+                }
+            }
+        }
+
+        if (!passwordMatches) {
             LOGGER.warnf("Login failed because password did not match for email %s", input.email());
             throw new RuntimeException("Invalid credentials");
         }

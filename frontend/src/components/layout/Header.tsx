@@ -64,6 +64,13 @@ export const Header = ({ onToggleMobileSidebar }: HeaderProps) => {
         .toUpperCase()
     : 'U'
 
+  const isMyActiveTask = Boolean(
+    activeTask &&
+    user?.email &&
+    ((activeTask.user?.email && activeTask.user.email.toLowerCase() === user.email.toLowerCase()) ||
+     (activeTask.createdBy?.email && activeTask.createdBy.email.toLowerCase() === user.email.toLowerCase()))
+  )
+
   return (
     <header className="sticky top-0 z-40 h-18 border-b border-border-soft bg-surface/85 backdrop-blur-md px-4 sm:px-6 lg:px-8 flex items-center justify-between transition-all">
       {/* Left Area: Mobile Menu Trigger + Workspace Switcher */}
@@ -175,7 +182,7 @@ export const Header = ({ onToggleMobileSidebar }: HeaderProps) => {
       {/* Right Area: Active Tracker Pill + Action Button + User Profile */}
       <div className="flex items-center gap-3">
         {/* Active Timer Pill Banner */}
-        {activeTask ? (
+        {isMyActiveTask && activeTask ? (
           <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-xs text-teal-300">
             <div className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
             <Clock className="w-3.5 h-3.5 text-teal-400 animate-pulse" />

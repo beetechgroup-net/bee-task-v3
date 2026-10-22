@@ -8,6 +8,7 @@ import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
+import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.CategoryRepository;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
@@ -22,15 +23,18 @@ public class CreateTaskUseCase {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final UserOrganizationRepository userOrganizationRepository;
+    private final OrganizationRepository organizationRepository;
 
     public CreateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
                               CategoryRepository categoryRepository, UserRepository userRepository,
-                              UserOrganizationRepository userOrganizationRepository) {
+                              UserOrganizationRepository userOrganizationRepository,
+                              OrganizationRepository organizationRepository) {
         this.taskRepository = taskRepository;
         this.projectRepository = projectRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.userOrganizationRepository = userOrganizationRepository;
+        this.organizationRepository = organizationRepository;
     }
 
     public CreateTaskOutput execute(CreateTaskInput input) {
@@ -60,7 +64,17 @@ public class CreateTaskUseCase {
         }
 
         validateRequesterMembership(input.organizationId(), input.userEmail());
+        if (Objects.nonNull(input.organizationId())) {
+            organizationRepository.findOrganizationById(input.organizationId()).ifPresent(task::setOrganization);
+        } else if (task.getProject() != null && task.getProject().getOrganization() != null) {
+            task.setOrganization(task.getProject().getOrganization());
+        } else if (task.getCategory() != null && task.getCategory().getOrganization() != null) {
+            task.setOrganization(task.getCategory().getOrganization());
+        }
+
         task.setUser(resolveAssignee(input.organizationId(), input.assigneeUserId()));
+        User creator = userRepository.findByEmail(input.userEmail()).orElse(null);
+        task.setCreatedBy(creator);
 
         if (Objects.nonNull(input.history())) {
             List<TaskHistoryItem> historyItems = input.history().stream().map(h -> {

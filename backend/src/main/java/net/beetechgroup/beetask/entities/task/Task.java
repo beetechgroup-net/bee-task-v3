@@ -8,18 +8,37 @@ import java.util.Objects;
 import net.beetechgroup.beetask.entities.Category;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.User;
+import net.beetechgroup.beetask.entities.organization.Organization;
 
 public class Task {
     private Long id;
     private String title;
     private String description;
     private TaskStatus status;
+    private Organization organization;
     private Project project;
     private Category category;
     private User user;
+    private User createdBy;
     private LocalDateTime finishedAt;
     private List<TaskHistoryItem> history = new ArrayList<>();
     private String externalUrl;
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
+    }
+
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
+    }
 
     public String getExternalUrl() {
         return externalUrl;
@@ -60,8 +79,15 @@ public class Task {
     public void setStatus(TaskStatus status) {
         if (this.status == status) return;
 
-        if (status == TaskStatus.COMPLETED) {
-            this.finishedAt = LocalDateTime.now();
+        if (status == TaskStatus.COMPLETED || status == TaskStatus.CANCELED) {
+            if (isRunning()) {
+                this.stop();
+            }
+            if (status == TaskStatus.COMPLETED) {
+                this.finishedAt = LocalDateTime.now();
+            } else {
+                this.finishedAt = null;
+            }
         } else {
             this.finishedAt = null;
         }
@@ -121,6 +147,10 @@ public class Task {
     }
 
     public void start() {
+        start(this.user);
+    }
+
+    public void start(User worker) {
         TaskHistoryItem current = getCurrentRunningItem();
 
         if (Objects.nonNull(current)) {
@@ -130,6 +160,7 @@ public class Task {
         this.status = TaskStatus.IN_PROGRESS;
         TaskHistoryItem item = new TaskHistoryItem();
         item.setStartAt(LocalDateTime.now());
+        item.setUser(worker != null ? worker : this.user);
         this.history.add(item);
     }
 

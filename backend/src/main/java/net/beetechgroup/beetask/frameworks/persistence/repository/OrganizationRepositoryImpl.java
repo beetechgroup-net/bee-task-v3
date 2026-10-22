@@ -41,7 +41,7 @@ public class OrganizationRepositoryImpl implements OrganizationRepository, Panac
             return organizations;
         }
 
-        List<Organization> organizations = find("name like ?1", "%" + query + "%").stream()
+        List<Organization> organizations = find("lower(name) like ?1", "%" + query.toLowerCase() + "%").stream()
                 .map(OrganizationEntityMapper::toDomain)
                 .toList();
         LOGGER.infof("Loaded %d organizations for search query '%s'", organizations.size(), query);

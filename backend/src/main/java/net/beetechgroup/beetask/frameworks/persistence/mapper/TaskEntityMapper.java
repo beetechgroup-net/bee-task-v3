@@ -17,9 +17,11 @@ public class TaskEntityMapper {
         entity.setStatus(task.getStatus());
         entity.setFinishedAt(task.getFinishedAt());
         entity.setExternalUrl(task.getExternalUrl());
+        entity.setOrganization(OrganizationEntityMapper.toEntity(task.getOrganization()));
         entity.setProject(ProjectEntityMapper.toEntity(task.getProject()));
         entity.setCategory(CategoryEntityMapper.toEntity(task.getCategory()));
         entity.setUser(UserEntityMapper.toEntity(task.getUser()));
+        entity.setCreatedBy(UserEntityMapper.toEntity(task.getCreatedBy()));
         entity.setHistory(new ArrayList<>(task.getHistory().stream().map(h -> {
             TaskHistoryItemEntity he = TaskHistoryItemMapper.toEntity(h);
             he.setTask(entity);
@@ -38,9 +40,11 @@ public class TaskEntityMapper {
         task.setStatus(entity.getStatus());
         task.setFinishedAt(entity.getFinishedAt());
         task.setExternalUrl(entity.getExternalUrl());
+        task.setOrganization(OrganizationEntityMapper.toDomain(entity.getOrganization()));
         task.setProject(ProjectEntityMapper.toDomain(entity.getProject()));
         task.setCategory(CategoryEntityMapper.toDomain(entity.getCategory()));
         task.setUser(UserEntityMapper.toDomain(entity.getUser()));
+        task.setCreatedBy(UserEntityMapper.toDomain(entity.getCreatedBy()));
         task.setHistory(new ArrayList<>(entity.getHistory().stream().map(TaskHistoryItemMapper::toDomain).toList()));
 
         return task;

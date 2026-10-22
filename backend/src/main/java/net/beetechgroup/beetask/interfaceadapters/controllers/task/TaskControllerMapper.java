@@ -68,6 +68,13 @@ public class TaskControllerMapper {
                                 output.user().email(),
                                 output.user().photo())
                         : null,
+                Objects.nonNull(output.createdBy())
+                        ? new CreateTaskResponse.UserResponse(
+                                output.createdBy().id(),
+                                output.createdBy().name(),
+                                output.createdBy().email(),
+                                output.createdBy().photo())
+                        : null,
                 output.finishedAt(),
                 output.history().stream().map(taskHistoryItemOutput -> new TaskHistoryItemResponse(
                         taskHistoryItemOutput.id(), taskHistoryItemOutput.startAt(), taskHistoryItemOutput.endAt(), taskHistoryItemOutput.elapsedSeconds())).toList(),

@@ -36,6 +36,7 @@ export interface Task {
   project?: Project;
   category?: Category;
   user?: TaskUser;
+  createdBy?: TaskUser;
   finishedAt?: string;
   history?: TaskHistoryItem[];
   externalUrl?: string;

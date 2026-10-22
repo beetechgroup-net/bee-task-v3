@@ -28,6 +28,13 @@ public class CreateTaskMapper {
                                 task.getUser().getEmail(),
                                 getPhotoUrl(task.getUser().getName(), task.getUser().getPhoto()))
                         : null,
+                Objects.nonNull(task.getCreatedBy())
+                        ? new CreateTaskOutput.UserOutput(
+                                task.getCreatedBy().getId(),
+                                task.getCreatedBy().getName(),
+                                task.getCreatedBy().getEmail(),
+                                getPhotoUrl(task.getCreatedBy().getName(), task.getCreatedBy().getPhoto()))
+                        : null,
                 task.getFinishedAt(),
                 task.getHistory().stream().map(CreateTaskMapper::toTaskHistoryItemOutput).toList(),
                 task.getExternalUrl());

@@ -63,4 +63,20 @@ export const authService = {
       body: { preferences },
     })
   },
+
+  async uploadPhoto(file: File): Promise<{ photoUrl: string }> {
+    const formData = new FormData()
+    formData.append('photo', file)
+    return apiFetch<{ photoUrl: string }>('/auth/profile/photo', {
+      method: 'POST',
+      body: formData,
+    })
+  },
+
+  async updateProfile(name: string, email: string): Promise<{ name: string; email: string; photo: string }> {
+    return apiFetch<{ name: string; email: string; photo: string }>('/auth/profile', {
+      method: 'PUT',
+      body: { name, email },
+    })
+  },
 }

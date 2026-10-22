@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Clock,
   CheckCircle2,
@@ -21,6 +21,8 @@ import {
   Settings2,
   BarChart3,
   ExternalLink,
+  User,
+  Users,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTimer } from '../contexts/TimerContext'
@@ -39,6 +41,15 @@ export const DashboardPage: React.FC = () => {
   const { user, activeOrg } = useAuth()
   const { activeTask, activeSeconds, startTimer, stopTimer, syncWithTasks } = useTimer()
   const navigate = useNavigate()
+
+  // Check if active task belongs to current user (as assignee or creator)
+  const isMyActiveTask = Boolean(
+    activeTask &&
+    user?.email &&
+    ((activeTask.user?.email && activeTask.user.email.toLowerCase() === user.email.toLowerCase()) ||
+     (activeTask.createdBy?.email && activeTask.createdBy.email.toLowerCase() === user.email.toLowerCase()))
+  )
+  const currentActiveTask = isMyActiveTask ? activeTask : null
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [projects, setProjects] = useState<Project[]>([])
@@ -71,6 +82,29 @@ export const DashboardPage: React.FC = () => {
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false)
 
+  // Scope Toggle State: 'mine' (Individual) vs 'team' (Equipe)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialScope =
+    (searchParams.get('scope') as 'mine' | 'team') ||
+    (localStorage.getItem('beetask_dashboard_scope') as 'mine' | 'team') ||
+    'mine'
+  const [viewScope, setViewScope] = useState<'mine' | 'team'>(initialScope)
+
+  const handleScopeChange = (newScope: 'mine' | 'team') => {
+    setViewScope(newScope)
+    try {
+      localStorage.setItem('beetask_dashboard_scope', newScope)
+    } catch (_) {}
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('scope', newScope)
+        return next
+      },
+      { replace: true }
+    )
+  }
+
   const activeOrgId = activeOrg?.id
 
   const loadData = useCallback(async () => {
@@ -102,21 +136,39 @@ export const DashboardPage: React.FC = () => {
     loadData()
   }, [loadData])
 
-  // KPIs
+  // Filter user's own tasks
+  const myTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      if (!user?.email) return false
+      return Boolean(
+        t.user?.email &&
+          user?.email &&
+          t.user.email.toLowerCase() === user.email.toLowerCase()
+      )
+    })
+  }, [tasks, user])
+
+  // Scope tasks based on viewScope
+  const scopeTasks = viewScope === 'mine' ? myTasks : tasks
+
+  // KPIs dynamically calculated based on active scope
   const stats = useMemo(() => {
-    const inProgress = tasks.filter((t) => t.status === 'IN_PROGRESS').length
-    const completed = tasks.filter((t) => t.status === 'COMPLETED').length
-    const notStarted = tasks.filter((t) => t.status === 'NOT_STARTED').length
-    const totalSeconds = tasks.reduce((acc, t) => acc + calculateTaskTotalSeconds(t), 0)
+    const inProgress = scopeTasks.filter((t) => t.status === 'IN_PROGRESS').length
+    const completed = scopeTasks.filter((t) => t.status === 'COMPLETED').length
+    const notStarted = scopeTasks.filter((t) => t.status === 'NOT_STARTED').length
+    const totalSeconds = scopeTasks.reduce((acc, t) => acc + calculateTaskTotalSeconds(t), 0)
+
+    const uniqueProjectIds = new Set(scopeTasks.map((t) => t.project?.id).filter(Boolean))
+    const projectsCount = viewScope === 'mine' ? uniqueProjectIds.size : projects.length
 
     return {
       inProgress,
       completed,
       notStarted,
       totalSeconds,
-      projectsCount: projects.length,
+      projectsCount,
     }
-  }, [tasks, projects])
+  }, [scopeTasks, projects, viewScope])
 
   // Work Goal Progress in Current Period
   const goalProgress = useMemo(() => {
@@ -124,7 +176,7 @@ export const DashboardPage: React.FC = () => {
     const workedSeconds = calculateUserPeriodWorkedSeconds(
       tasks,
       workGoal?.period || 'DAILY',
-      activeTask?.id,
+      currentActiveTask?.id,
       activeSeconds
     )
     const percent = Math.min(100, Math.round((workedSeconds / targetSeconds) * 100))
@@ -152,17 +204,17 @@ export const DashboardPage: React.FC = () => {
       targetHours: workGoal?.targetHours || 8,
       isCompleted: workedSeconds >= targetSeconds,
     }
-  }, [tasks, workGoal, activeTask?.id, activeSeconds])
+  }, [tasks, workGoal, currentActiveTask?.id, activeSeconds])
 
-  // Recent 5 tasks
+  // Recent 5 tasks based on active scope
   const recentTasks = useMemo(() => {
-    return [...tasks].slice(0, 5)
-  }, [tasks])
+    return [...scopeTasks].slice(0, 5)
+  }, [scopeTasks])
 
   // Toggle timer on a task
   const handleToggleTimer = async (task: Task) => {
     try {
-      if (activeTask?.id === task.id) {
+      if (currentActiveTask?.id === task.id) {
         const stopped = await stopTimer(task)
         if (stopped) {
           setTasks((prev) => prev.map((t) => (t.id === stopped.id ? stopped : t)))
@@ -201,10 +253,19 @@ export const DashboardPage: React.FC = () => {
     setTasks((prev) => [created, ...prev])
   }
 
-  // Priority task to focus on if none running
+  // Priority task to focus on if none running (only user's own tasks)
   const suggestedTask = useMemo(() => {
-    return tasks.find((t) => t.status === 'IN_PROGRESS') || tasks.find((t) => t.status === 'NOT_STARTED') || tasks[0]
-  }, [tasks])
+    const myTasks = tasks.filter((t) => {
+      if (!user?.email || !t.user?.email) return false
+      return t.user.email.toLowerCase() === user.email.toLowerCase()
+    })
+    return (
+      myTasks.find((t) => t.status === 'IN_PROGRESS') ||
+      myTasks.find((t) => t.status === 'NOT_STARTED') ||
+      myTasks[0] ||
+      null
+    )
+  }, [tasks, user])
 
   const firstName = user?.name ? user.name.split(' ')[0] : 'Desenvolvedor'
 
@@ -288,6 +349,64 @@ export const DashboardPage: React.FC = () => {
         </div>
       )}
 
+      {/* Scope Selector: Individual (Minhas Tarefas) vs Equipe (Workspace) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 sm:p-4 rounded-3xl bg-surface/90 border border-border-soft backdrop-blur-md shadow-panel">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider hidden sm:inline">
+            Modo de Visualização:
+          </span>
+          <div className="inline-flex p-1 rounded-xl bg-surface-sunken border border-border-soft shadow-inner">
+            <button
+              type="button"
+              onClick={() => handleScopeChange('mine')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                viewScope === 'mine'
+                  ? 'bg-brand text-white shadow-md shadow-brand/25'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Individual (Minhas Tarefas)</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  viewScope === 'mine' ? 'bg-white/20 text-white' : 'bg-surface text-muted'
+                }`}
+              >
+                {myTasks.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleScopeChange('team')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                viewScope === 'team'
+                  ? 'bg-brand text-white shadow-md shadow-brand/25'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Equipe (Workspace Completo)</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  viewScope === 'team' ? 'bg-white/20 text-white' : 'bg-surface text-muted'
+                }`}
+              >
+                {tasks.length}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="text-[11px] truncate">
+            {viewScope === 'mine'
+              ? 'KPIs e métricas filtrados estritamente para demandas atribuídas a você'
+              : 'KPIs e métricas consolidados de todos os integrantes do workspace'}
+          </span>
+        </div>
+      </div>
+
       {/* 4 Premium KPI Cards with shadow-panel & backdrop-blur */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -303,17 +422,28 @@ export const DashboardPage: React.FC = () => {
           {/* In Progress */}
           <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-muted">Tarefas em Andamento</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-muted">
+                  {viewScope === 'mine' ? 'Suas Tarefas em Andamento' : 'Tarefas da Equipe em Andamento'}
+                </span>
+              </div>
               <div className="w-9 h-9 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-700 dark:text-teal-400 shadow-xs">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-teal-700 dark:text-teal-400 tracking-tight font-mono">
-                {stats.inProgress}
-              </p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-3xl font-extrabold text-teal-700 dark:text-teal-400 tracking-tight font-mono">
+                  {stats.inProgress}
+                </p>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
+                  {viewScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+                </span>
+              </div>
               <p className="text-[11px] text-muted font-medium mt-1">
-                {stats.notStarted} tarefas aguardando no backlog
+                {viewScope === 'mine'
+                  ? `${stats.notStarted} na sua fila aguardando`
+                  : `${stats.notStarted} tarefas aguardando no backlog`}
               </p>
             </div>
           </div>
@@ -321,17 +451,26 @@ export const DashboardPage: React.FC = () => {
           {/* Completed */}
           <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-muted">Entregas Concluídas</span>
+              <span className="text-xs font-bold text-muted">
+                {viewScope === 'mine' ? 'Suas Entregas Concluídas' : 'Entregas Concluídas da Equipe'}
+              </span>
               <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 shadow-xs">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight font-mono">
-                {stats.completed}
-              </p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight font-mono">
+                  {stats.completed}
+                </p>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
+                  {viewScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+                </span>
+              </div>
               <p className="text-[11px] text-muted font-medium mt-1">
-                de {tasks.length} demandas cadastradas
+                {viewScope === 'mine'
+                  ? `de ${myTasks.length} demandas suas`
+                  : `de ${tasks.length} demandas cadastradas`}
               </p>
             </div>
           </div>
@@ -339,17 +478,26 @@ export const DashboardPage: React.FC = () => {
           {/* Time Tracked */}
           <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-muted">Tempo Total Dedicado</span>
+              <span className="text-xs font-bold text-muted">
+                {viewScope === 'mine' ? 'Seu Tempo Dedicado' : 'Tempo Total da Equipe'}
+              </span>
               <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-xs">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-amber-400 tracking-tight font-mono">
-                {formatSecondsToTimer(stats.totalSeconds)}
-              </p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-3xl font-extrabold text-amber-400 tracking-tight font-mono">
+                  {formatSecondsToTimer(stats.totalSeconds)}
+                </p>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
+                  {viewScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+                </span>
+              </div>
               <p className="text-[11px] text-muted font-medium mt-1">
-                {formatSecondsToHuman(stats.totalSeconds)} auditadas no time
+                {viewScope === 'mine'
+                  ? `${formatSecondsToHuman(stats.totalSeconds)} auditadas por você`
+                  : `${formatSecondsToHuman(stats.totalSeconds)} auditadas no time`}
               </p>
             </div>
           </div>
@@ -357,17 +505,26 @@ export const DashboardPage: React.FC = () => {
           {/* Projects */}
           <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-5 shadow-panel hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-muted">Projetos Ativos</span>
+              <span className="text-xs font-bold text-muted">
+                {viewScope === 'mine' ? 'Seus Projetos Ativos' : 'Projetos da Organização'}
+              </span>
               <div className="w-9 h-9 rounded-xl bg-brand-soft text-brand border border-brand/25 flex items-center justify-center shadow-xs">
                 <FolderKanban className="w-4 h-4 text-brand" />
               </div>
             </div>
             <div>
-              <p className="text-3xl font-extrabold text-foreground tracking-tight font-mono">
-                {stats.projectsCount}
-              </p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-3xl font-extrabold text-foreground tracking-tight font-mono">
+                  {stats.projectsCount}
+                </p>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
+                  {viewScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+                </span>
+              </div>
               <p className="text-[11px] text-muted font-medium mt-1">
-                Iniciativas ativas no workspace
+                {viewScope === 'mine'
+                  ? 'Iniciativas com tarefas suas'
+                  : 'Iniciativas ativas no workspace'}
               </p>
             </div>
           </div>
@@ -394,43 +551,43 @@ export const DashboardPage: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 <span
                   className={`inline-block w-2 h-2 rounded-full ${
-                    activeTask ? 'bg-emerald-500 animate-ping' : 'bg-zinc-400'
+                    currentActiveTask ? 'bg-emerald-500 animate-ping' : 'bg-zinc-400'
                   }`}
                 />
                 <span
                   className={`text-xs font-bold ${
-                    activeTask ? 'text-teal-700 dark:text-teal-400' : 'text-muted'
+                    currentActiveTask ? 'text-teal-700 dark:text-teal-400' : 'text-muted'
                   }`}
                 >
-                  {activeTask ? 'CRONOMETRANDO' : 'EM ESPERA'}
+                  {currentActiveTask ? 'CRONOMETRANDO' : 'EM ESPERA'}
                 </span>
               </div>
             </div>
 
             {/* Active or Suggested Task Info Box */}
-            {activeTask ? (
+            {currentActiveTask ? (
               <div className="p-4 rounded-2xl bg-surface-raised border border-border-soft space-y-2 shadow-xs">
                 <div className="flex items-center gap-2 flex-wrap">
-                  {activeTask.project && (
+                  {currentActiveTask.project && (
                     <span
                       className="px-2 py-0.5 rounded-md text-[10px] font-semibold border"
                       style={{
-                        backgroundColor: activeTask.project.color ? `${activeTask.project.color}15` : 'rgba(15,118,110,0.1)',
-                        color: activeTask.project.color || '#0f766e',
-                        borderColor: activeTask.project.color ? `${activeTask.project.color}35` : 'rgba(15,118,110,0.25)',
+                        backgroundColor: currentActiveTask.project.color ? `${currentActiveTask.project.color}15` : 'rgba(15,118,110,0.1)',
+                        color: currentActiveTask.project.color || '#0f766e',
+                        borderColor: currentActiveTask.project.color ? `${currentActiveTask.project.color}35` : 'rgba(15,118,110,0.25)',
                       }}
                     >
-                      {activeTask.project.name}
+                      {currentActiveTask.project.name}
                     </span>
                   )}
-                  {activeTask.category && (
+                  {currentActiveTask.category && (
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-accent-soft text-accent border border-accent/25">
-                      {activeTask.category.name}
+                      {currentActiveTask.category.name}
                     </span>
                   )}
                 </div>
                 <h3 className="text-sm font-bold text-foreground line-clamp-2 leading-snug">
-                  {activeTask.title}
+                  {currentActiveTask.title}
                 </h3>
               </div>
             ) : suggestedTask ? (
@@ -458,19 +615,19 @@ export const DashboardPage: React.FC = () => {
             {/* Big Bold Timer Display */}
             <div className="text-center py-5 rounded-2xl bg-surface border border-border-soft shadow-xs">
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
-                {activeTask ? 'Tempo Decorrido na Tarefa' : 'Pronto para Iniciar'}
+                {currentActiveTask ? 'Tempo Decorrido na Tarefa' : 'Pronto para Iniciar'}
               </span>
               <p className="text-4xl sm:text-5xl font-extrabold font-mono text-foreground mt-1.5 tracking-tight">
-                {activeTask ? formatSecondsToTimer(activeSeconds) : '00:00:00'}
+                {currentActiveTask ? formatSecondsToTimer(activeSeconds) : '00:00:00'}
               </p>
             </div>
 
             {/* Timer Actions */}
-            {activeTask ? (
+            {currentActiveTask ? (
               <button
                 type="button"
-                onClick={() => stopTimer(activeTask)}
-                className="w-full py-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs"
+                onClick={() => stopTimer(currentActiveTask)}
+                className="w-full py-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
               >
                 <Square className="w-4 h-4 fill-rose-300" />
                 <span>Pausar Cronômetro</span>
@@ -607,7 +764,7 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Zap className="w-4 h-4 text-accent" />
-              Tarefas Recentes da Equipe
+              {viewScope === 'mine' ? 'Minhas Demandas Recentes' : 'Demandas Recentes da Equipe'}
             </h2>
             <Link
               to="/tasks"
@@ -631,7 +788,9 @@ export const DashboardPage: React.FC = () => {
             <div className="text-center py-20 rounded-3xl border border-dashed border-border-soft bg-surface/60 backdrop-blur-md">
               <Activity className="w-8 h-8 text-muted mx-auto mb-2" />
               <p className="text-xs text-muted mb-4 font-medium">
-                Nenhuma tarefa encontrada neste workspace.
+                {viewScope === 'mine'
+                  ? 'Você não possui nenhuma demanda atribuída no momento.'
+                  : 'Nenhuma tarefa encontrada neste workspace.'}
               </p>
               <button
                 type="button"
@@ -645,7 +804,7 @@ export const DashboardPage: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {recentTasks.map((task) => {
-                const isTracking = activeTask?.id === task.id
+                const isTracking = currentActiveTask?.id === task.id
                 const taskSec = isTracking ? activeSeconds : calculateTaskTotalSeconds(task)
 
                 return (
@@ -659,6 +818,34 @@ export const DashboardPage: React.FC = () => {
                   >
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
+                        {/* Assignee Indicator */}
+                        {task.user?.name ? (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                              user?.email &&
+                              task.user.email &&
+                              task.user.email.toLowerCase() === user.email.toLowerCase()
+                                ? 'bg-brand/10 text-brand border-brand/20'
+                                : 'bg-surface-sunken text-muted border-border-soft'
+                            }`}
+                            title={`Responsável: ${task.user.name} (${task.user.email || ''})`}
+                          >
+                            <User className="w-3 h-3" />
+                            <span className="truncate max-w-[110px]">
+                              {user?.email &&
+                              task.user.email &&
+                              task.user.email.toLowerCase() === user.email.toLowerCase()
+                                ? 'Você'
+                                : task.user.name.split(' ')[0]}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-surface-sunken text-muted/60 border border-border-soft">
+                            <User className="w-3 h-3" />
+                            <span>Sem responsável</span>
+                          </span>
+                        )}
+
                         {task.project && (
                           <span
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border"

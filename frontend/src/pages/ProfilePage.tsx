@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Mail,
@@ -9,9 +9,15 @@ import {
   CheckCircle2,
   Save,
   Sparkles,
+  Camera,
+  Edit2,
+  AlertCircle,
+  X,
+  Check,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { taskService } from '../services/taskService'
+import { authService } from '../services/authService'
 import type { Task } from '../types/task'
 import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer } from '../lib/timeUtils'
 import { CustomSelect } from '../components/ui/Select'
@@ -23,16 +29,100 @@ import {
 } from '../lib/userGoals'
 
 export const ProfilePage: React.FC = () => {
-  const { user, activeOrg, setActiveOrg, logout } = useAuth()
+  const { user, activeOrg, setActiveOrg, logout, updateUser, refreshUser } = useAuth()
   const navigate = useNavigate()
 
   const [myTasks, setMyTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Photo upload state
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [photoSuccess, setPhotoSuccess] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+
+  // Name edit state
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState(user?.name || '')
+  const [savingName, setSavingName] = useState(false)
+  const [nameSuccess, setNameSuccess] = useState(false)
+  const [nameError, setNameError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (user?.name) {
+      setNameInput(user.name)
+    }
+  }, [user?.name])
+
   // Workload & Goal State (Global)
   const [goalPeriod, setGoalPeriod] = useState<WorkGoalPeriod>('DAILY')
   const [goalHours, setGoalHours] = useState<number>(8)
   const [savedSuccess, setSavedSuccess] = useState(false)
+
+  const handlePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate size (5 MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('A imagem deve ter no máximo 5 MB.')
+      setTimeout(() => setPhotoError(null), 5000)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    // Validate image mime type
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('O arquivo selecionado deve ser uma imagem (JPG, PNG, WebP).')
+      setTimeout(() => setPhotoError(null), 5000)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
+    setUploadingPhoto(true)
+    setPhotoError(null)
+
+    try {
+      const res = await authService.uploadPhoto(file)
+      // Append timestamp query parameter to bust browser cache
+      const freshPhotoUrl = res.photoUrl.includes('?')
+        ? `${res.photoUrl}&t=${Date.now()}`
+        : `${res.photoUrl}?t=${Date.now()}`
+      updateUser({ photo: freshPhotoUrl })
+      setPhotoSuccess(true)
+      setTimeout(() => setPhotoSuccess(false), 4000)
+      await refreshUser()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao atualizar a foto de perfil.'
+      setPhotoError(msg)
+      setTimeout(() => setPhotoError(null), 5000)
+    } finally {
+      setUploadingPhoto(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleSaveName = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user?.email || !nameInput.trim()) return
+
+    setSavingName(true)
+    setNameError(null)
+
+    try {
+      const res = await authService.updateProfile(nameInput.trim(), user.email)
+      updateUser({ name: res.name })
+      setNameSuccess(true)
+      setEditingName(false)
+      setTimeout(() => setNameSuccess(false), 4000)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar o nome.'
+      setNameError(msg)
+      setTimeout(() => setNameError(null), 5000)
+    } finally {
+      setSavingName(false)
+    }
+  }
 
   useEffect(() => {
     if (user?.email) {
@@ -97,35 +187,165 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       {/* Main Profile Info Card */}
-      <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-8 shadow-panel space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border-soft/60">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-brand/40 bg-gradient-to-br from-brand to-teal-700 flex items-center justify-center text-white font-extrabold text-2xl shadow-lg shadow-brand/20 shrink-0">
-              {user.photo ? (
-                <img
-                  src={user.photo}
-                  alt={user.name || 'Avatar'}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : user.name ? (
-                user.name.charAt(0).toUpperCase()
-              ) : (
-                user.email.charAt(0).toUpperCase()
-              )}
+      <div className="rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md p-6 sm:p-8 shadow-panel space-y-6">
+        {/* Status Alerts */}
+        {photoSuccess && (
+          <div className="flex items-center gap-2 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-600/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold animate-in fade-in duration-200">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Foto de perfil atualizada com sucesso!</span>
+          </div>
+        )}
+
+        {photoError && (
+          <div className="flex items-center gap-2 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-600/20 text-rose-300 text-xs font-semibold animate-in fade-in duration-200">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{photoError}</span>
+          </div>
+        )}
+
+        {nameSuccess && (
+          <div className="flex items-center gap-2 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-600/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold animate-in fade-in duration-200">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Nome atualizado com sucesso!</span>
+          </div>
+        )}
+
+        {nameError && (
+          <div className="flex items-center gap-2 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-600/20 text-rose-300 text-xs font-semibold animate-in fade-in duration-200">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{nameError}</span>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-border-soft/60">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            {/* Avatar with Camera Trigger */}
+            <div className="relative group shrink-0">
+              <div
+                onClick={() => !uploadingPhoto && fileInputRef.current?.click()}
+                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-brand/50 bg-gradient-to-br from-brand to-teal-700 flex items-center justify-center text-white font-extrabold text-2xl sm:text-3xl shadow-lg shadow-brand/20 cursor-pointer relative transition-transform duration-200 group-hover:scale-[1.02] ${
+                  uploadingPhoto ? 'opacity-80 pointer-events-none' : ''
+                }`}
+              >
+                {user.photo ? (
+                  <img
+                    src={user.photo}
+                    alt={user.name || 'Avatar'}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : user.name ? (
+                  user.name.charAt(0).toUpperCase()
+                ) : (
+                  user.email.charAt(0).toUpperCase()
+                )}
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[11px] font-bold gap-1">
+                  <Camera className="w-5 h-5 text-white drop-shadow" />
+                  <span>Alterar</span>
+                </div>
+
+                {/* Uploading Overlay */}
+                {uploadingPhoto && (
+                  <div className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center text-white gap-1 z-10">
+                    <Loader2 className="w-6 h-6 animate-spin text-brand" />
+                    <span className="text-[10px] font-bold">Enviando...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Camera Badge Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                title="Alterar foto de perfil"
+                className="absolute -bottom-1 -right-1 p-2 rounded-full bg-brand hover:bg-brand-strong text-white shadow-md border-2 border-surface transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer disabled:opacity-60"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handlePhotoSelected}
+                className="hidden"
+              />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">{user.name || 'Usuário'}</h2>
-              <p className="text-xs text-muted flex items-center gap-1.5 mt-0.5">
+
+            {/* User Details & Edit Form */}
+            <div className="space-y-1.5 flex-1 min-w-0">
+              {editingName ? (
+                <form onSubmit={handleSaveName} className="flex items-center gap-2 flex-wrap">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    required
+                    placeholder="Seu nome"
+                    className="px-3 py-1.5 rounded-xl border border-brand bg-surface text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-brand/40"
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    disabled={savingName || !nameInput.trim()}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-strong shadow-xs disabled:opacity-60 cursor-pointer"
+                  >
+                    {savingName ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                    <span>Salvar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNameInput(user.name || '')
+                      setEditingName(false)
+                    }}
+                    className="p-1.5 rounded-xl text-muted hover:text-foreground hover:bg-surface-raised cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">{user.name || 'Usuário'}</h2>
+                  <button
+                    type="button"
+                    onClick={() => setEditingName(true)}
+                    title="Editar nome"
+                    className="p-1 rounded-lg text-muted hover:text-brand hover:bg-brand/10 transition-colors cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <p className="text-xs text-muted flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5" />
                 {user.email}
               </p>
+
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-surface-raised hover:bg-surface-sunken border border-border-soft text-xs font-semibold text-foreground transition-all cursor-pointer shadow-xs"
+                >
+                  <Camera className="w-3.5 h-3.5 text-brand" />
+                  <span>Trocar foto</span>
+                </button>
+                <span className="text-[10px] text-muted">
+                  PNG, JPG, WebP ou GIF (máx. 5MB)
+                </span>
+              </div>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleLogout}
-            className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 text-xs font-semibold transition-all hover:shadow-xs"
+            className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 text-xs font-semibold transition-all hover:shadow-xs cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             <span>Encerrar Sessão</span>

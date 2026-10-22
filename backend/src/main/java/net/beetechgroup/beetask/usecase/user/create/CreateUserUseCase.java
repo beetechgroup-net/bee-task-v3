@@ -21,6 +21,9 @@ public class CreateUserUseCase {
 
         LOGGER.infof("Creating user with email %s", input.email());
         User user = CreateUserMapper.toUser(input);
+        if (user.getPassword() != null && !user.getPassword().isBlank()) {
+            user.setPassword(org.mindrot.jbcrypt.BCrypt.hashpw(user.getPassword(), org.mindrot.jbcrypt.BCrypt.gensalt(10)));
+        }
         User savedUser = userRepository.save(user);
         LOGGER.infof("User %d created successfully with email %s", savedUser.getId(), savedUser.getEmail());
 
