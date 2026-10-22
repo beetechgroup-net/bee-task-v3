@@ -436,8 +436,15 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-3xl font-extrabold text-teal-700 dark:text-teal-400 tracking-tight font-mono">
                   {stats.inProgress}
                 </p>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
-                  {viewScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+                <span
+                  className="text-muted/70 hover:text-foreground transition-colors shrink-0"
+                  title={viewScope === 'mine' ? 'Métrica Individual' : 'Métrica da Equipe'}
+                >
+                  {viewScope === 'mine' ? (
+                    <User className="w-4 h-4 text-brand" />
+                  ) : (
+                    <Users className="w-4 h-4 text-muted" />
+                  )}
                 </span>
               </div>
               <p className="text-[11px] text-muted font-medium mt-1">
@@ -463,8 +470,15 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight font-mono">
                   {stats.completed}
                 </p>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
-                  {viewScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+                <span
+                  className="text-muted/70 hover:text-foreground transition-colors shrink-0"
+                  title={viewScope === 'mine' ? 'Métrica Individual' : 'Métrica da Equipe'}
+                >
+                  {viewScope === 'mine' ? (
+                    <User className="w-4 h-4 text-brand" />
+                  ) : (
+                    <Users className="w-4 h-4 text-muted" />
+                  )}
                 </span>
               </div>
               <p className="text-[11px] text-muted font-medium mt-1">
@@ -490,8 +504,15 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-3xl font-extrabold text-amber-400 tracking-tight font-mono">
                   {formatSecondsToTimer(stats.totalSeconds)}
                 </p>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
-                  {viewScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+                <span
+                  className="text-muted/70 hover:text-foreground transition-colors shrink-0"
+                  title={viewScope === 'mine' ? 'Métrica Individual' : 'Métrica da Equipe'}
+                >
+                  {viewScope === 'mine' ? (
+                    <User className="w-4 h-4 text-brand" />
+                  ) : (
+                    <Users className="w-4 h-4 text-muted" />
+                  )}
                 </span>
               </div>
               <p className="text-[11px] text-muted font-medium mt-1">
@@ -517,8 +538,15 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-3xl font-extrabold text-foreground tracking-tight font-mono">
                   {stats.projectsCount}
                 </p>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-surface-sunken text-muted border border-border-soft">
-                  {viewScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
+                <span
+                  className="text-muted/70 hover:text-foreground transition-colors shrink-0"
+                  title={viewScope === 'mine' ? 'Métrica Individual' : 'Métrica da Equipe'}
+                >
+                  {viewScope === 'mine' ? (
+                    <User className="w-4 h-4 text-brand" />
+                  ) : (
+                    <Users className="w-4 h-4 text-muted" />
+                  )}
                 </span>
               </div>
               <p className="text-[11px] text-muted font-medium mt-1">

@@ -16,6 +16,8 @@ import {
   Trash2,
   Edit2,
   GripVertical,
+  User,
+  Users,
 } from 'lucide-react'
 import type { DashboardV2Card } from '../../lib/userPreferences'
 import type { Task, Project, Category } from '../../types/task'
@@ -557,21 +559,20 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
 
       {/* Footer: Compact Dimension Tags */}
       <div className="pt-1.5 border-t border-border-soft/60 flex items-center gap-1.5 flex-wrap text-[9px] truncate">
-        {/* Scope Tag */}
+        {/* Scope Icon (only icon, without background color) */}
         <span
-          className={`px-1.5 py-0.2 rounded font-semibold border ${
-            effectiveScope === 'mine'
-              ? 'bg-brand/10 text-brand border-brand/25'
-              : 'bg-zinc-500/10 text-muted border-zinc-500/20'
-          }`}
+          className="text-muted/70 hover:text-foreground transition-colors shrink-0 inline-flex items-center px-0.5"
           title={
             card.scope && card.scope !== 'INHERIT'
-              ? 'Escopo fixado nas configurações deste card'
-              : 'Escopo herdado do filtro global da página'
+              ? `Escopo fixado: ${effectiveScope === 'mine' ? 'Individual' : 'Equipe'}`
+              : `Escopo: ${effectiveScope === 'mine' ? 'Individual' : 'Equipe'}`
           }
         >
-          {effectiveScope === 'mine' ? '👤 Minhas' : '👥 Equipe'}
-          {card.scope && card.scope !== 'INHERIT' && ' • fixo'}
+          {effectiveScope === 'mine' ? (
+            <User className="w-3.5 h-3.5 text-brand" />
+          ) : (
+            <Users className="w-3.5 h-3.5 text-muted" />
+          )}
         </span>
 
         <span className={`px-1.5 py-0.2 rounded font-semibold border ${theme.badge}`}>
