@@ -20,6 +20,7 @@ import { categoryService } from '../services/categoryService'
 import { organizationService, type OrganizationMember } from '../services/organizationService'
 import type { Task, Project, Category } from '../types/task'
 import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer } from '../lib/timeUtils'
+import { CustomSelect } from '../components/ui/Select'
 
 export const AnalyticsPage: React.FC = () => {
   const { user, activeOrg } = useAuth()
@@ -316,19 +317,21 @@ export const AnalyticsPage: React.FC = () => {
           </div>
 
           {/* Specific Member Dropdown */}
-          <div className="flex items-center gap-1.5">
-            <select
+          <div className="w-56">
+            <CustomSelect
+              size="sm"
               value={selectedMember === 'ALL' || selectedMember === 'MINE' ? '' : selectedMember}
-              onChange={(e) => handleMemberChange(e.target.value || 'ALL')}
-              className="px-3 py-1.5 rounded-xl border border-border-soft bg-surface text-xs font-medium text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-            >
-              <option value="">Outro Membro...</option>
-              {members.map((m) => (
-                <option key={m.userId} value={m.userEmail}>
-                  {m.userName} ({m.userEmail})
-                </option>
-              ))}
-            </select>
+              onChange={(val) => handleMemberChange(val || 'ALL')}
+              placeholder="Outro Membro..."
+              options={[
+                { value: '', label: 'Outro Membro...' },
+                ...members.map((m) => ({
+                  value: m.userEmail,
+                  label: m.userName,
+                  description: m.userEmail,
+                })),
+              ]}
+            />
           </div>
         </div>
 

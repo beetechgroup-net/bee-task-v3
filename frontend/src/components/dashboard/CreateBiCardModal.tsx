@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import type { DashboardV2Card, BiMetricType, BiPeriodFilter, BiCardScope } from '../../lib/userPreferences'
 import type { Project, Category } from '../../types/task'
+import { CustomSelect } from '../ui/Select'
 
 interface CreateBiCardModalProps {
   isOpen: boolean
@@ -253,69 +254,67 @@ export const CreateBiCardModal: React.FC<CreateBiCardModalProps> = ({
               {/* Period Filter */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Período</label>
-                <select
+                <CustomSelect
                   value={period}
-                  onChange={(e) => setPeriod(e.target.value as BiPeriodFilter)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                >
-                  <option value="ALL">Todo o Histórico</option>
-                  <option value="TODAY">Apenas Hoje</option>
-                  <option value="WEEK">Esta Semana</option>
-                  <option value="MONTH">Este Mês</option>
-                </select>
+                  onChange={(val) => setPeriod(val as BiPeriodFilter)}
+                  options={[
+                    { value: 'ALL', label: 'Todo o Histórico' },
+                    { value: 'TODAY', label: 'Apenas Hoje' },
+                    { value: 'WEEK', label: 'Esta Semana' },
+                    { value: 'MONTH', label: 'Este Mês' },
+                  ]}
+                />
               </div>
 
               {/* Status Filter */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Filtro por Status</label>
-                <select
+                <CustomSelect
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                >
-                  <option value="ALL">Todos os Status</option>
-                  <option value="COMPLETED">Apenas Concluídas</option>
-                  <option value="IN_PROGRESS">Apenas Em Andamento</option>
-                  <option value="NOT_STARTED">Apenas A Fazer</option>
-                </select>
+                  onChange={(val) => setStatusFilter(val as any)}
+                  options={[
+                    { value: 'ALL', label: 'Todos os Status' },
+                    { value: 'COMPLETED', label: 'Apenas Concluídas', color: '#10b981' },
+                    { value: 'IN_PROGRESS', label: 'Apenas Em Andamento', color: '#14b8a6' },
+                    { value: 'NOT_STARTED', label: 'Apenas A Fazer', color: '#71717a' },
+                  ]}
+                />
               </div>
 
               {/* Project Filter */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Iniciativa / Projeto</label>
-                <select
-                  value={projectId ?? ''}
-                  onChange={(e) =>
-                    setProjectId(e.target.value ? Number(e.target.value) : undefined)
-                  }
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                >
-                  <option value="">Todos os Projetos</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={projectId ?? 0}
+                  onChange={(val) => setProjectId(Number(val) === 0 ? undefined : Number(val))}
+                  placeholder="Todos os Projetos"
+                  options={[
+                    { value: 0, label: 'Todos os Projetos' },
+                    ...projects.map((p) => ({
+                      value: p.id,
+                      label: p.name,
+                      color: p.color,
+                    })),
+                  ]}
+                />
               </div>
 
               {/* Category Filter */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">Categoria / Tag</label>
-                <select
-                  value={categoryId ?? ''}
-                  onChange={(e) =>
-                    setCategoryId(e.target.value ? Number(e.target.value) : undefined)
-                  }
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                >
-                  <option value="">Todas as Categorias</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={categoryId ?? 0}
+                  onChange={(val) => setCategoryId(Number(val) === 0 ? undefined : Number(val))}
+                  placeholder="Todas as Categorias"
+                  options={[
+                    { value: 0, label: 'Todas as Categorias' },
+                    ...categories.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                      color: c.color,
+                    })),
+                  ]}
+                />
               </div>
 
               {/* Data Scope Filter */}
@@ -324,15 +323,27 @@ export const CreateBiCardModal: React.FC<CreateBiCardModalProps> = ({
                   <span>Escopo dos Dados (Atribuição)</span>
                   <span className="text-[11px] text-muted font-normal">Individual vs Equipe</span>
                 </label>
-                <select
+                <CustomSelect
                   value={scope}
-                  onChange={(e) => setScope(e.target.value as BiCardScope)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                >
-                  <option value="INHERIT">🔗 Seguir filtro global da página (Padrão)</option>
-                  <option value="MINE">👤 Sempre Apenas Minhas Tarefas (Individual)</option>
-                  <option value="TEAM">👥 Sempre Toda a Equipe (Workspace Geral)</option>
-                </select>
+                  onChange={(val) => setScope(val as BiCardScope)}
+                  options={[
+                    {
+                      value: 'INHERIT',
+                      label: '🔗 Seguir filtro global da página (Padrão)',
+                      description: 'Acompanha a alternância da tela',
+                    },
+                    {
+                      value: 'MINE',
+                      label: '👤 Sempre Apenas Minhas Tarefas (Individual)',
+                      description: 'Fixo nas suas demandas',
+                    },
+                    {
+                      value: 'TEAM',
+                      label: '👥 Sempre Toda a Equipe (Workspace Geral)',
+                      description: 'Fixo em todo o time',
+                    },
+                  ]}
+                />
               </div>
             </div>
           </div>
