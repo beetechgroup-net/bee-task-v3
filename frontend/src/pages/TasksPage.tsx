@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   LayoutGrid,
   List as ListIcon,
@@ -7,8 +8,8 @@ import {
   Filter,
   RefreshCw,
   Folder,
-  UserCheck,
   Users,
+  User,
   CheckCircle2,
   Clock,
   Sparkles,
@@ -58,7 +59,29 @@ export const TasksPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<TaskStatus | 'ALL'>('ALL')
   const [selectedProjectId, setSelectedProjectId] = useState<number | 'ALL'>('ALL')
-  const [onlyMyTasks, setOnlyMyTasks] = useState(false)
+
+  // Scope Toggle State: 'mine' (Individual) vs 'team' (Equipe)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialScope =
+    (searchParams.get('scope') as 'mine' | 'team') ||
+    (localStorage.getItem('beetask_tasks_scope') as 'mine' | 'team') ||
+    'mine'
+  const [viewScope, setViewScope] = useState<'mine' | 'team'>(initialScope)
+
+  const handleScopeChange = (newScope: 'mine' | 'team') => {
+    setViewScope(newScope)
+    try {
+      localStorage.setItem('beetask_tasks_scope', newScope)
+    } catch (_) {}
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('scope', newScope)
+        return next
+      },
+      { replace: true }
+    )
+  }
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -132,9 +155,7 @@ export const TasksPage: React.FC = () => {
     try {
       setRefreshing(true)
       const [tasksRes, projsRes] = await Promise.all([
-        onlyMyTasks
-          ? taskService.listMyTasks({ organizationId: activeOrgId })
-          : taskService.listTasks({ organizationId: activeOrgId }),
+        taskService.listTasks({ organizationId: activeOrgId }),
         projectService.listProjects(activeOrgId).catch(() => []),
       ])
 
@@ -148,15 +169,29 @@ export const TasksPage: React.FC = () => {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [activeOrgId, onlyMyTasks])
+  }, [activeOrgId])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
+  // User's own tasks
+  const myTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      if (!user?.email) return false
+      return Boolean(
+        t.user?.email &&
+          t.user.email.toLowerCase() === user.email.toLowerCase()
+      )
+    })
+  }, [tasks, user])
+
+  // Scope tasks based on viewScope
+  const scopeTasks = viewScope === 'mine' ? myTasks : tasks
+
   // Filter tasks client-side for ultra-responsive search
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    return scopeTasks.filter((task) => {
       // Status filter
       if (selectedStatus !== 'ALL' && task.status !== selectedStatus) {
         return false
@@ -178,7 +213,7 @@ export const TasksPage: React.FC = () => {
       }
       return true
     })
-  }, [tasks, selectedStatus, selectedProjectId, searchQuery])
+  }, [scopeTasks, selectedStatus, selectedProjectId, searchQuery])
 
   // Timer play/pause handler
   const handleToggleTimer = async (task: Task) => {
@@ -305,11 +340,11 @@ export const TasksPage: React.FC = () => {
     [activeTask, stopTimer, editingTask]
   )
 
-  // Summary counts
-  const notStartedCount = tasks.filter((t) => t.status === 'NOT_STARTED').length
-  const inProgressCount = tasks.filter((t) => t.status === 'IN_PROGRESS').length
-  const completedCount = tasks.filter((t) => t.status === 'COMPLETED').length
-  const canceledCount = tasks.filter((t) => t.status === 'CANCELED').length
+  // Summary counts based on active scope
+  const notStartedCount = scopeTasks.filter((t) => t.status === 'NOT_STARTED').length
+  const inProgressCount = scopeTasks.filter((t) => t.status === 'IN_PROGRESS').length
+  const completedCount = scopeTasks.filter((t) => t.status === 'COMPLETED').length
+  const canceledCount = scopeTasks.filter((t) => t.status === 'CANCELED').length
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -511,6 +546,64 @@ export const TasksPage: React.FC = () => {
         </div>
       )}
 
+      {/* Scope Selector: Individual (Minhas Tarefas) vs Equipe (Workspace) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 sm:p-4 rounded-3xl bg-surface/90 border border-border-soft backdrop-blur-md shadow-panel">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-muted uppercase tracking-wider hidden sm:inline">
+            Modo de Visualização:
+          </span>
+          <div className="inline-flex p-1 rounded-xl bg-surface-sunken border border-border-soft shadow-inner">
+            <button
+              type="button"
+              onClick={() => handleScopeChange('mine')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                viewScope === 'mine'
+                  ? 'bg-brand text-white shadow-md shadow-brand/25'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Individual (Minhas Tarefas)</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  viewScope === 'mine' ? 'bg-white/20 text-white' : 'bg-surface text-muted'
+                }`}
+              >
+                {myTasks.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleScopeChange('team')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                viewScope === 'team'
+                  ? 'bg-brand text-white shadow-md shadow-brand/25'
+                  : 'text-muted hover:text-foreground'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Equipe (Workspace Completo)</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  viewScope === 'team' ? 'bg-white/20 text-white' : 'bg-surface text-muted'
+                }`}
+              >
+                {tasks.length}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="text-[11px] truncate">
+            {viewScope === 'mine'
+              ? 'Exibindo tarefas atribuídas diretamente a você'
+              : 'Exibindo tarefas de todos os integrantes do workspace'}
+          </span>
+        </div>
+      </div>
+
       {/* Filter and Search Bar with embedded status stats */}
       <div className="p-3 sm:p-4 rounded-3xl border border-border-soft bg-surface/90 backdrop-blur-md flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 shadow-panel">
         {/* Left side: Search Input & Quick Status Counts */}
@@ -542,7 +635,7 @@ export const TasksPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedStatus('ALL')}
-              title="Todas as tarefas"
+              title="Todas as tarefas do escopo ativo"
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                 selectedStatus === 'ALL'
                   ? 'bg-surface-sunken border-border text-foreground shadow-xs'
@@ -550,7 +643,7 @@ export const TasksPage: React.FC = () => {
               }`}
             >
               <Filter className="w-3.5 h-3.5 text-muted shrink-0" />
-              <span className="font-mono text-xs">{tasks.length}</span>
+              <span className="font-mono text-xs">{scopeTasks.length}</span>
             </button>
 
             {/* A Fazer (NOT_STARTED) */}
@@ -617,20 +710,6 @@ export const TasksPage: React.FC = () => {
 
         {/* Filters Group */}
         <div className="flex items-center gap-2.5 flex-wrap w-full md:w-auto justify-end">
-          {/* Mine vs All toggle */}
-          <button
-            type="button"
-            onClick={() => setOnlyMyTasks(!onlyMyTasks)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all ${
-              onlyMyTasks
-                ? 'bg-brand/15 text-brand border-brand/40 font-semibold shadow-xs'
-                : 'bg-surface-raised/80 border-border-soft text-muted hover:text-foreground'
-            }`}
-          >
-            {onlyMyTasks ? <UserCheck className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
-            <span>{onlyMyTasks ? 'Minhas Tarefas' : 'Todas'}</span>
-          </button>
-
           {/* Project Filter */}
           {projects.length > 0 && (
             <div className="w-48">
