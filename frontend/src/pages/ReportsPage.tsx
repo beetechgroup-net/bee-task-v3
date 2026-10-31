@@ -95,9 +95,7 @@ export const ReportsPage: React.FC = () => {
 
   const standardTags = [
     { tag: '{{nome}}', desc: 'Nome do colaborador (pega automaticamente do usuário logado)' },
-    { tag: '{{nome_gestor}}', desc: 'Nome do gestor responsável (pré-definido no modelo)' },
-    { tag: '{{nome_projeto}}', desc: 'Nome do projeto (pré-definido no cadastro do modelo)' },
-    { tag: '{{periodo}}', desc: 'Período formatado no padrão escolhido no modelo (ex.: DD/MM/AAAA até DD/MM/AAAA)' },
+    { tag: '{{periodo}}', desc: 'Período formatado no padrão escolhido no modelo (ex.: 01/10/2026 até 31/10/2026)' },
     { tag: '{{data_inicio}}', desc: 'Data inicial do período escolhido (ex: 01/10/2026)' },
     { tag: '{{data_fim}}', desc: 'Data final do período escolhido (ex: 31/10/2026)' },
     { tag: '{{periodo_vigencia}}', desc: 'Intervalo formatado no modelo (ex: 01/10/2026 até 31/10/2026)' },
@@ -297,16 +295,19 @@ export const ReportsPage: React.FC = () => {
                     {/* Tags configuradas */}
                     <div className="space-y-1.5 pt-1">
                       <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
-                        Seções Dinâmicas ({tpl.sections.length})
+                        Campos e Seções ({tpl.sections.length})
                       </span>
                       <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
                         {tpl.sections.map((s) => (
                           <span
                             key={s.sectionKey}
-                            title={`${s.title} (${s.sectionType})`}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-surface-raised border border-border-soft text-foreground/80"
+                            title={`${s.title} (${s.sectionType}${s.defaultValue ? ` — Valor fixo: ${s.defaultValue}` : ''})`}
+                            className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-surface-raised border border-border-soft text-foreground/80 inline-flex items-center gap-1"
                           >
-                            {`{{${s.sectionKey}}}`}
+                            <span>{`{{${s.sectionKey}}}`}</span>
+                            {s.defaultValue && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-brand" title="Valor pré-preenchido" />
+                            )}
                           </span>
                         ))}
                       </div>

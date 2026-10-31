@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   FileText,
   Loader2,
+  Lock,
 } from 'lucide-react'
 import { CustomSelect } from '../ui/Select'
 import { reportService, type ReportTemplateOutput } from '../../services/reportService'
@@ -67,17 +68,30 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
     return templates.find((t) => t.id === selectedTemplateId)
   }, [templates, selectedTemplateId])
 
-  // Ajustar projeto selecionado de acordo com o template
+  // Ajustar projeto selecionado e preencher valores padrão das seções
   useEffect(() => {
-    if (selectedTemplate?.projectId) {
-      setSelectedProjectId(selectedTemplate.projectId)
+    if (selectedTemplate) {
+      if (selectedTemplate.projectId) {
+        setSelectedProjectId(selectedTemplate.projectId)
+      }
+
+      // Preencher campos com os valores padrão configurados no modelo
+      const initialFields: Record<string, string> = {}
+      selectedTemplate.sections?.forEach((sec) => {
+        if (sec.defaultValue) {
+          initialFields[sec.sectionKey] = sec.defaultValue
+        }
+      })
+      setCustomFields(initialFields)
     }
   }, [selectedTemplate])
 
-  // Seções de texto livre do template selecionado
-  const freeTextSections = useMemo(() => {
+  // Seções de texto (livre ou fixo) do template selecionado
+  const textSections = useMemo(() => {
     if (!selectedTemplate) return []
-    return selectedTemplate.sections.filter((s) => s.sectionType === 'FREE_TEXT')
+    return selectedTemplate.sections.filter(
+      (s) => s.sectionType === 'FREE_TEXT' || s.sectionType === 'FIXED_TEXT'
+    )
   }, [selectedTemplate])
 
   // Lista de seções de tarefas do template selecionado
@@ -288,7 +302,7 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPeriodPreset('custom')}
+                  onClick={() => handlePresetChange('custom')}
                   className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                     periodPreset === 'custom'
                       ? 'bg-brand text-white shadow-xs'
@@ -337,38 +351,56 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
             <div className="text-[11px] text-muted flex items-center gap-1.5 pt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               <span>
-                Refletirá nas tags: <code className="text-brand font-semibold">{'{{data_inicio}}'}</code>,{' '}
-                <code className="text-brand font-semibold">{'{{data_fim}}'}</code> e{' '}
-                <code className="text-brand font-semibold">{'{{periodo_vigencia}}'}</code>.
+                Refletirá nas tags: <code className="text-brand font-semibold">{'{{periodo}}'}</code>,{' '}
+                <code className="text-brand font-semibold">{'{{data_inicio}}'}</code> e{' '}
+                <code className="text-brand font-semibold">{'{{data_fim}}'}</code>.
               </span>
             </div>
           </div>
 
-          {/* Seções de Texto Livre Dinâmicas */}
-          {freeTextSections.length > 0 && (
+          {/* Seções de Texto (Livre ou Pré-preenchido) Dinâmicas */}
+          {textSections.length > 0 && (
             <div className="space-y-3.5">
               <div className="border-b border-border-soft pb-1">
                 <h4 className="text-xs font-bold text-foreground">
                   Informações Descritivas do Relatório
                 </h4>
                 <p className="text-[11px] text-muted">
-                  Preencha os textos que serão substituídos no documento Word.
+                  Campos que serão inseridos no documento Word. Valores fixos foram pré-preenchidos automaticamente pelo modelo.
                 </p>
               </div>
 
-              {freeTextSections.map((sec) => (
+              {textSections.map((sec) => (
                 <div key={sec.sectionKey} className="space-y-1.5">
                   <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                    <span>{sec.title}</span>
+                    <span className="flex items-center gap-1.5">
+                      {sec.sectionType === 'FIXED_TEXT' && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand/10 text-brand">
+                          <Lock className="w-2.5 h-2.5" /> Pré-preenchido
+                        </span>
+                      )}
+                      <span>{sec.title}</span>
+                    </span>
                     <span className="text-[10px] text-muted font-mono">{`{{${sec.sectionKey}}}`}</span>
                   </label>
-                  <textarea
-                    rows={3}
-                    value={customFields[sec.sectionKey] || ''}
-                    onChange={(e) => handleCustomFieldChange(sec.sectionKey, e.target.value)}
-                    placeholder={`Escreva aqui o conteúdo para "${sec.title}"...`}
-                    className="w-full p-3 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand focus:ring-1 focus:ring-brand shadow-xs resize-y"
-                  />
+
+                  {sec.sectionType === 'FIXED_TEXT' ? (
+                    <input
+                      type="text"
+                      value={customFields[sec.sectionKey] || ''}
+                      onChange={(e) => handleCustomFieldChange(sec.sectionKey, e.target.value)}
+                      placeholder={`Valor para "${sec.title}"...`}
+                      className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+                    />
+                  ) : (
+                    <textarea
+                      rows={3}
+                      value={customFields[sec.sectionKey] || ''}
+                      onChange={(e) => handleCustomFieldChange(sec.sectionKey, e.target.value)}
+                      placeholder={`Escreva aqui o conteúdo para "${sec.title}"...`}
+                      className="w-full p-3 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand focus:ring-1 focus:ring-brand shadow-xs resize-y"
+                    />
+                  )}
                 </div>
               ))}
             </div>

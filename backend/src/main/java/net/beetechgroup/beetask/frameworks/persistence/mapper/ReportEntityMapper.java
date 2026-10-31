@@ -52,6 +52,7 @@ public class ReportEntityMapper {
         entity.setSectionKey(domain.getSectionKey());
         entity.setTitle(domain.getTitle());
         entity.setSectionType(domain.getSectionType());
+        entity.setDefaultValue(domain.getDefaultValue());
         entity.setFilterStatus(domain.getFilterStatus());
         entity.setIncludeTime(domain.getIncludeTime());
         entity.setOrderIndex(domain.getOrderIndex());
@@ -104,6 +105,7 @@ public class ReportEntityMapper {
         domain.setSectionKey(entity.getSectionKey());
         domain.setTitle(entity.getTitle());
         domain.setSectionType(entity.getSectionType());
+        domain.setDefaultValue(entity.getDefaultValue());
         domain.setFilterStatus(entity.getFilterStatus());
         domain.setIncludeTime(entity.getIncludeTime());
         domain.setOrderIndex(entity.getOrderIndex());

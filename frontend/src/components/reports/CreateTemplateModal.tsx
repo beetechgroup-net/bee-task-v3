@@ -8,9 +8,9 @@ import {
   Tag,
   AlertCircle,
   Folder,
-  UserCheck,
   Calendar,
-  User,
+  Sparkles,
+  Info,
 } from 'lucide-react'
 import { CustomSelect } from '../ui/Select'
 import { reportService, type ReportTemplateOutput } from '../../services/reportService'
@@ -28,7 +28,8 @@ interface CreateTemplateModalProps {
 interface SectionFormItem {
   sectionKey: string
   title: string
-  sectionType: 'FREE_TEXT' | 'TASK_LIST'
+  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'TASK_LIST'
+  defaultValue?: string
   filterCategoryId?: number
   filterStatus?: 'ALL' | 'COMPLETED' | 'IN_PROGRESS'
   includeTime: boolean
@@ -46,32 +47,9 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   const [description, setDescription] = useState('')
   const [scope, setScope] = useState<'ORGANIZATION' | 'PROJECT'>('ORGANIZATION')
   const [projectId, setProjectId] = useState<number | undefined>(undefined)
-  const [managerName, setManagerName] = useState('')
-  const [customProjectName, setCustomProjectName] = useState('')
   const [dateFormatPattern, setDateFormatPattern] = useState('DD/MM/AAAA até DD/MM/AAAA')
   const [file, setFile] = useState<File | null>(null)
-  const [sections, setSections] = useState<SectionFormItem[]>([
-    {
-      sectionKey: 'resumo_andamento',
-      title: 'Resumo do Andamento do Projeto',
-      sectionType: 'FREE_TEXT',
-      includeTime: false,
-    },
-    {
-      sectionKey: 'atividades',
-      title: 'Atividades e Entregas Desenvolvidas',
-      sectionType: 'TASK_LIST',
-      filterStatus: 'ALL',
-      includeTime: true,
-    },
-    {
-      sectionKey: 'reunioes',
-      title: 'Reuniões e Alinhamentos Técnicos',
-      sectionType: 'TASK_LIST',
-      filterStatus: 'ALL',
-      includeTime: true,
-    },
-  ])
+  const [sections, setSections] = useState<SectionFormItem[]>([])
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -79,12 +57,14 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   if (!isOpen) return null
 
   const handleAddSection = () => {
+    const nextIndex = sections.length + 1
     setSections((prev) => [
       ...prev,
       {
-        sectionKey: `secao_${prev.length + 1}`,
-        title: `Nova Seção ${prev.length + 1}`,
+        sectionKey: `campo_${nextIndex}`,
+        title: `Campo ${nextIndex}`,
         sectionType: 'FREE_TEXT',
+        defaultValue: '',
         includeTime: false,
       },
     ])
@@ -135,18 +115,17 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       formData.append('name', name.trim())
       formData.append('description', description.trim())
       formData.append('scope', scope)
-      formData.append('managerName', managerName.trim())
-      formData.append('customProjectName', customProjectName.trim())
       formData.append('dateFormatPattern', dateFormatPattern)
       if (scope === 'PROJECT' && projectId) {
         formData.append('projectId', String(projectId))
       }
 
-      // Limpar chaves das seções para serem seguras para {{tag}}
+      // Sanitizar seções com chave segura e valor padrão
       const sanitizedSections = sections.map((s, idx) => ({
         sectionKey: s.sectionKey.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_'),
         title: s.title.trim() || s.sectionKey,
         sectionType: s.sectionType,
+        defaultValue: s.defaultValue ? s.defaultValue.trim() : '',
         filterCategoryId: s.filterCategoryId,
         filterStatus: s.filterStatus || 'ALL',
         includeTime: s.includeTime ?? true,
@@ -183,7 +162,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 Cadastrar Modelo de Relatório (.DOCX)
               </h2>
               <p className="text-xs text-muted">
-                Envie seu arquivo Word e configure as tags que serão preenchidas automaticamente.
+                Envie seu arquivo Word e configure os campos dinâmicos e valores pré-preenchidos.
               </p>
             </div>
           </div>
@@ -256,104 +235,57 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             </div>
           )}
 
-          {/* Descrição */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground">
-              Descrição ou Orientações <span className="text-muted font-normal">(Opcional)</span>
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ex.: Template padrão exigido para prestação de contas mensal."
-              className="w-full px-3.5 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-            />
-          </div>
-
-          {/* Seção Padrão (Identificação, Gestão e Período) */}
-          <div className="p-4 rounded-2xl border border-brand/25 bg-brand-soft/20 dark:bg-brand/10 space-y-3.5">
-            <div className="flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-brand" />
-              <div>
-                <h4 className="text-xs font-extrabold text-brand uppercase tracking-wider">
-                  Seção Padrão: Identificação e Gestão
-                </h4>
-                <p className="text-[11px] text-muted">
-                  Valores configurados no modelo que alimentam o cabeçalho e identificação no Word.
-                </p>
-              </div>
+          {/* Descrição e Formato do Período */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground">
+                Descrição <span className="text-muted font-normal">(Opcional)</span>
+              </label>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Ex.: Modelo oficial para prestação de contas"
+                className="w-full px-3.5 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+              />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              {/* Colaborador / Usuário (Automático) */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-foreground flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <User className="w-3 h-3 text-muted" /> Nome do Colaborador
-                  </span>
-                  <code className="text-[10px] text-brand font-mono font-bold">{'{{nome}}'}</code>
-                </label>
-                <div className="px-3 py-2 rounded-xl border border-border-soft bg-surface/60 text-xs text-muted font-medium">
-                  Preenchido automaticamente com o usuário logado
-                </div>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-muted" />
+                  Formato da tag {'{{periodo}}'}
+                </span>
+              </label>
+              <CustomSelect
+                size="sm"
+                value={dateFormatPattern}
+                onChange={(val) => setDateFormatPattern(String(val))}
+                options={[
+                  { value: 'DD/MM/AAAA até DD/MM/AAAA', label: 'DD/MM/AAAA até DD/MM/AAAA (ex: 01/10/2026 até 31/10/2026)' },
+                  { value: 'DD/MM/AAAA a DD/MM/AAAA', label: 'DD/MM/AAAA a DD/MM/AAAA (ex: 01/10/2026 a 31/10/2026)' },
+                  { value: 'DD de Mês de AAAA até DD de Mês de AAAA', label: '01 de Outubro de 2026 até 31 de Outubro de 2026' },
+                  { value: 'MM/AAAA', label: 'MM/AAAA (ex: 10/2026)' },
+                  { value: 'Mês de AAAA', label: 'Mês de AAAA (ex: Outubro de 2026)' },
+                  { value: 'DD/MM - DD/MM/AAAA', label: 'DD/MM - DD/MM/AAAA (ex: 01/10 - 31/10/2026)' },
+                ]}
+              />
+            </div>
+          </div>
 
-              {/* Nome do Gestor */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-foreground flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <UserCheck className="w-3 h-3 text-muted" /> Nome do Gestor Responsável
-                  </span>
-                  <code className="text-[10px] text-brand font-mono font-bold">{'{{nome_gestor}}'}</code>
-                </label>
-                <input
-                  type="text"
-                  value={managerName}
-                  onChange={(e) => setManagerName(e.target.value)}
-                  placeholder="Ex.: Dr. Roberto Silva"
-                  className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                />
-              </div>
-
-              {/* Nome do Projeto */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-foreground flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Folder className="w-3 h-3 text-muted" /> Nome do Projeto no Relatório
-                  </span>
-                  <code className="text-[10px] text-brand font-mono font-bold">{'{{nome_projeto}}'}</code>
-                </label>
-                <input
-                  type="text"
-                  value={customProjectName}
-                  onChange={(e) => setCustomProjectName(e.target.value)}
-                  placeholder="Ex.: Projeto BeeTask Inovação Tecnológica"
-                  className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                />
-              </div>
-
-              {/* Formato da Data do Período */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-bold text-foreground flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-muted" /> Formato do Período
-                  </span>
-                  <code className="text-[10px] text-brand font-mono font-bold">{'{{periodo}}'}</code>
-                </label>
-                <CustomSelect
-                  size="sm"
-                  value={dateFormatPattern}
-                  onChange={(val) => setDateFormatPattern(String(val))}
-                  options={[
-                    { value: 'DD/MM/AAAA até DD/MM/AAAA', label: 'DD/MM/AAAA até DD/MM/AAAA (ex: 01/10/2026 até 31/10/2026)' },
-                    { value: 'DD/MM/AAAA a DD/MM/AAAA', label: 'DD/MM/AAAA a DD/MM/AAAA (ex: 01/10/2026 a 31/10/2026)' },
-                    { value: 'DD de Mês de AAAA até DD de Mês de AAAA', label: '01 de Outubro de 2026 até 31 de Outubro de 2026' },
-                    { value: 'MM/AAAA', label: 'MM/AAAA (ex: 10/2026)' },
-                    { value: 'Mês de AAAA', label: 'Mês de AAAA (ex: Outubro de 2026)' },
-                    { value: 'DD/MM - DD/MM/AAAA', label: 'DD/MM - DD/MM/AAAA (ex: 01/10 - 31/10/2026)' },
-                  ]}
-                />
-              </div>
+          {/* Dica de Tags Nativas */}
+          <div className="p-3.5 rounded-2xl bg-brand/5 border border-brand/15 text-xs text-foreground/80 flex items-start gap-2.5">
+            <Info className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+            <div className="space-y-1 text-[11px] leading-relaxed">
+              <p className="font-bold text-brand">Tags Padrão Automáticas Disponíveis no Word:</p>
+              <p className="text-muted">
+                Você pode utilizar diretamente as tags{' '}
+                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{nome}}'}</code> (usuário logado),{' '}
+                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{periodo}}'}</code> (período formatado),{' '}
+                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{data_inicio}}'}</code>,{' '}
+                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{data_fim}}'}</code> e{' '}
+                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{total_horas}}'}</code> sem precisar cadastrar seções para elas.
+              </p>
             </div>
           </div>
 
@@ -386,13 +318,13 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             </label>
           </div>
 
-          {/* Construtor de Seções Dinâmicas */}
+          {/* Construtor de Campos e Seções */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-bold text-foreground">Seções e Tags Dinâmicas do Modelo</h4>
+                <h4 className="text-xs font-bold text-foreground">Campos e Seções do Relatório</h4>
                 <p className="text-[11px] text-muted">
-                  Insira essas tags entre <code className="text-brand font-bold">{'{{nome_da_tag}}'}</code> no seu arquivo Word.
+                  Crie tags que serão substituídas pelo Word. Escolha se o campo é texto livre, texto fixo pré-preenchido ou listagem de tarefas.
                 </p>
               </div>
               <button
@@ -401,119 +333,163 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand text-xs font-bold transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Adicionar Seção</span>
+                <span>Adicionar Campo / Seção</span>
               </button>
             </div>
 
-            <div className="space-y-3">
-              {sections.map((section, idx) => (
-                <div
-                  key={idx}
-                  className="p-3.5 rounded-2xl border border-border-soft bg-surface-raised/40 space-y-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold text-brand flex items-center gap-1.5">
-                      <Tag className="w-3 h-3" />
-                      Tag no Word: <code className="bg-surface px-1.5 py-0.5 rounded-md border border-border-soft text-foreground font-mono font-bold">
-                        {`{{${section.sectionKey || 'tag'}}}`}
-                      </code>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSection(idx)}
-                      className="p-1 rounded-lg text-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                      title="Remover seção"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div>
-                      <label className="text-[10px] font-semibold text-muted block mb-1">Identificador da Tag</label>
-                      <input
-                        type="text"
-                        value={section.sectionKey}
-                        onChange={(e) =>
-                          handleUpdateSection(idx, {
-                            sectionKey: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
-                          })
-                        }
-                        placeholder="ex: resumo_projeto"
-                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-soft bg-surface text-xs font-mono text-foreground focus:outline-hidden focus:border-brand"
-                      />
+            {sections.length === 0 ? (
+              <div className="p-6 rounded-2xl border border-dashed border-border-soft text-center space-y-2 bg-surface/40">
+                <Sparkles className="w-6 h-6 text-muted mx-auto" />
+                <p className="text-xs font-semibold text-foreground">Nenhum campo personalizado adicionado</p>
+                <p className="text-[11px] text-muted max-w-md mx-auto">
+                  Caso seu documento precise de variáveis como Gestor, Nome do Projeto, Resumo ou Lista de Tarefas, clique em <strong>Adicionar Campo / Seção</strong>.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sections.map((section, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-2xl border border-border-soft bg-surface-raised/40 space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold text-brand flex items-center gap-1.5">
+                        <Tag className="w-3 h-3" />
+                        Tag no Word:{' '}
+                        <code className="bg-surface px-1.5 py-0.5 rounded-md border border-border-soft text-foreground font-mono font-bold">
+                          {`{{${section.sectionKey || 'tag'}}}`}
+                        </code>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSection(idx)}
+                        className="p-1 rounded-lg text-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        title="Remover campo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
-                    <div>
-                      <label className="text-[10px] font-semibold text-muted block mb-1">Título Amigável</label>
-                      <input
-                        type="text"
-                        value={section.title}
-                        onChange={(e) => handleUpdateSection(idx, { title: e.target.value })}
-                        placeholder="ex: Resumo do Andamento"
-                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-semibold text-muted block mb-1">Tipo de Seção</label>
-                      <CustomSelect
-                        size="sm"
-                        value={section.sectionType}
-                        onChange={(val) =>
-                          handleUpdateSection(idx, { sectionType: val as 'FREE_TEXT' | 'TASK_LIST' })
-                        }
-                        options={[
-                          { value: 'FREE_TEXT', label: 'Texto Livre (Digitado)' },
-                          { value: 'TASK_LIST', label: 'Lista de Tarefas do Período' },
-                        ]}
-                      />
-                    </div>
-                  </div>
-
-                  {section.sectionType === 'TASK_LIST' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-border-soft/60 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                       <div>
-                        <label className="text-[10px] font-semibold text-muted block mb-1">
-                          Filtrar por Categoria (Opcional)
-                        </label>
-                        <CustomSelect
-                          size="sm"
-                          value={section.filterCategoryId ?? 0}
-                          onChange={(val) =>
+                        <label className="text-[10px] font-semibold text-muted block mb-1">Identificador da Tag</label>
+                        <input
+                          type="text"
+                          value={section.sectionKey}
+                          onChange={(e) =>
                             handleUpdateSection(idx, {
-                              filterCategoryId: Number(val) === 0 ? undefined : Number(val),
+                              sectionKey: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
                             })
                           }
-                          options={[
-                            { value: 0, label: 'Todas as Categorias' },
-                            ...categories.map((c) => ({
-                              value: c.id,
-                              label: c.name,
-                              color: c.color,
-                            })),
-                          ]}
+                          placeholder="ex: gestor ou resumo"
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-border-soft bg-surface text-xs font-mono text-foreground focus:outline-hidden focus:border-brand"
                         />
                       </div>
 
-                      <div className="flex items-center justify-between pt-4">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs text-foreground">
-                          <input
-                            type="checkbox"
-                            checked={section.includeTime}
-                            onChange={(e) =>
-                              handleUpdateSection(idx, { includeTime: e.target.checked })
-                            }
-                            className="rounded border-border text-brand focus:ring-brand"
-                          />
-                          <span>Incluir duração/horas da tarefa</span>
-                        </label>
+                      <div>
+                        <label className="text-[10px] font-semibold text-muted block mb-1">Nome / Rótulo</label>
+                        <input
+                          type="text"
+                          value={section.title}
+                          onChange={(e) => handleUpdateSection(idx, { title: e.target.value })}
+                          placeholder="ex: Nome do Gestor"
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-semibold text-muted block mb-1">Tipo de Campo</label>
+                        <CustomSelect
+                          size="sm"
+                          value={section.sectionType}
+                          onChange={(val) =>
+                            handleUpdateSection(idx, {
+                              sectionType: val as 'FREE_TEXT' | 'FIXED_TEXT' | 'TASK_LIST',
+                            })
+                          }
+                          options={[
+                            { value: 'FREE_TEXT', label: 'Texto Livre (Preenchido na emissão)' },
+                            { value: 'FIXED_TEXT', label: 'Texto Fixo (Pré-preenchido no cadastro)' },
+                            { value: 'TASK_LIST', label: 'Lista de Tarefas do Período' },
+                          ]}
+                        />
                       </div>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+
+                    {/* Campo de Valor Pré-preenchido (Fixo ou Sugerido) */}
+                    {(section.sectionType === 'FIXED_TEXT' || section.sectionType === 'FREE_TEXT') && (
+                      <div className="pt-1 border-t border-border-soft/60 animate-in fade-in duration-150">
+                        <label className="text-[10px] font-semibold text-muted block mb-1 flex items-center justify-between">
+                          <span>
+                            {section.sectionType === 'FIXED_TEXT'
+                              ? 'Valor Fixo Pré-preenchido'
+                              : 'Valor Padrão / Sugestão Inicial (Opcional)'}
+                          </span>
+                          <span className="text-[9px] text-brand font-medium">
+                            {section.sectionType === 'FIXED_TEXT'
+                              ? 'Sempre virá preenchido no relatório'
+                              : 'Sugestão inicial editável'}
+                          </span>
+                        </label>
+                        <input
+                          type="text"
+                          value={section.defaultValue || ''}
+                          onChange={(e) => handleUpdateSection(idx, { defaultValue: e.target.value })}
+                          placeholder={
+                            section.sectionType === 'FIXED_TEXT'
+                              ? 'Ex.: Dr. Roberto Silva ou Nome do Projeto'
+                              : 'Ex.: Deixar uma observação inicial...'
+                          }
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand"
+                        />
+                      </div>
+                    )}
+
+                    {/* Configurações de Lista de Tarefas */}
+                    {section.sectionType === 'TASK_LIST' && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-border-soft/60 animate-in fade-in duration-150">
+                        <div>
+                          <label className="text-[10px] font-semibold text-muted block mb-1">
+                            Filtrar por Categoria (Opcional)
+                          </label>
+                          <CustomSelect
+                            size="sm"
+                            value={section.filterCategoryId ?? 0}
+                            onChange={(val) =>
+                              handleUpdateSection(idx, {
+                                filterCategoryId: Number(val) === 0 ? undefined : Number(val),
+                              })
+                            }
+                            options={[
+                              { value: 0, label: 'Todas as Categorias' },
+                              ...categories.map((c) => ({
+                                value: c.id,
+                                label: c.name,
+                                color: c.color,
+                              })),
+                            ]}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs text-foreground">
+                            <input
+                              type="checkbox"
+                              checked={section.includeTime}
+                              onChange={(e) =>
+                                handleUpdateSection(idx, { includeTime: e.target.checked })
+                              }
+                              className="rounded border-border text-brand focus:ring-brand"
+                            />
+                            <span>Incluir duração/horas da tarefa</span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </form>
 

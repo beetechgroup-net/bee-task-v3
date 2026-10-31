@@ -30,7 +30,10 @@ public class ReportSectionEntity {
     private String title;
 
     @Column(name = "section_type", nullable = false, length = 50)
-    private String sectionType; // 'FREE_TEXT' ou 'TASK_LIST'
+    private String sectionType; // 'FREE_TEXT', 'FIXED_TEXT', 'TASK_LIST'
+
+    @Column(name = "default_value", columnDefinition = "TEXT")
+    private String defaultValue;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filter_category_id")
@@ -86,6 +89,14 @@ public class ReportSectionEntity {
 
     public void setSectionType(String sectionType) {
         this.sectionType = sectionType;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     public CategoryEntity getFilterCategory() {

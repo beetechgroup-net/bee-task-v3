@@ -107,6 +107,7 @@ public class CreateReportTemplateUseCase {
                 section.setSectionKey(sInput.sectionKey().trim().toLowerCase().replaceAll("[^a-z0-9_]", "_"));
                 section.setTitle(sInput.title() != null ? sInput.title().trim() : section.getSectionKey());
                 section.setSectionType(sInput.sectionType() != null ? sInput.sectionType() : "FREE_TEXT");
+                section.setDefaultValue(sInput.defaultValue() != null ? sInput.defaultValue().trim() : null);
                 section.setFilterStatus(sInput.filterStatus() != null ? sInput.filterStatus() : "ALL");
                 section.setIncludeTime(sInput.includeTime() != null ? sInput.includeTime() : true);
                 section.setOrderIndex(sInput.orderIndex() != null ? sInput.orderIndex() : order++);

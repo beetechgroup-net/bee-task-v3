@@ -7,6 +7,7 @@ public record ReportSectionOutput(
         String sectionKey,
         String title,
         String sectionType,
+        String defaultValue,
         Long filterCategoryId,
         String filterCategoryName,
         String filterStatus,

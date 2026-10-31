@@ -179,10 +179,22 @@ public class GenerateReportUseCase {
         variables.put("total_horas", formattedTotalTime);
         variables.put("data_emissao", LocalDate.now().format(DATE_FORMATTER));
 
+        // Valores padrão das seções configuradas no modelo
+        if (template.getSections() != null) {
+            for (ReportSection sec : template.getSections()) {
+                if (("FREE_TEXT".equalsIgnoreCase(sec.getSectionType()) || "FIXED_TEXT".equalsIgnoreCase(sec.getSectionType()))
+                        && sec.getDefaultValue() != null) {
+                    variables.put(sec.getSectionKey(), sec.getDefaultValue());
+                }
+            }
+        }
+
         // Incorporar campos de texto customizados enviados pelo usuário
         if (input.customFields() != null) {
             for (Map.Entry<String, String> entry : input.customFields().entrySet()) {
-                variables.put(entry.getKey(), entry.getValue() != null ? entry.getValue() : "");
+                if (entry.getValue() != null && !entry.getValue().isBlank()) {
+                    variables.put(entry.getKey(), entry.getValue());
+                }
             }
         }
 

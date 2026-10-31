@@ -8,7 +8,8 @@ public class ReportSection {
     private Long reportTemplateId;
     private String sectionKey;
     private String title;
-    private String sectionType; // 'FREE_TEXT' ou 'TASK_LIST'
+    private String sectionType; // 'FREE_TEXT', 'FIXED_TEXT', 'TASK_LIST'
+    private String defaultValue;
     private Category filterCategory;
     private String filterStatus; // 'ALL', 'COMPLETED', 'IN_PROGRESS'
     private Boolean includeTime;
@@ -53,6 +54,14 @@ public class ReportSection {
 
     public void setSectionType(String sectionType) {
         this.sectionType = sectionType;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     public Category getFilterCategory() {

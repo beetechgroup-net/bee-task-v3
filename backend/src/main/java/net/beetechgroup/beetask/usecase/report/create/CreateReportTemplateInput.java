@@ -22,6 +22,7 @@ public record CreateReportTemplateInput(
             String sectionKey,
             String title,
             String sectionType,
+            String defaultValue,
             Long filterCategoryId,
             String filterStatus,
             Boolean includeTime,
