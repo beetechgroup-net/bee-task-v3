@@ -304,14 +304,11 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                   Crie tags que serão substituídas pelo Word. Escolha se o campo é texto livre, texto fixo, data (com formato personalizado) ou listagem de tarefas.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handleAddSection}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand text-xs font-bold transition-colors cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Adicionar Campo / Seção</span>
-              </button>
+              {sections.length > 0 && (
+                <span className="text-[11px] font-semibold text-muted bg-surface-raised px-2.5 py-1 rounded-xl border border-border-soft">
+                  {sections.length} {sections.length === 1 ? 'campo' : 'campos'}
+                </span>
+              )}
             </div>
 
             {sections.length === 0 ? (
@@ -500,6 +497,18 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 ))}
               </div>
             )}
+
+            {/* Botão de Adicionar Campo / Seção embaixo */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleAddSection}
+                className="w-full py-2.5 px-4 rounded-2xl border-2 border-dashed border-brand/35 hover:border-brand bg-brand/5 hover:bg-brand/10 text-brand text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Adicionar Campo / Seção</span>
+              </button>
+            </div>
           </div>
         </form>
 
