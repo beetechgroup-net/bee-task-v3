@@ -56,20 +56,29 @@ public class ReportTemplateRepositoryImpl implements ReportTemplateRepository, P
     }
 
     @Override
+    @Transactional
     public Optional<ReportTemplate> findReportTemplateById(Long id) {
-        return findByIdOptional(id).map(ReportEntityMapper::toDomain);
+        return find("select distinct t from ReportTemplateEntity t left join fetch t.sections s left join fetch s.filterCategory left join fetch t.project left join fetch t.organization left join fetch t.createdBy where t.id = ?1", id)
+                .firstResultOptional()
+                .map(ReportEntityMapper::toDomain);
     }
 
     @Override
+    @Transactional
     public List<ReportTemplate> findByOrganizationId(Long organizationId) {
-        return find("organization.id = ?1 order by createdAt desc", organizationId).stream()
+        List<ReportTemplateEntity> entities = find("select distinct t from ReportTemplateEntity t left join fetch t.sections s left join fetch s.filterCategory left join fetch t.project left join fetch t.organization left join fetch t.createdBy where t.organization.id = ?1 order by t.createdAt desc", organizationId)
+                .list();
+        return entities.stream()
                 .map(ReportEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional
     public List<ReportTemplate> findByProjectId(Long projectId) {
-        return find("project.id = ?1 order by createdAt desc", projectId).stream()
+        List<ReportTemplateEntity> entities = find("select distinct t from ReportTemplateEntity t left join fetch t.sections s left join fetch s.filterCategory left join fetch t.project left join fetch t.organization left join fetch t.createdBy where t.project.id = ?1 order by t.createdAt desc", projectId)
+                .list();
+        return entities.stream()
                 .map(ReportEntityMapper::toDomain)
                 .toList();
     }

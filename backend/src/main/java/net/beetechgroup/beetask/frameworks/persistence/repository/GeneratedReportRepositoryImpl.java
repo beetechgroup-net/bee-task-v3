@@ -56,20 +56,29 @@ public class GeneratedReportRepositoryImpl implements GeneratedReportRepository,
     }
 
     @Override
+    @Transactional
     public Optional<GeneratedReport> findGeneratedReportById(Long id) {
-        return findByIdOptional(id).map(ReportEntityMapper::toDomain);
+        return find("select distinct r from GeneratedReportEntity r left join fetch r.organization left join fetch r.project left join fetch r.user where r.id = ?1", id)
+                .firstResultOptional()
+                .map(ReportEntityMapper::toDomain);
     }
 
     @Override
+    @Transactional
     public List<GeneratedReport> findByOrganizationId(Long organizationId) {
-        return find("organization.id = ?1 order by createdAt desc", organizationId).stream()
+        List<GeneratedReportEntity> entities = find("select distinct r from GeneratedReportEntity r left join fetch r.organization left join fetch r.project left join fetch r.user where r.organization.id = ?1 order by r.createdAt desc", organizationId)
+                .list();
+        return entities.stream()
                 .map(ReportEntityMapper::toDomain)
                 .toList();
     }
 
     @Override
+    @Transactional
     public List<GeneratedReport> findByUserId(Long userId) {
-        return find("user.id = ?1 order by createdAt desc", userId).stream()
+        List<GeneratedReportEntity> entities = find("select distinct r from GeneratedReportEntity r left join fetch r.organization left join fetch r.project left join fetch r.user where r.user.id = ?1 order by r.createdAt desc", userId)
+                .list();
+        return entities.stream()
                 .map(ReportEntityMapper::toDomain)
                 .toList();
     }
