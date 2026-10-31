@@ -27,6 +27,9 @@ export interface ReportTemplateOutput {
   storageKey: string
   createdById?: number
   createdByName?: string
+  managerName?: string
+  customProjectName?: string
+  dateFormatPattern?: string
   sections: ReportSectionOutput[]
   createdAt: string
   updatedAt: string

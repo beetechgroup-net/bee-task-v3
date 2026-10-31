@@ -21,6 +21,9 @@ public class ReportEntityMapper {
         entity.setFileUrl(domain.getFileUrl());
         entity.setFileName(domain.getFileName());
         entity.setStorageKey(domain.getStorageKey());
+        entity.setManagerName(domain.getManagerName());
+        entity.setCustomProjectName(domain.getCustomProjectName());
+        entity.setDateFormatPattern(domain.getDateFormatPattern());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
 
@@ -70,6 +73,9 @@ public class ReportEntityMapper {
         domain.setFileUrl(entity.getFileUrl());
         domain.setFileName(entity.getFileName());
         domain.setStorageKey(entity.getStorageKey());
+        domain.setManagerName(entity.getManagerName());
+        domain.setCustomProjectName(entity.getCustomProjectName());
+        domain.setDateFormatPattern(entity.getDateFormatPattern());
         domain.setCreatedAt(entity.getCreatedAt());
         domain.setUpdatedAt(entity.getUpdatedAt());
 

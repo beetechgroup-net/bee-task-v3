@@ -30,6 +30,9 @@ public class ReportMapper {
                 template.getStorageKey(),
                 template.getCreatedBy() != null ? template.getCreatedBy().getId() : null,
                 template.getCreatedBy() != null ? template.getCreatedBy().getName() : null,
+                template.getManagerName(),
+                template.getCustomProjectName(),
+                template.getDateFormatPattern(),
                 sections,
                 template.getCreatedAt(),
                 template.getUpdatedAt()

@@ -8,6 +8,9 @@ import {
   Tag,
   AlertCircle,
   Folder,
+  UserCheck,
+  Calendar,
+  User,
 } from 'lucide-react'
 import { CustomSelect } from '../ui/Select'
 import { reportService, type ReportTemplateOutput } from '../../services/reportService'
@@ -43,6 +46,9 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   const [description, setDescription] = useState('')
   const [scope, setScope] = useState<'ORGANIZATION' | 'PROJECT'>('ORGANIZATION')
   const [projectId, setProjectId] = useState<number | undefined>(undefined)
+  const [managerName, setManagerName] = useState('')
+  const [customProjectName, setCustomProjectName] = useState('')
+  const [dateFormatPattern, setDateFormatPattern] = useState('DD/MM/AAAA até DD/MM/AAAA')
   const [file, setFile] = useState<File | null>(null)
   const [sections, setSections] = useState<SectionFormItem[]>([
     {
@@ -129,6 +135,9 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       formData.append('name', name.trim())
       formData.append('description', description.trim())
       formData.append('scope', scope)
+      formData.append('managerName', managerName.trim())
+      formData.append('customProjectName', customProjectName.trim())
+      formData.append('dateFormatPattern', dateFormatPattern)
       if (scope === 'PROJECT' && projectId) {
         formData.append('projectId', String(projectId))
       }
@@ -259,6 +268,93 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               placeholder="Ex.: Template padrão exigido para prestação de contas mensal."
               className="w-full px-3.5 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
             />
+          </div>
+
+          {/* Seção Padrão (Identificação, Gestão e Período) */}
+          <div className="p-4 rounded-2xl border border-brand/25 bg-brand-soft/20 dark:bg-brand/10 space-y-3.5">
+            <div className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-brand" />
+              <div>
+                <h4 className="text-xs font-extrabold text-brand uppercase tracking-wider">
+                  Seção Padrão: Identificação e Gestão
+                </h4>
+                <p className="text-[11px] text-muted">
+                  Valores configurados no modelo que alimentam o cabeçalho e identificação no Word.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Colaborador / Usuário (Automático) */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-foreground flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <User className="w-3 h-3 text-muted" /> Nome do Colaborador
+                  </span>
+                  <code className="text-[10px] text-brand font-mono font-bold">{'{{nome}}'}</code>
+                </label>
+                <div className="px-3 py-2 rounded-xl border border-border-soft bg-surface/60 text-xs text-muted font-medium">
+                  Preenchido automaticamente com o usuário logado
+                </div>
+              </div>
+
+              {/* Nome do Gestor */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-foreground flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <UserCheck className="w-3 h-3 text-muted" /> Nome do Gestor Responsável
+                  </span>
+                  <code className="text-[10px] text-brand font-mono font-bold">{'{{nome_gestor}}'}</code>
+                </label>
+                <input
+                  type="text"
+                  value={managerName}
+                  onChange={(e) => setManagerName(e.target.value)}
+                  placeholder="Ex.: Dr. Roberto Silva"
+                  className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+                />
+              </div>
+
+              {/* Nome do Projeto */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-foreground flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <Folder className="w-3 h-3 text-muted" /> Nome do Projeto no Relatório
+                  </span>
+                  <code className="text-[10px] text-brand font-mono font-bold">{'{{nome_projeto}}'}</code>
+                </label>
+                <input
+                  type="text"
+                  value={customProjectName}
+                  onChange={(e) => setCustomProjectName(e.target.value)}
+                  placeholder="Ex.: Projeto BeeTask Inovação Tecnológica"
+                  className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+                />
+              </div>
+
+              {/* Formato da Data do Período */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-foreground flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-muted" /> Formato do Período
+                  </span>
+                  <code className="text-[10px] text-brand font-mono font-bold">{'{{periodo}}'}</code>
+                </label>
+                <CustomSelect
+                  size="sm"
+                  value={dateFormatPattern}
+                  onChange={(val) => setDateFormatPattern(String(val))}
+                  options={[
+                    { value: 'DD/MM/AAAA até DD/MM/AAAA', label: 'DD/MM/AAAA até DD/MM/AAAA (ex: 01/10/2026 até 31/10/2026)' },
+                    { value: 'DD/MM/AAAA a DD/MM/AAAA', label: 'DD/MM/AAAA a DD/MM/AAAA (ex: 01/10/2026 a 31/10/2026)' },
+                    { value: 'DD de Mês de AAAA até DD de Mês de AAAA', label: '01 de Outubro de 2026 até 31 de Outubro de 2026' },
+                    { value: 'MM/AAAA', label: 'MM/AAAA (ex: 10/2026)' },
+                    { value: 'Mês de AAAA', label: 'Mês de AAAA (ex: Outubro de 2026)' },
+                    { value: 'DD/MM - DD/MM/AAAA', label: 'DD/MM - DD/MM/AAAA (ex: 01/10 - 31/10/2026)' },
+                  ]}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Upload de Arquivo .DOCX */}

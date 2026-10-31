@@ -18,6 +18,9 @@ public class ReportTemplate {
     private String fileName;
     private String storageKey;
     private User createdBy;
+    private String managerName;
+    private String customProjectName;
+    private String dateFormatPattern;
     private List<ReportSection> sections = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -100,6 +103,30 @@ public class ReportTemplate {
 
     public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
+    }
+
+    public String getManagerName() {
+        return managerName;
+    }
+
+    public void setManagerName(String managerName) {
+        this.managerName = managerName;
+    }
+
+    public String getCustomProjectName() {
+        return customProjectName;
+    }
+
+    public void setCustomProjectName(String customProjectName) {
+        this.customProjectName = customProjectName;
+    }
+
+    public String getDateFormatPattern() {
+        return dateFormatPattern != null ? dateFormatPattern : "DD/MM/AAAA até DD/MM/AAAA";
+    }
+
+    public void setDateFormatPattern(String dateFormatPattern) {
+        this.dateFormatPattern = dateFormatPattern;
     }
 
     public List<ReportSection> getSections() {

@@ -94,14 +94,16 @@ export const ReportsPage: React.FC = () => {
   }
 
   const standardTags = [
+    { tag: '{{nome}}', desc: 'Nome do colaborador (pega automaticamente do usuário logado)' },
+    { tag: '{{nome_gestor}}', desc: 'Nome do gestor responsável (pré-definido no modelo)' },
+    { tag: '{{nome_projeto}}', desc: 'Nome do projeto (pré-definido no cadastro do modelo)' },
+    { tag: '{{periodo}}', desc: 'Período formatado no padrão escolhido no modelo (ex.: DD/MM/AAAA até DD/MM/AAAA)' },
     { tag: '{{data_inicio}}', desc: 'Data inicial do período escolhido (ex: 01/10/2026)' },
     { tag: '{{data_fim}}', desc: 'Data final do período escolhido (ex: 31/10/2026)' },
-    { tag: '{{periodo_vigencia}}', desc: 'Intervalo formatado (ex: 01/10/2026 a 31/10/2026)' },
+    { tag: '{{periodo_vigencia}}', desc: 'Intervalo formatado no modelo (ex: 01/10/2026 até 31/10/2026)' },
     { tag: '{{mes_ano}}', desc: 'Mês e ano por extenso (ex: Outubro/2026)' },
-    { tag: '{{nome_usuario}}', desc: 'Nome completo do usuário logado' },
-    { tag: '{{email_usuario}}', desc: 'E-mail do usuário' },
+    { tag: '{{email_usuario}}', desc: 'E-mail do usuário logado' },
     { tag: '{{organizacao}}', desc: 'Nome da organização / workspace ativo' },
-    { tag: '{{projeto}}', desc: 'Nome do projeto selecionado ou Geral' },
     { tag: '{{total_horas}}', desc: 'Total de horas trabalhadas no período (ex: 142h 30m)' },
     { tag: '{{data_emissao}}', desc: 'Data de geração do relatório (ex: 31/10/2026)' },
   ]
@@ -270,6 +272,26 @@ export const ReportsPage: React.FC = () => {
                       {tpl.description && (
                         <p className="text-xs text-muted line-clamp-2 mt-1">{tpl.description}</p>
                       )}
+                    </div>
+
+                    {/* Dados da Seção Padrão */}
+                    <div className="p-2.5 rounded-xl bg-surface-raised/60 border border-border-soft text-[11px] space-y-1">
+                      {tpl.managerName && (
+                        <div className="flex items-center justify-between gap-1 text-muted">
+                          <span>Gestor:</span>
+                          <span className="font-semibold text-foreground truncate">{tpl.managerName}</span>
+                        </div>
+                      )}
+                      {(tpl.customProjectName || tpl.projectName) && (
+                        <div className="flex items-center justify-between gap-1 text-muted">
+                          <span>Projeto:</span>
+                          <span className="font-semibold text-foreground truncate">{tpl.customProjectName || tpl.projectName}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between gap-1 text-muted">
+                        <span>Padrão de Data:</span>
+                        <span className="font-mono text-[10px] text-brand truncate">{tpl.dateFormatPattern || 'DD/MM/AAAA até DD/MM/AAAA'}</span>
+                      </div>
                     </div>
 
                     {/* Tags configuradas */}

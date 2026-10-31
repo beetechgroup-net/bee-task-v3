@@ -54,6 +54,15 @@ public class ReportTemplateEntity {
     @JoinColumn(name = "created_by")
     private UserEntity createdBy;
 
+    @Column(name = "manager_name")
+    private String managerName;
+
+    @Column(name = "custom_project_name")
+    private String customProjectName;
+
+    @Column(name = "date_format_pattern")
+    private String dateFormatPattern = "DD/MM/AAAA até DD/MM/AAAA";
+
     @OneToMany(mappedBy = "reportTemplate", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     private List<ReportSectionEntity> sections = new ArrayList<>();
@@ -142,6 +151,30 @@ public class ReportTemplateEntity {
 
     public void setCreatedBy(UserEntity createdBy) {
         this.createdBy = createdBy;
+    }
+
+    public String getManagerName() {
+        return managerName;
+    }
+
+    public void setManagerName(String managerName) {
+        this.managerName = managerName;
+    }
+
+    public String getCustomProjectName() {
+        return customProjectName;
+    }
+
+    public void setCustomProjectName(String customProjectName) {
+        this.customProjectName = customProjectName;
+    }
+
+    public String getDateFormatPattern() {
+        return dateFormatPattern != null ? dateFormatPattern : "DD/MM/AAAA até DD/MM/AAAA";
+    }
+
+    public void setDateFormatPattern(String dateFormatPattern) {
+        this.dateFormatPattern = dateFormatPattern;
     }
 
     public List<ReportSectionEntity> getSections() {

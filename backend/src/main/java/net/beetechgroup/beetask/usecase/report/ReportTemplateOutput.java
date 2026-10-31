@@ -17,6 +17,9 @@ public record ReportTemplateOutput(
         String storageKey,
         Long createdById,
         String createdByName,
+        String managerName,
+        String customProjectName,
+        String dateFormatPattern,
         List<ReportSectionOutput> sections,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

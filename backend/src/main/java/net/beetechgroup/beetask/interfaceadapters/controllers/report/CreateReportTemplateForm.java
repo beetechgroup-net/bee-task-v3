@@ -20,6 +20,15 @@ public class CreateReportTemplateForm {
     @RestForm("projectId")
     public Long projectId;
 
+    @RestForm("managerName")
+    public String managerName;
+
+    @RestForm("customProjectName")
+    public String customProjectName;
+
+    @RestForm("dateFormatPattern")
+    public String dateFormatPattern;
+
     @RestForm("sectionsJson")
     public String sectionsJson;
 }

@@ -141,19 +141,41 @@ public class GenerateReportUseCase {
         Map<String, String> variables = new HashMap<>();
         String strStart = input.startDate().format(DATE_FORMATTER);
         String strEnd = input.endDate().format(DATE_FORMATTER);
-        String strPeriodo = strStart + " a " + strEnd;
+
+        String pattern = template.getDateFormatPattern();
+        String formattedPeriod = formatPeriodWithPattern(input.startDate(), input.endDate(), pattern);
 
         String monthName = input.startDate().getMonth().getDisplayName(TextStyle.FULL, PT_BR);
         String mesAno = capitalize(monthName) + "/" + input.startDate().getYear();
 
+        String userName = user.getName() != null && !user.getName().isBlank() ? user.getName() : user.getEmail();
+        String managerName = template.getManagerName() != null ? template.getManagerName() : "";
+        String projectName = template.getCustomProjectName() != null && !template.getCustomProjectName().isBlank()
+                ? template.getCustomProjectName()
+                : (project != null ? project.getName() : "Geral / Todos os Projetos");
+
+        // Nome do Usuário / Colaborador
+        variables.put("nome", userName);
+        variables.put("nome_usuario", userName);
+        variables.put("colaborador", userName);
+        variables.put("email_usuario", user.getEmail());
+
+        // Gestor Responsável
+        variables.put("gestor", managerName);
+        variables.put("nome_gestor", managerName);
+
+        // Projeto
+        variables.put("projeto", projectName);
+        variables.put("nome_projeto", projectName);
+        variables.put("organizacao", org.getName());
+
+        // Período
+        variables.put("periodo", formattedPeriod);
+        variables.put("periodo_vigencia", formattedPeriod);
         variables.put("data_inicio", strStart);
         variables.put("data_fim", strEnd);
-        variables.put("periodo_vigencia", strPeriodo);
         variables.put("mes_ano", mesAno);
-        variables.put("nome_usuario", user.getName() != null ? user.getName() : user.getEmail());
-        variables.put("email_usuario", user.getEmail());
-        variables.put("organizacao", org.getName());
-        variables.put("projeto", project != null ? project.getName() : "Geral / Todos os Projetos");
+
         variables.put("total_horas", formattedTotalTime);
         variables.put("data_emissao", LocalDate.now().format(DATE_FORMATTER));
 
@@ -251,7 +273,7 @@ public class GenerateReportUseCase {
         generated.setOrganization(org);
         generated.setProject(project);
         generated.setUser(user);
-        generated.setTitle(template.getName() + " (" + strPeriodo + ")");
+        generated.setTitle(template.getName() + " (" + formattedPeriod + ")");
         generated.setStartDate(input.startDate());
         generated.setEndDate(input.endDate());
         generated.setFileUrl(fileUrl);
@@ -351,5 +373,35 @@ public class GenerateReportUseCase {
     private String capitalize(String text) {
         if (text == null || text.isEmpty()) return "";
         return text.substring(0, 1).toUpperCase(PT_BR) + text.substring(1);
+    }
+
+    private String formatPeriodWithPattern(LocalDate start, LocalDate end, String pattern) {
+        if (pattern == null || pattern.isBlank()) {
+            pattern = "DD/MM/AAAA até DD/MM/AAAA";
+        }
+
+        String strStart = start.format(DATE_FORMATTER);
+        String strEnd = end.format(DATE_FORMATTER);
+
+        return switch (pattern) {
+            case "DD/MM/AAAA até DD/MM/AAAA" -> strStart + " até " + strEnd;
+            case "DD/MM/AAAA a DD/MM/AAAA" -> strStart + " a " + strEnd;
+            case "DD de Mês de AAAA até DD de Mês de AAAA" -> {
+                String mStart = capitalize(start.getMonth().getDisplayName(TextStyle.FULL, PT_BR));
+                String mEnd = capitalize(end.getMonth().getDisplayName(TextStyle.FULL, PT_BR));
+                yield String.format("%02d de %s de %d até %02d de %s de %d",
+                        start.getDayOfMonth(), mStart, start.getYear(),
+                        end.getDayOfMonth(), mEnd, end.getYear());
+            }
+            case "MM/AAAA" -> String.format("%02d/%d", start.getMonthValue(), start.getYear());
+            case "Mês de AAAA" -> {
+                String mStart = capitalize(start.getMonth().getDisplayName(TextStyle.FULL, PT_BR));
+                yield mStart + " de " + start.getYear();
+            }
+            case "DD/MM - DD/MM/AAAA" -> String.format("%02d/%02d - %02d/%02d/%d",
+                    start.getDayOfMonth(), start.getMonthValue(),
+                    end.getDayOfMonth(), end.getMonthValue(), end.getYear());
+            default -> strStart + " até " + strEnd;
+        };
     }
 }

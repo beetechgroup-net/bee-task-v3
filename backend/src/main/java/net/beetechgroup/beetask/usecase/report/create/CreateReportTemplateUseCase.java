@@ -91,6 +91,9 @@ public class CreateReportTemplateUseCase {
         template.setStorageKey(storageKey);
         template.setFileUrl(fileUrl);
         template.setCreatedBy(user);
+        template.setManagerName(input.managerName() != null ? input.managerName().trim() : null);
+        template.setCustomProjectName(input.customProjectName() != null ? input.customProjectName().trim() : null);
+        template.setDateFormatPattern(input.dateFormatPattern() != null ? input.dateFormatPattern().trim() : "DD/MM/AAAA até DD/MM/AAAA");
         template.setCreatedAt(LocalDateTime.now());
         template.setUpdatedAt(LocalDateTime.now());
 
