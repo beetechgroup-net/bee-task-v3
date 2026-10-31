@@ -1,9 +1,11 @@
 package net.beetechgroup.beetask.frameworks.storage;
 
 import io.minio.BucketExistsArgs;
+import io.minio.GetObjectArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.SetBucketPolicyArgs;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -71,6 +73,32 @@ public class MinioStorageService implements StorageRepository {
         } catch (Exception e) {
             LOGGER.errorf("Failed to upload object '%s': %s", key, e.getMessage());
             throw new RuntimeException("Falha ao fazer upload da imagem", e);
+        }
+    }
+
+    @Override
+    public InputStream download(String key) {
+        try {
+            return minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(key)
+                    .build());
+        } catch (Exception e) {
+            LOGGER.errorf("Failed to download object '%s' from bucket '%s': %s", key, bucket, e.getMessage());
+            throw new RuntimeException("Falha ao recuperar arquivo do storage", e);
+        }
+    }
+
+    @Override
+    public void delete(String key) {
+        try {
+            minioClient.removeObject(RemoveObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(key)
+                    .build());
+            LOGGER.infof("Deleted object '%s' from bucket '%s'", key, bucket);
+        } catch (Exception e) {
+            LOGGER.warnf("Failed to delete object '%s' from bucket '%s': %s", key, bucket, e.getMessage());
         }
     }
 }

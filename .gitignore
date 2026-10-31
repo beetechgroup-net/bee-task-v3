@@ -4,5 +4,6 @@
 .env
 *.pem
 *.sql
+!backend/src/main/resources/db/migration/*.sql
 *.sql.gz
 

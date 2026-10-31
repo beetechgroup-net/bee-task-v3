@@ -19,6 +19,7 @@ import {
   PlusCircle,
   User,
   LogOut,
+  FileText,
 } from 'lucide-react'
 import { Chip, ChipLabel } from '@heroui/react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -99,6 +100,7 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
       group: 'Gestão',
       links: [
         { to: '/analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> },
+        { to: '/reports', label: 'Relatórios', icon: <FileText className="w-4 h-4" /> },
         { to: '/members', label: 'Membros', icon: <Users className="w-4 h-4" /> },
         { to: '/organization/settings', label: 'Configurações', icon: <Settings className="w-4 h-4" /> },
       ],

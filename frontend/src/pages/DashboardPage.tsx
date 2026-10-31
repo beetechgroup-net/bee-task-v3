@@ -23,14 +23,17 @@ import {
   ExternalLink,
   User,
   Users,
+  FileDown,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTimer } from '../contexts/TimerContext'
 import { taskService } from '../services/taskService'
 import { projectService } from '../services/projectService'
+import { reportService, type ReportTemplateOutput } from '../services/reportService'
 import type { Task, Project } from '../types/task'
 import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer } from '../lib/timeUtils'
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
+import { GenerateReportModal } from '../components/reports/GenerateReportModal'
 import {
   getUserWorkGoal,
   calculateUserPeriodWorkedSeconds,
@@ -53,6 +56,8 @@ export const DashboardPage: React.FC = () => {
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [projects, setProjects] = useState<Project[]>([])
+  const [reportTemplates, setReportTemplates] = useState<ReportTemplateOutput[]>([])
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -111,9 +116,10 @@ export const DashboardPage: React.FC = () => {
     if (!activeOrgId) return
     try {
       setRefreshing(true)
-      const [tasksRes, projsRes] = await Promise.allSettled([
+      const [tasksRes, projsRes, tplsRes] = await Promise.allSettled([
         taskService.listTasks({ organizationId: activeOrgId }),
         projectService.listProjects(activeOrgId),
+        reportService.listTemplates(activeOrgId),
       ])
 
       const loadedTasks = tasksRes.status === 'fulfilled' ? tasksRes.value || [] : []
@@ -122,6 +128,10 @@ export const DashboardPage: React.FC = () => {
 
       if (projsRes.status === 'fulfilled') {
         setProjects(projsRes.value || [])
+      }
+
+      if (tplsRes.status === 'fulfilled') {
+        setReportTemplates(tplsRes.value || [])
       }
     } catch (err: unknown) {
       console.error(err)
@@ -321,6 +331,15 @@ export const DashboardPage: React.FC = () => {
               Quadro Kanban
             </button>
           </Link>
+
+          <button
+            type="button"
+            onClick={() => setIsReportModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand/30 bg-brand/10 hover:bg-brand/20 text-brand text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <FileDown className="w-4 h-4" />
+            <span>Gerar Relatório</span>
+          </button>
 
           <button
             type="button"
@@ -980,13 +999,23 @@ export const DashboardPage: React.FC = () => {
 
       {/* Task Creation Modal */}
       {activeOrgId && (
-        <CreateTaskModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSubmit={handleModalSubmit}
-          organizationId={activeOrgId}
-          initialStatus="NOT_STARTED"
-        />
+        <>
+          <CreateTaskModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSubmit={handleModalSubmit}
+            organizationId={activeOrgId}
+            initialStatus="NOT_STARTED"
+          />
+
+          <GenerateReportModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            orgId={activeOrgId}
+            templates={reportTemplates}
+            projects={projects}
+          />
+        </>
       )}
     </div>
   )

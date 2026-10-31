@@ -1,0 +1,433 @@
+import React, { useState, useEffect, useMemo } from 'react'
+import {
+  X,
+  FileDown,
+  Calendar,
+  AlertCircle,
+  Folder,
+  CheckCircle2,
+  FileText,
+  Loader2,
+} from 'lucide-react'
+import { CustomSelect } from '../ui/Select'
+import { reportService, type ReportTemplateOutput } from '../../services/reportService'
+import type { Project } from '../../types/task'
+
+interface GenerateReportModalProps {
+  isOpen: boolean
+  onClose: () => void
+  orgId: number
+  templates: ReportTemplateOutput[]
+  projects: Project[]
+  initialTemplateId?: number
+}
+
+export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
+  isOpen,
+  onClose,
+  orgId,
+  templates,
+  projects,
+  initialTemplateId,
+}) => {
+  // Inicializar datas com o mês atual (do 1º ao último dia do mês)
+  const defaultDates = useMemo(() => {
+    const now = new Date()
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    return {
+      start: firstDay.toISOString().split('T')[0],
+      end: lastDay.toISOString().split('T')[0],
+    }
+  }, [])
+
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | undefined>(
+    initialTemplateId || (templates[0]?.id)
+  )
+  const [selectedProjectId, setSelectedProjectId] = useState<number | undefined>(undefined)
+  const [startDate, setStartDate] = useState(defaultDates.start)
+  const [endDate, setEndDate] = useState(defaultDates.end)
+  const [periodPreset, setPeriodPreset] = useState<'current_month' | 'last_month' | 'custom'>('current_month')
+  const [customFields, setCustomFields] = useState<Record<string, string>>({})
+
+  const [generating, setGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  // Atualizar template selecionado se initialTemplateId mudar ou templates carregarem
+  useEffect(() => {
+    if (initialTemplateId) {
+      setSelectedTemplateId(initialTemplateId)
+    } else if (!selectedTemplateId && templates.length > 0) {
+      setSelectedTemplateId(templates[0].id)
+    }
+  }, [initialTemplateId, templates, selectedTemplateId])
+
+  const selectedTemplate = useMemo(() => {
+    return templates.find((t) => t.id === selectedTemplateId)
+  }, [templates, selectedTemplateId])
+
+  // Ajustar projeto selecionado de acordo com o template
+  useEffect(() => {
+    if (selectedTemplate?.projectId) {
+      setSelectedProjectId(selectedTemplate.projectId)
+    }
+  }, [selectedTemplate])
+
+  // Seções de texto livre do template selecionado
+  const freeTextSections = useMemo(() => {
+    if (!selectedTemplate) return []
+    return selectedTemplate.sections.filter((s) => s.sectionType === 'FREE_TEXT')
+  }, [selectedTemplate])
+
+  // Lista de seções de tarefas do template selecionado
+  const taskListSections = useMemo(() => {
+    if (!selectedTemplate) return []
+    return selectedTemplate.sections.filter((s) => s.sectionType === 'TASK_LIST')
+  }, [selectedTemplate])
+
+  // Preset Handlers
+  const handlePresetChange = (preset: 'current_month' | 'last_month' | 'custom') => {
+    setPeriodPreset(preset)
+    const now = new Date()
+
+    if (preset === 'current_month') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      setStartDate(firstDay.toISOString().split('T')[0])
+      setEndDate(lastDay.toISOString().split('T')[0])
+    } else if (preset === 'last_month') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const lastDay = new Date(now.getFullYear(), now.getMonth(), 0)
+      setStartDate(firstDay.toISOString().split('T')[0])
+      setEndDate(lastDay.toISOString().split('T')[0])
+    }
+  }
+
+  const handleCustomFieldChange = (key: string, value: string) => {
+    setCustomFields((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedTemplateId) {
+      setError('Selecione um modelo de relatório')
+      return
+    }
+    if (!startDate || !endDate) {
+      setError('Defina o período (data de início e término)')
+      return
+    }
+    if (new Date(startDate) > new Date(endDate)) {
+      setError('A data de início não pode ser posterior à data de término')
+      return
+    }
+
+    try {
+      setGenerating(true)
+      setError(null)
+      setSuccess(false)
+
+      const { blob, fileName } = await reportService.generateReport(orgId, {
+        templateId: selectedTemplateId,
+        projectId: selectedProjectId,
+        startDate,
+        endDate,
+        customFields,
+      })
+
+      // Download do arquivo gerado
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(downloadUrl)
+      document.body.removeChild(a)
+
+      setSuccess(true)
+      setTimeout(() => {
+        onClose()
+      }, 1500)
+    } catch (err: unknown) {
+      console.error(err)
+      setError(err instanceof Error ? err.message : 'Falha ao gerar relatório')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div
+        className="w-full max-w-2xl bg-surface border border-border-soft rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+        role="dialog"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-border-soft">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-brand/10 text-brand border border-brand/20 flex items-center justify-center shadow-xs">
+              <FileDown className="w-5 h-5 text-brand" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-foreground">
+                Gerar Relatório de Atividades (.DOCX)
+              </h2>
+              <p className="text-xs text-muted">
+                Selecione o modelo, o período de vigência e preencha as informações do relatório.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl text-muted hover:text-foreground hover:bg-surface-raised transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Form Body */}
+        <form onSubmit={handleGenerate} className="p-6 overflow-y-auto space-y-5 flex-1">
+          {error && (
+            <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {success && (
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Relatório gerado e baixado com sucesso!</span>
+            </div>
+          )}
+
+          {/* Seleção do Template */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-foreground">
+              Modelo de Relatório (.docx) <span className="text-rose-500">*</span>
+            </label>
+            {templates.length === 0 ? (
+              <div className="p-4 rounded-2xl border border-dashed border-border-soft text-center text-xs text-muted">
+                Nenhum modelo cadastrado ainda. Cadastre um modelo antes de gerar o relatório.
+              </div>
+            ) : (
+              <CustomSelect
+                value={selectedTemplateId}
+                onChange={(val) => setSelectedTemplateId(Number(val))}
+                placeholder="Selecione um modelo..."
+                leftIcon={<FileText className="w-3.5 h-3.5 text-brand" />}
+                options={templates.map((t) => ({
+                  value: t.id,
+                  label: t.name,
+                  description: t.scope === 'PROJECT' && t.projectName ? `Projeto: ${t.projectName}` : 'Nível Organização',
+                }))}
+              />
+            )}
+          </div>
+
+          {/* Seleção de Projeto (se o template não for restrito) */}
+          {selectedTemplate?.scope !== 'PROJECT' && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground">
+                Iniciativa / Projeto <span className="text-muted font-normal">(Opcional)</span>
+              </label>
+              <CustomSelect
+                value={selectedProjectId ?? 0}
+                onChange={(val) => setSelectedProjectId(Number(val) === 0 ? undefined : Number(val))}
+                placeholder="Todos os Projetos (Consolidado)"
+                leftIcon={<Folder className="w-3.5 h-3.5 text-brand" />}
+                options={[
+                  { value: 0, label: 'Todos os Projetos (Consolidado)' },
+                  ...projects.map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                    color: p.color || '#0f766e',
+                  })),
+                ]}
+              />
+            </div>
+          )}
+
+          {/* Período de Vigência com Atalhos Rápidos */}
+          <div className="space-y-2.5 p-4 rounded-2xl border border-border-soft bg-surface-raised/40">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-accent" />
+                Período de Vigência do Relatório
+              </label>
+
+              {/* Botões de Atalho */}
+              <div className="inline-flex rounded-xl p-0.5 bg-surface-sunken/60 border border-border-soft text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('current_month')}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                    periodPreset === 'current_month'
+                      ? 'bg-brand text-white shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Mês Atual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('last_month')}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                    periodPreset === 'last_month'
+                      ? 'bg-brand text-white shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Mês Anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriodPreset('custom')}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                    periodPreset === 'custom'
+                      ? 'bg-brand text-white shadow-xs'
+                      : 'text-muted hover:text-foreground'
+                  }`}
+                >
+                  Personalizado
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="text-[11px] font-semibold text-muted block mb-1">
+                  Data de Início
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value)
+                    setPeriodPreset('custom')
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand focus:ring-1 focus:ring-brand shadow-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-muted block mb-1">
+                  Data de Término
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value)
+                    setPeriodPreset('custom')
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand focus:ring-1 focus:ring-brand shadow-xs"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="text-[11px] text-muted flex items-center gap-1.5 pt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+              <span>
+                Refletirá nas tags: <code className="text-brand font-semibold">{'{{data_inicio}}'}</code>,{' '}
+                <code className="text-brand font-semibold">{'{{data_fim}}'}</code> e{' '}
+                <code className="text-brand font-semibold">{'{{periodo_vigencia}}'}</code>.
+              </span>
+            </div>
+          </div>
+
+          {/* Seções de Texto Livre Dinâmicas */}
+          {freeTextSections.length > 0 && (
+            <div className="space-y-3.5">
+              <div className="border-b border-border-soft pb-1">
+                <h4 className="text-xs font-bold text-foreground">
+                  Informações Descritivas do Relatório
+                </h4>
+                <p className="text-[11px] text-muted">
+                  Preencha os textos que serão substituídos no documento Word.
+                </p>
+              </div>
+
+              {freeTextSections.map((sec) => (
+                <div key={sec.sectionKey} className="space-y-1.5">
+                  <label className="text-xs font-bold text-foreground flex items-center justify-between">
+                    <span>{sec.title}</span>
+                    <span className="text-[10px] text-muted font-mono">{`{{${sec.sectionKey}}}`}</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={customFields[sec.sectionKey] || ''}
+                    onChange={(e) => handleCustomFieldChange(sec.sectionKey, e.target.value)}
+                    placeholder={`Escreva aqui o conteúdo para "${sec.title}"...`}
+                    className="w-full p-3 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand focus:ring-1 focus:ring-brand shadow-xs resize-y"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Lista de Seções que serão preenchidas automaticamente */}
+          {taskListSections.length > 0 && (
+            <div className="p-3.5 rounded-2xl bg-surface-raised/40 border border-border-soft">
+              <span className="text-xs font-bold text-foreground block mb-1.5">
+                Listagens Automáticas incluídas no Relatório:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {taskListSections.map((sec) => (
+                  <span
+                    key={sec.sectionKey}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand/10 text-brand border border-brand/20"
+                  >
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>{sec.title}</span>
+                    {sec.filterCategoryName && (
+                      <span className="text-[10px] text-muted">({sec.filterCategoryName})</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </form>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 p-5 border-t border-border-soft bg-surface-raised/40">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={generating}
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-raised transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={generating || templates.length === 0}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-teal-700 hover:from-brand-hover hover:to-teal-800 text-white text-xs font-bold shadow-md shadow-brand/20 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {generating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Preenchendo e Gerando .DOCX...</span>
+              </>
+            ) : (
+              <>
+                <FileDown className="w-4 h-4" />
+                <span>Gerar e Baixar (.DOCX)</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
