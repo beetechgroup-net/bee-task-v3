@@ -1,7 +1,22 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8081'
+export const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8081'
 
-function buildUrl(path: string) {
+export function buildUrl(path: string) {
   return `${API_BASE_URL}${path}`
+}
+
+export function getAuthToken(): string | null {
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    try {
+      const userData = JSON.parse(storedUser)
+      if (userData?.jwt) {
+        return userData.jwt
+      }
+    } catch {
+      // Ignora erro de parsing
+    }
+  }
+  return null
 }
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
@@ -14,16 +29,9 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
   let authHeader: Record<string, string> = {}
   if (!skipAuth) {
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser)
-        if (userData?.jwt) {
-          authHeader = { Authorization: `Bearer ${userData.jwt}` }
-        }
-      } catch {
-        // Ignora erro de parsing
-      }
+    const token = getAuthToken()
+    if (token) {
+      authHeader = { Authorization: `Bearer ${token}` }
     }
   }
 

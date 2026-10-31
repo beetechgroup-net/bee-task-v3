@@ -1,4 +1,4 @@
-import { apiFetch } from '../lib/api'
+import { apiFetch, getAuthToken, buildUrl } from '../lib/api'
 
 export interface ReportSectionOutput {
   id: number
@@ -69,23 +69,10 @@ export const reportService = {
   },
 
   async createTemplate(orgId: number, formData: FormData): Promise<ReportTemplateOutput> {
-    const token = localStorage.getItem('token')
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://api-task.beetech.dev'
-
-    const res = await fetch(`${apiUrl}/organizations/${orgId}/reports/templates`, {
+    return apiFetch<ReportTemplateOutput>(`/organizations/${orgId}/reports/templates`, {
       method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
       body: formData,
     })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Erro ao criar modelo de relatório' }))
-      throw new Error(err.message || 'Erro ao criar modelo de relatório')
-    }
-
-    return res.json()
   },
 
   async deleteTemplate(orgId: number, templateId: number): Promise<void> {
@@ -95,10 +82,9 @@ export const reportService = {
   },
 
   async generateReport(orgId: number, payload: GenerateReportPayload): Promise<{ blob: Blob; fileName: string }> {
-    const token = localStorage.getItem('token')
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://api-task.beetech.dev'
+    const token = getAuthToken()
 
-    const res = await fetch(`${apiUrl}/organizations/${orgId}/reports/generate`, {
+    const res = await fetch(buildUrl(`/organizations/${orgId}/reports/generate`), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -108,8 +94,16 @@ export const reportService = {
     })
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Erro ao gerar relatório' }))
-      throw new Error(err.message || 'Erro ao gerar relatório')
+      const text = await res.text()
+      let message = text || 'Erro ao gerar relatório'
+      try {
+        const err = JSON.parse(text)
+        if (err.message) message = err.message
+        if (err.error) message = err.error
+      } catch {
+        // Ignora erro de parsing
+      }
+      throw new Error(message)
     }
 
     // Obter nome do arquivo do header Content-Disposition ou gerar fallback
