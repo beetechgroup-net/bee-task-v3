@@ -9,6 +9,7 @@ import {
   FileText,
   Loader2,
   Lock,
+  Tag,
 } from 'lucide-react'
 import { CustomSelect } from '../ui/Select'
 import { reportService, type ReportTemplateOutput } from '../../services/reportService'
@@ -476,28 +477,43 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
             </div>
           )}
 
-          {/* Lista de Seções que serão preenchidas automaticamente */}
-          {taskListSections.length > 0 && (
-            <div className="p-3.5 rounded-2xl bg-surface-raised/40 border border-border-soft">
-              <span className="text-xs font-bold text-foreground block mb-1.5">
-                Listagens Automáticas incluídas no Relatório:
+          {/* Listagens de Atividades e Tarefas Preenchidas Automaticamente */}
+          <div className="p-4 rounded-2xl bg-surface-raised/40 border border-border-soft space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                Atividades e Tarefas (Preenchimento Automático)
               </span>
-              <div className="flex flex-wrap gap-2">
-                {taskListSections.map((sec) => (
-                  <span
-                    key={sec.sectionKey}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand/10 text-brand border border-brand/20"
-                  >
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>{sec.title}</span>
-                    {sec.filterCategoryName && (
-                      <span className="text-[10px] text-muted">({sec.filterCategoryName})</span>
-                    )}
-                  </span>
-                ))}
-              </div>
+              <span className="text-[10px] text-muted font-mono font-semibold">{'{{atividades}}'} / {'{{tarefas}}'}</span>
             </div>
-          )}
+
+            <p className="text-[11px] text-muted leading-relaxed">
+              O BeeTask busca todas as atividades que você trabalhou ou concluiu no período de vigência selecionado e preenche automaticamente as tabelas e listas no Word sob a tag <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{atividades}}'}</code>.
+            </p>
+
+            {taskListSections.length > 0 && (
+              <div className="pt-2 border-t border-border-soft/60 space-y-1.5">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
+                  Listagens filtradas por categoria configuradas no modelo:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {taskListSections.map((sec) => (
+                    <span
+                      key={sec.sectionKey}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand/10 text-brand border border-brand/20"
+                    >
+                      <Tag className="w-3 h-3" />
+                      <span>{sec.title}</span>
+                      <code className="text-[10px] text-muted font-mono">{`{{${sec.sectionKey}}}`}</code>
+                      {sec.filterCategoryName && (
+                        <span className="text-[10px] text-muted">({sec.filterCategoryName})</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </form>
 
         {/* Footer */}

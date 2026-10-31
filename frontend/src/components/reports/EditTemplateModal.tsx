@@ -275,6 +275,7 @@ export const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
               <p className="font-bold text-brand">Tags Nativas Automáticas Disponíveis no Word:</p>
               <p className="text-muted">
                 Você pode utilizar diretamente as tags{' '}
+                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{atividades}}'}</code> (ou <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{tarefas}}'}</code>, com todas as atividades realizadas no período),{' '}
                 <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{nome}}'}</code> (usuário logado),{' '}
                 <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{periodo}}'}</code> (período de vigência),{' '}
                 <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{data_inicio}}'}</code>,{' '}
