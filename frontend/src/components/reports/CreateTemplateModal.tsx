@@ -28,8 +28,9 @@ interface CreateTemplateModalProps {
 interface SectionFormItem {
   sectionKey: string
   title: string
-  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'TASK_LIST'
+  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST'
   defaultValue?: string
+  dateFormat?: string
   filterCategoryId?: number
   filterStatus?: 'ALL' | 'COMPLETED' | 'IN_PROGRESS'
   includeTime: boolean
@@ -47,7 +48,6 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   const [description, setDescription] = useState('')
   const [scope, setScope] = useState<'ORGANIZATION' | 'PROJECT'>('ORGANIZATION')
   const [projectId, setProjectId] = useState<number | undefined>(undefined)
-  const [dateFormatPattern, setDateFormatPattern] = useState('DD/MM/AAAA até DD/MM/AAAA')
   const [file, setFile] = useState<File | null>(null)
   const [sections, setSections] = useState<SectionFormItem[]>([])
 
@@ -65,6 +65,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         title: `Campo ${nextIndex}`,
         sectionType: 'FREE_TEXT',
         defaultValue: '',
+        dateFormat: 'DD/MM/AAAA',
         includeTime: false,
       },
     ])
@@ -115,17 +116,17 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       formData.append('name', name.trim())
       formData.append('description', description.trim())
       formData.append('scope', scope)
-      formData.append('dateFormatPattern', dateFormatPattern)
       if (scope === 'PROJECT' && projectId) {
         formData.append('projectId', String(projectId))
       }
 
-      // Sanitizar seções com chave segura e valor padrão
+      // Sanitizar seções com chave segura, valor padrão e formato de data
       const sanitizedSections = sections.map((s, idx) => ({
         sectionKey: s.sectionKey.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_'),
         title: s.title.trim() || s.sectionKey,
         sectionType: s.sectionType,
         defaultValue: s.defaultValue ? s.defaultValue.trim() : '',
+        dateFormat: s.sectionType === 'DATE' ? (s.dateFormat || 'DD/MM/AAAA') : undefined,
         filterCategoryId: s.filterCategoryId,
         filterStatus: s.filterStatus || 'ALL',
         includeTime: s.includeTime ?? true,
@@ -162,7 +163,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 Cadastrar Modelo de Relatório (.DOCX)
               </h2>
               <p className="text-xs text-muted">
-                Envie seu arquivo Word e configure os campos dinâmicos e valores pré-preenchidos.
+                Envie seu arquivo Word e configure os campos dinâmicos, tipos e formatos.
               </p>
             </div>
           </div>
@@ -235,56 +236,32 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             </div>
           )}
 
-          {/* Descrição e Formato do Período */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground">
-                Descrição <span className="text-muted font-normal">(Opcional)</span>
-              </label>
-              <input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ex.: Modelo oficial para prestação de contas"
-                className="w-full px-3.5 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-muted" />
-                  Formato da tag {'{{periodo}}'}
-                </span>
-              </label>
-              <CustomSelect
-                size="sm"
-                value={dateFormatPattern}
-                onChange={(val) => setDateFormatPattern(String(val))}
-                options={[
-                  { value: 'DD/MM/AAAA até DD/MM/AAAA', label: 'DD/MM/AAAA até DD/MM/AAAA (ex: 01/10/2026 até 31/10/2026)' },
-                  { value: 'DD/MM/AAAA a DD/MM/AAAA', label: 'DD/MM/AAAA a DD/MM/AAAA (ex: 01/10/2026 a 31/10/2026)' },
-                  { value: 'DD de Mês de AAAA até DD de Mês de AAAA', label: '01 de Outubro de 2026 até 31 de Outubro de 2026' },
-                  { value: 'MM/AAAA', label: 'MM/AAAA (ex: 10/2026)' },
-                  { value: 'Mês de AAAA', label: 'Mês de AAAA (ex: Outubro de 2026)' },
-                  { value: 'DD/MM - DD/MM/AAAA', label: 'DD/MM - DD/MM/AAAA (ex: 01/10 - 31/10/2026)' },
-                ]}
-              />
-            </div>
+          {/* Descrição */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-foreground">
+              Descrição <span className="text-muted font-normal">(Opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ex.: Modelo padrão exigido para prestação de contas mensal."
+              className="w-full px-3.5 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+            />
           </div>
 
           {/* Dica de Tags Nativas */}
           <div className="p-3.5 rounded-2xl bg-brand/5 border border-brand/15 text-xs text-foreground/80 flex items-start gap-2.5">
             <Info className="w-4 h-4 text-brand shrink-0 mt-0.5" />
             <div className="space-y-1 text-[11px] leading-relaxed">
-              <p className="font-bold text-brand">Tags Padrão Automáticas Disponíveis no Word:</p>
+              <p className="font-bold text-brand">Tags Nativas Automáticas Disponíveis no Word:</p>
               <p className="text-muted">
                 Você pode utilizar diretamente as tags{' '}
                 <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{nome}}'}</code> (usuário logado),{' '}
-                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{periodo}}'}</code> (período formatado),{' '}
+                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{periodo}}'}</code> (período de vigência),{' '}
                 <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{data_inicio}}'}</code>,{' '}
                 <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{data_fim}}'}</code> e{' '}
-                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{total_horas}}'}</code> sem precisar cadastrar seções para elas.
+                <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{total_horas}}'}</code> sem precisar cadastrar campos para elas.
               </p>
             </div>
           </div>
@@ -324,7 +301,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               <div>
                 <h4 className="text-xs font-bold text-foreground">Campos e Seções do Relatório</h4>
                 <p className="text-[11px] text-muted">
-                  Crie tags que serão substituídas pelo Word. Escolha se o campo é texto livre, texto fixo pré-preenchido ou listagem de tarefas.
+                  Crie tags que serão substituídas pelo Word. Escolha se o campo é texto livre, texto fixo, data (com formato personalizado) ou listagem de tarefas.
                 </p>
               </div>
               <button
@@ -342,7 +319,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 <Sparkles className="w-6 h-6 text-muted mx-auto" />
                 <p className="text-xs font-semibold text-foreground">Nenhum campo personalizado adicionado</p>
                 <p className="text-[11px] text-muted max-w-md mx-auto">
-                  Caso seu documento precise de variáveis como Gestor, Nome do Projeto, Resumo ou Lista de Tarefas, clique em <strong>Adicionar Campo / Seção</strong>.
+                  Caso seu documento precise de variáveis como Gestor, Nome do Projeto, Data formatada, Resumo ou Lista de Tarefas, clique em <strong>Adicionar Campo / Seção</strong>.
                 </p>
               </div>
             ) : (
@@ -381,7 +358,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                               sectionKey: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
                             })
                           }
-                          placeholder="ex: gestor ou resumo"
+                          placeholder="ex: gestor ou periodo"
                           className="w-full px-2.5 py-1.5 rounded-lg border border-border-soft bg-surface text-xs font-mono text-foreground focus:outline-hidden focus:border-brand"
                         />
                       </div>
@@ -392,7 +369,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                           type="text"
                           value={section.title}
                           onChange={(e) => handleUpdateSection(idx, { title: e.target.value })}
-                          placeholder="ex: Nome do Gestor"
+                          placeholder="ex: Período de Vigência"
                           className="w-full px-2.5 py-1.5 rounded-lg border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand"
                         />
                       </div>
@@ -404,17 +381,50 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                           value={section.sectionType}
                           onChange={(val) =>
                             handleUpdateSection(idx, {
-                              sectionType: val as 'FREE_TEXT' | 'FIXED_TEXT' | 'TASK_LIST',
+                              sectionType: val as 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST',
                             })
                           }
                           options={[
                             { value: 'FREE_TEXT', label: 'Texto Livre (Preenchido na emissão)' },
                             { value: 'FIXED_TEXT', label: 'Texto Fixo (Pré-preenchido no cadastro)' },
+                            { value: 'DATE', label: 'Data (Com formato personalizado)' },
                             { value: 'TASK_LIST', label: 'Lista de Tarefas do Período' },
                           ]}
                         />
                       </div>
                     </div>
+
+                    {/* Configuração de Campo de Tipo DATA */}
+                    {section.sectionType === 'DATE' && (
+                      <div className="pt-2 border-t border-border-soft/60 space-y-2 animate-in fade-in duration-150">
+                        <label className="text-[10px] font-semibold text-foreground flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-brand" />
+                            Formato de Exibição da Data / Período
+                          </span>
+                          <span className="text-[9px] text-muted">Escolha a formatação para o Word</span>
+                        </label>
+                        <CustomSelect
+                          size="sm"
+                          value={section.dateFormat || 'DD/MM/AAAA'}
+                          onChange={(val) => handleUpdateSection(idx, { dateFormat: String(val) })}
+                          options={[
+                            { value: 'DD/MM/AAAA', label: 'DD/MM/AAAA (ex: 31/10/2026)' },
+                            { value: 'DD-MM-AAAA', label: 'DD-MM-AAAA (ex: 31-10-2026)' },
+                            { value: 'AAAA-MM-DD', label: 'AAAA-MM-DD (ex: 2026-10-31)' },
+                            { value: 'DD/MM/AAAA até DD/MM/AAAA', label: 'DD/MM/AAAA até DD/MM/AAAA (ex: 01/10/2026 até 31/10/2026)' },
+                            { value: 'DD-MM-AAAA até DD-MM-AAAA', label: 'DD-MM-AAAA até DD-MM-AAAA (ex: 01-10-2026 até 31-10-2026)' },
+                            { value: 'DD/MM/AAAA a DD/MM/AAAA', label: 'DD/MM/AAAA a DD/MM/AAAA (ex: 01/10/2026 a 31/10/2026)' },
+                            { value: 'DD-MM-AAAA a DD-MM-AAAA', label: 'DD-MM-AAAA a DD-MM-AAAA (ex: 01-10-2026 a 31-10-2026)' },
+                            { value: 'DD de Mês de AAAA', label: 'DD de Mês de AAAA (ex: 31 de Outubro de 2026)' },
+                            { value: 'DD de Mês de AAAA até DD de Mês de AAAA', label: '01 de Outubro de 2026 até 31 de Outubro de 2026' },
+                            { value: 'MM/AAAA', label: 'MM/AAAA (ex: 10/2026)' },
+                            { value: 'Mês de AAAA', label: 'Mês de AAAA (ex: Outubro de 2026)' },
+                            { value: 'DD/MM - DD/MM/AAAA', label: 'DD/MM - DD/MM/AAAA (ex: 01/10 - 31/10/2026)' },
+                          ]}
+                        />
+                      </div>
+                    )}
 
                     {/* Campo de Valor Pré-preenchido (Fixo ou Sugerido) */}
                     {(section.sectionType === 'FIXED_TEXT' || section.sectionType === 'FREE_TEXT') && (

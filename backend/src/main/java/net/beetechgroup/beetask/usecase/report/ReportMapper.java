@@ -47,6 +47,7 @@ public class ReportMapper {
                 section.getTitle(),
                 section.getSectionType(),
                 section.getDefaultValue(),
+                section.getDateFormat(),
                 section.getFilterCategory() != null ? section.getFilterCategory().getId() : null,
                 section.getFilterCategory() != null ? section.getFilterCategory().getName() : null,
                 section.getFilterStatus(),

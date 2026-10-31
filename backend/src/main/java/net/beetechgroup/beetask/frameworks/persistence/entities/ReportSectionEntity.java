@@ -30,10 +30,13 @@ public class ReportSectionEntity {
     private String title;
 
     @Column(name = "section_type", nullable = false, length = 50)
-    private String sectionType; // 'FREE_TEXT', 'FIXED_TEXT', 'TASK_LIST'
+    private String sectionType; // 'FREE_TEXT', 'FIXED_TEXT', 'DATE', 'TASK_LIST'
 
     @Column(name = "default_value", columnDefinition = "TEXT")
     private String defaultValue;
+
+    @Column(name = "date_format", length = 100)
+    private String dateFormat;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filter_category_id")
@@ -129,6 +132,14 @@ public class ReportSectionEntity {
 
     public void setOrderIndex(Integer orderIndex) {
         this.orderIndex = orderIndex;
+    }
+
+    public String getDateFormat() {
+        return dateFormat;
+    }
+
+    public void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -94,6 +94,12 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
     )
   }, [selectedTemplate])
 
+  // Seções de data do template selecionado
+  const dateSections = useMemo(() => {
+    if (!selectedTemplate) return []
+    return selectedTemplate.sections.filter((s) => s.sectionType === 'DATE')
+  }, [selectedTemplate])
+
   // Lista de seções de tarefas do template selecionado
   const taskListSections = useMemo(() => {
     if (!selectedTemplate) return []
@@ -357,6 +363,70 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
               </span>
             </div>
           </div>
+
+          {/* Campos de Data Customizados do Modelo */}
+          {dateSections.length > 0 && (
+            <div className="space-y-3 p-4 rounded-2xl border border-border-soft bg-surface-raised/40">
+              <div className="border-b border-border-soft pb-1">
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-brand" />
+                  Datas Configuradas no Modelo
+                </h4>
+                <p className="text-[11px] text-muted">
+                  Campos formatados de acordo com as regras definidas no modelo.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {dateSections.map((sec) => {
+                  const isPeriod =
+                    sec.dateFormat?.includes('até') ||
+                    sec.dateFormat?.includes(' a ') ||
+                    sec.dateFormat?.includes(' - ') ||
+                    sec.sectionKey.includes('periodo') ||
+                    sec.sectionKey.includes('vigencia')
+
+                  return (
+                    <div key={sec.sectionKey} className="space-y-1">
+                      <label className="text-[11px] font-semibold text-foreground flex items-center justify-between">
+                        <span>{sec.title}</span>
+                        <code className="text-[10px] text-brand font-mono font-bold">{`{{${sec.sectionKey}}}`}</code>
+                      </label>
+
+                      {isPeriod ? (
+                        <div className="px-3 py-2 rounded-xl border border-border-soft bg-surface/70 text-xs text-foreground/80 flex items-center justify-between">
+                          <span className="truncate">Período de Vigência</span>
+                          <span className="text-[10px] font-mono text-brand font-bold bg-brand/10 px-1.5 py-0.5 rounded">
+                            {sec.dateFormat || 'DD/MM/AAAA'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            type="date"
+                            value={
+                              customFields[sec.sectionKey] ||
+                              (sec.sectionKey.includes('inicio')
+                                ? startDate
+                                : sec.sectionKey.includes('fim')
+                                ? endDate
+                                : endDate)
+                            }
+                            onChange={(e) => handleCustomFieldChange(sec.sectionKey, e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+                          />
+                          <span className="text-[10px] text-muted block mt-0.5">
+                            Formato no Word:{' '}
+                            <strong className="font-mono text-brand">{sec.dateFormat || 'DD/MM/AAAA'}</strong>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Seções de Texto (Livre ou Pré-preenchido) Dinâmicas */}
           {textSections.length > 0 && (

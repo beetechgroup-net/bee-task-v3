@@ -185,6 +185,39 @@ public class GenerateReportUseCase {
                 if (("FREE_TEXT".equalsIgnoreCase(sec.getSectionType()) || "FIXED_TEXT".equalsIgnoreCase(sec.getSectionType()))
                         && sec.getDefaultValue() != null) {
                     variables.put(sec.getSectionKey(), sec.getDefaultValue());
+                } else if ("DATE".equalsIgnoreCase(sec.getSectionType())) {
+                    String datePattern = sec.getDateFormat() != null && !sec.getDateFormat().isBlank()
+                            ? sec.getDateFormat().trim()
+                            : "DD/MM/AAAA";
+                    String formattedVal;
+                    String customVal = input.customFields() != null ? input.customFields().get(sec.getSectionKey()) : null;
+                    if (customVal != null && !customVal.isBlank()) {
+                        try {
+                            LocalDate d = LocalDate.parse(customVal.trim());
+                            formattedVal = formatSingleDate(d, datePattern);
+                        } catch (Exception e) {
+                            formattedVal = customVal.trim();
+                        }
+                    } else {
+                        if (isPeriodPattern(datePattern) || sec.getSectionKey().contains("periodo") || sec.getSectionKey().contains("vigencia")) {
+                            formattedVal = formatPeriodWithPattern(input.startDate(), input.endDate(), datePattern);
+                        } else if (sec.getSectionKey().contains("fim") || sec.getSectionKey().contains("termino")) {
+                            formattedVal = formatSingleDate(input.endDate(), datePattern);
+                        } else if (sec.getSectionKey().contains("inicio")) {
+                            formattedVal = formatSingleDate(input.startDate(), datePattern);
+                        } else if (sec.getSectionKey().contains("emissao") || sec.getSectionKey().contains("hoje")) {
+                            formattedVal = formatSingleDate(LocalDate.now(), datePattern);
+                        } else {
+                            formattedVal = isPeriodPattern(datePattern)
+                                    ? formatPeriodWithPattern(input.startDate(), input.endDate(), datePattern)
+                                    : formatSingleDate(input.endDate(), datePattern);
+                        }
+                    }
+                    variables.put(sec.getSectionKey(), formattedVal);
+                    if ("periodo".equalsIgnoreCase(sec.getSectionKey()) || "periodo_vigencia".equalsIgnoreCase(sec.getSectionKey())) {
+                        variables.put("periodo", formattedVal);
+                        variables.put("periodo_vigencia", formattedVal);
+                    }
                 }
             }
         }
@@ -387,17 +420,52 @@ public class GenerateReportUseCase {
         return text.substring(0, 1).toUpperCase(PT_BR) + text.substring(1);
     }
 
+    private boolean isPeriodPattern(String pattern) {
+        if (pattern == null) return false;
+        return pattern.contains("até") || pattern.contains(" a ") || pattern.contains(" - ");
+    }
+
+    private String formatSingleDate(LocalDate date, String pattern) {
+        if (date == null) return "";
+        if (pattern == null || pattern.isBlank()) pattern = "DD/MM/AAAA";
+
+        return switch (pattern) {
+            case "DD/MM/AAAA" -> date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            case "DD-MM-AAAA" -> date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+            case "AAAA-MM-DD" -> date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            case "DD de Mês de AAAA" -> {
+                String m = capitalize(date.getMonth().getDisplayName(TextStyle.FULL, PT_BR));
+                yield String.format("%02d de %s de %d", date.getDayOfMonth(), m, date.getYear());
+            }
+            case "MM/AAAA" -> date.format(DateTimeFormatter.ofPattern("MM/yyyy"));
+            case "Mês de AAAA" -> {
+                String m = capitalize(date.getMonth().getDisplayName(TextStyle.FULL, PT_BR));
+                yield m + " de " + date.getYear();
+            }
+            default -> {
+                if (pattern.contains("-")) {
+                    yield date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                }
+                yield date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            }
+        };
+    }
+
     private String formatPeriodWithPattern(LocalDate start, LocalDate end, String pattern) {
         if (pattern == null || pattern.isBlank()) {
             pattern = "DD/MM/AAAA até DD/MM/AAAA";
         }
 
-        String strStart = start.format(DATE_FORMATTER);
-        String strEnd = end.format(DATE_FORMATTER);
+        String strSlashStart = start.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String strSlashEnd = end.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String strDashStart = start.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        String strDashEnd = end.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
 
         return switch (pattern) {
-            case "DD/MM/AAAA até DD/MM/AAAA" -> strStart + " até " + strEnd;
-            case "DD/MM/AAAA a DD/MM/AAAA" -> strStart + " a " + strEnd;
+            case "DD/MM/AAAA até DD/MM/AAAA" -> strSlashStart + " até " + strSlashEnd;
+            case "DD-MM-AAAA até DD-MM-AAAA" -> strDashStart + " até " + strDashEnd;
+            case "DD/MM/AAAA a DD/MM/AAAA" -> strSlashStart + " a " + strSlashEnd;
+            case "DD-MM-AAAA a DD-MM-AAAA" -> strDashStart + " a " + strDashEnd;
             case "DD de Mês de AAAA até DD de Mês de AAAA" -> {
                 String mStart = capitalize(start.getMonth().getDisplayName(TextStyle.FULL, PT_BR));
                 String mEnd = capitalize(end.getMonth().getDisplayName(TextStyle.FULL, PT_BR));
@@ -413,7 +481,10 @@ public class GenerateReportUseCase {
             case "DD/MM - DD/MM/AAAA" -> String.format("%02d/%02d - %02d/%02d/%d",
                     start.getDayOfMonth(), start.getMonthValue(),
                     end.getDayOfMonth(), end.getMonthValue(), end.getYear());
-            default -> strStart + " até " + strEnd;
+            case "DD-MM-AAAA" -> strDashStart;
+            case "DD/MM/AAAA" -> strSlashStart;
+            case "AAAA-MM-DD" -> start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            default -> strSlashStart + " até " + strSlashEnd;
         };
     }
 }

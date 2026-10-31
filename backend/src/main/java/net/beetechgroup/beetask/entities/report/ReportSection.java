@@ -8,8 +8,9 @@ public class ReportSection {
     private Long reportTemplateId;
     private String sectionKey;
     private String title;
-    private String sectionType; // 'FREE_TEXT', 'FIXED_TEXT', 'TASK_LIST'
+    private String sectionType; // 'FREE_TEXT', 'FIXED_TEXT', 'DATE', 'TASK_LIST'
     private String defaultValue;
+    private String dateFormat;
     private Category filterCategory;
     private String filterStatus; // 'ALL', 'COMPLETED', 'IN_PROGRESS'
     private Boolean includeTime;
@@ -94,6 +95,14 @@ public class ReportSection {
 
     public void setOrderIndex(Integer orderIndex) {
         this.orderIndex = orderIndex;
+    }
+
+    public String getDateFormat() {
+        return dateFormat;
+    }
+
+    public void setDateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -272,25 +272,23 @@ export const ReportsPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Dados da Seção Padrão */}
-                    <div className="p-2.5 rounded-xl bg-surface-raised/60 border border-border-soft text-[11px] space-y-1">
-                      {tpl.managerName && (
-                        <div className="flex items-center justify-between gap-1 text-muted">
-                          <span>Gestor:</span>
-                          <span className="font-semibold text-foreground truncate">{tpl.managerName}</span>
-                        </div>
-                      )}
-                      {(tpl.customProjectName || tpl.projectName) && (
-                        <div className="flex items-center justify-between gap-1 text-muted">
-                          <span>Projeto:</span>
-                          <span className="font-semibold text-foreground truncate">{tpl.customProjectName || tpl.projectName}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between gap-1 text-muted">
-                        <span>Padrão de Data:</span>
-                        <span className="font-mono text-[10px] text-brand truncate">{tpl.dateFormatPattern || 'DD/MM/AAAA até DD/MM/AAAA'}</span>
+                    {/* Informações adicionais se houver */}
+                    {(tpl.managerName || tpl.customProjectName || tpl.projectName) && (
+                      <div className="p-2.5 rounded-xl bg-surface-raised/60 border border-border-soft text-[11px] space-y-1">
+                        {tpl.managerName && (
+                          <div className="flex items-center justify-between gap-1 text-muted">
+                            <span>Gestor:</span>
+                            <span className="font-semibold text-foreground truncate">{tpl.managerName}</span>
+                          </div>
+                        )}
+                        {(tpl.customProjectName || tpl.projectName) && (
+                          <div className="flex items-center justify-between gap-1 text-muted">
+                            <span>Projeto:</span>
+                            <span className="font-semibold text-foreground truncate">{tpl.customProjectName || tpl.projectName}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
 
                     {/* Tags configuradas */}
                     <div className="space-y-1.5 pt-1">
@@ -301,10 +299,13 @@ export const ReportsPage: React.FC = () => {
                         {tpl.sections.map((s) => (
                           <span
                             key={s.sectionKey}
-                            title={`${s.title} (${s.sectionType}${s.defaultValue ? ` — Valor fixo: ${s.defaultValue}` : ''})`}
+                            title={`${s.title} (${s.sectionType}${s.dateFormat ? ` — Formato: ${s.dateFormat}` : ''}${s.defaultValue ? ` — Valor fixo: ${s.defaultValue}` : ''})`}
                             className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-surface-raised border border-border-soft text-foreground/80 inline-flex items-center gap-1"
                           >
                             <span>{`{{${s.sectionKey}}}`}</span>
+                            {s.sectionType === 'DATE' && (
+                              <span className="text-[9px] text-brand font-sans font-bold">[{s.dateFormat || 'data'}]</span>
+                            )}
                             {s.defaultValue && (
                               <span className="w-1.5 h-1.5 rounded-full bg-brand" title="Valor pré-preenchido" />
                             )}
