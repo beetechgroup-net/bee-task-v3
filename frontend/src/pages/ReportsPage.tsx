@@ -11,6 +11,7 @@ import {
   Check,
   Clock,
   AlertCircle,
+  Pencil,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -22,6 +23,7 @@ import { projectService } from '../services/projectService'
 import { categoryService } from '../services/categoryService'
 import type { Project, Category } from '../types/task'
 import { CreateTemplateModal } from '../components/reports/CreateTemplateModal'
+import { EditTemplateModal } from '../components/reports/EditTemplateModal'
 import { GenerateReportModal } from '../components/reports/GenerateReportModal'
 
 export const ReportsPage: React.FC = () => {
@@ -41,6 +43,7 @@ export const ReportsPage: React.FC = () => {
   // Modais
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isGenerateOpen, setIsGenerateOpen] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<ReportTemplateOutput | null>(null)
   const [generateInitialTemplateId, setGenerateInitialTemplateId] = useState<number | undefined>(undefined)
 
   const loadData = useCallback(async () => {
@@ -317,14 +320,24 @@ export const ReportsPage: React.FC = () => {
 
                   {/* Actions */}
                   <div className="flex items-center justify-between pt-3 border-t border-border-soft/60">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteTemplate(tpl.id)}
-                      className="p-1.5 rounded-xl text-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                      title="Excluir Modelo"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setEditingTemplate(tpl)}
+                        className="p-1.5 rounded-xl text-muted hover:text-brand hover:bg-brand/10 transition-colors cursor-pointer"
+                        title="Editar Modelo"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTemplate(tpl.id)}
+                        className="p-1.5 rounded-xl text-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        title="Excluir Modelo"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
 
                     <div className="flex items-center gap-2">
                       <a
@@ -513,6 +526,20 @@ export const ReportsPage: React.FC = () => {
             projects={projects}
             categories={categories}
           />
+
+          {editingTemplate && (
+            <EditTemplateModal
+              isOpen={true}
+              onClose={() => setEditingTemplate(null)}
+              template={editingTemplate}
+              onSuccess={(updated) => {
+                setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+              }}
+              orgId={orgId}
+              projects={projects}
+              categories={categories}
+            />
+          )}
 
           <GenerateReportModal
             isOpen={isGenerateOpen}

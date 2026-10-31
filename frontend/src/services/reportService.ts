@@ -75,6 +75,13 @@ export const reportService = {
     })
   },
 
+  async updateTemplate(orgId: number, templateId: number, formData: FormData): Promise<ReportTemplateOutput> {
+    return apiFetch<ReportTemplateOutput>(`/organizations/${orgId}/reports/templates/${templateId}`, {
+      method: 'PUT',
+      body: formData,
+    })
+  },
+
   async deleteTemplate(orgId: number, templateId: number): Promise<void> {
     return apiFetch<void>(`/organizations/${orgId}/reports/templates/${templateId}`, {
       method: 'DELETE',

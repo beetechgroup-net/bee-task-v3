@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationMemberUseCase;
 import net.beetechgroup.beetask.usecase.report.create.CreateReportTemplateUseCase;
+import net.beetechgroup.beetask.usecase.report.update.UpdateReportTemplateUseCase;
 import net.beetechgroup.beetask.usecase.report.delete.DeleteReportTemplateUseCase;
 import net.beetechgroup.beetask.usecase.report.generate.GenerateReportUseCase;
 import net.beetechgroup.beetask.usecase.report.list.ListGeneratedReportsUseCase;
@@ -36,6 +37,23 @@ public class ReportUseCaseConfig {
                 projectRepository,
                 categoryRepository,
                 userRepository,
+                storageRepository,
+                authorizer
+        );
+    }
+
+    @Produces
+    public UpdateReportTemplateUseCase updateReportTemplateUseCase(
+            ReportTemplateRepository reportTemplateRepository,
+            ProjectRepository projectRepository,
+            CategoryRepository categoryRepository,
+            StorageRepository storageRepository,
+            AuthorizeOrganizationMemberUseCase authorizer
+    ) {
+        return new UpdateReportTemplateUseCase(
+                reportTemplateRepository,
+                projectRepository,
+                categoryRepository,
                 storageRepository,
                 authorizer
         );

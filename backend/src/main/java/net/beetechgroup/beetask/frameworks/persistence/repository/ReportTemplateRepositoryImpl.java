@@ -23,8 +23,33 @@ public class ReportTemplateRepositoryImpl implements ReportTemplateRepository, P
         if (Objects.isNull(entity.getId())) {
             persist(entity);
         } else {
-            entity = getEntityManager().merge(entity);
+            ReportTemplateEntity existing = findById(entity.getId());
+            if (existing != null) {
+                existing.setName(entity.getName());
+                existing.setDescription(entity.getDescription());
+                existing.setScope(entity.getScope());
+                existing.setProject(entity.getProject());
+                existing.setFileName(entity.getFileName());
+                existing.setFileUrl(entity.getFileUrl());
+                existing.setStorageKey(entity.getStorageKey());
+                existing.setManagerName(entity.getManagerName());
+                existing.setCustomProjectName(entity.getCustomProjectName());
+                existing.setDateFormatPattern(entity.getDateFormatPattern());
+                existing.setUpdatedAt(java.time.LocalDateTime.now());
+
+                existing.getSections().clear();
+                if (entity.getSections() != null) {
+                    for (net.beetechgroup.beetask.frameworks.persistence.entities.ReportSectionEntity s : entity.getSections()) {
+                        s.setReportTemplate(existing);
+                        existing.getSections().add(s);
+                    }
+                }
+                entity = existing;
+            } else {
+                entity = getEntityManager().merge(entity);
+            }
         }
+        getEntityManager().flush();
         ReportTemplate saved = ReportEntityMapper.toDomain(entity);
         LOGGER.infof("Persisted report template %d for organization %d", saved.getId(), saved.getOrganization().getId());
         return saved;

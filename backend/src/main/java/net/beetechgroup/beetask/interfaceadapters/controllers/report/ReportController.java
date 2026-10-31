@@ -15,6 +15,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -25,6 +26,8 @@ import net.beetechgroup.beetask.entities.report.GeneratedReport;
 import net.beetechgroup.beetask.usecase.report.ReportTemplateOutput;
 import net.beetechgroup.beetask.usecase.report.create.CreateReportTemplateInput;
 import net.beetechgroup.beetask.usecase.report.create.CreateReportTemplateUseCase;
+import net.beetechgroup.beetask.usecase.report.update.UpdateReportTemplateInput;
+import net.beetechgroup.beetask.usecase.report.update.UpdateReportTemplateUseCase;
 import net.beetechgroup.beetask.usecase.report.delete.DeleteReportTemplateUseCase;
 import net.beetechgroup.beetask.usecase.report.generate.GenerateReportInput;
 import net.beetechgroup.beetask.usecase.report.generate.GenerateReportOutput;
@@ -46,6 +49,9 @@ public class ReportController {
 
     @Inject
     CreateReportTemplateUseCase createReportTemplateUseCase;
+
+    @Inject
+    UpdateReportTemplateUseCase updateReportTemplateUseCase;
 
     @Inject
     ListReportTemplatesUseCase listReportTemplatesUseCase;
@@ -119,6 +125,62 @@ public class ReportController {
         } catch (Exception e) {
             LOGGER.errorf("Erro ao processar template: %s", e.getMessage());
             throw new RuntimeException("Erro ao processar arquivo de template: " + e.getMessage(), e);
+        }
+    }
+
+    @PUT
+    @Path("/templates/{templateId}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Operation(summary = "Update report template", description = "Updates report template metadata, sections and optionally replaces the .docx file")
+    public ReportTemplateOutput updateTemplate(
+            @PathParam("orgId") Long orgId,
+            @PathParam("templateId") Long templateId,
+            @MultipartForm CreateReportTemplateForm form
+    ) {
+        String email = securityIdentity.getPrincipal().getName();
+
+        List<CreateReportTemplateInput.SectionInput> sections = new ArrayList<>();
+        if (form.sectionsJson != null && !form.sectionsJson.isBlank()) {
+            try {
+                sections = objectMapper.readValue(form.sectionsJson, new TypeReference<List<CreateReportTemplateInput.SectionInput>>() {});
+            } catch (Exception e) {
+                LOGGER.warnf("Falha ao parsear sectionsJson: %s", e.getMessage());
+            }
+        }
+
+        InputStream is = null;
+        try {
+            String fileName = null;
+            long fileSize = 0;
+            if (form.file != null && form.file.filePath() != null) {
+                is = new FileInputStream(form.file.filePath().toFile());
+                fileName = form.file.fileName();
+                fileSize = form.file.size();
+            }
+
+            UpdateReportTemplateInput input = new UpdateReportTemplateInput(
+                    email,
+                    orgId,
+                    templateId,
+                    form.projectId,
+                    form.name,
+                    form.description,
+                    form.scope,
+                    fileName,
+                    is,
+                    fileSize,
+                    sections
+            );
+            return updateReportTemplateUseCase.execute(input);
+        } catch (Exception e) {
+            LOGGER.errorf("Erro ao atualizar template: %s", e.getMessage());
+            throw new RuntimeException("Erro ao atualizar arquivo de template: " + e.getMessage(), e);
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (Exception ignored) {}
+            }
         }
     }
 
