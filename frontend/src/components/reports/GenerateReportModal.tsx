@@ -10,6 +10,7 @@ import {
   Loader2,
   Lock,
   Tag,
+  PenTool,
 } from 'lucide-react'
 import { CustomSelect } from '../ui/Select'
 import { reportService, type ReportTemplateOutput } from '../../services/reportService'
@@ -105,6 +106,12 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
   const taskListSections = useMemo(() => {
     if (!selectedTemplate) return []
     return selectedTemplate.sections.filter((s) => s.sectionType === 'TASK_LIST')
+  }, [selectedTemplate])
+
+  // Lista de seções de assinatura do template selecionado
+  const signatureSections = useMemo(() => {
+    if (!selectedTemplate) return []
+    return selectedTemplate.sections.filter((s) => s.sectionType === 'SIGNATURE')
   }, [selectedTemplate])
 
   // Preset Handlers
@@ -513,6 +520,24 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Seções de Assinatura Digital do Modelo */}
+          {signatureSections.length > 0 && (
+            <div className="p-4 rounded-2xl bg-surface-raised/40 border border-border-soft space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <PenTool className="w-4 h-4 text-brand" />
+                  Assinatura Digital no Relatório
+                </span>
+                <span className="text-[10px] text-muted font-mono font-semibold">
+                  {signatureSections.map((s) => `{{${s.sectionKey}}}`).join(', ')}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted leading-relaxed">
+                Este modelo contém campo de assinatura ({signatureSections.map((s) => s.title).join(', ')}). O BeeTask incluirá automaticamente a assinatura padrão cadastrada no seu perfil. Caso não possua assinatura cadastrada, o campo ficará em branco.
+              </p>
             </div>
           )}
         </form>

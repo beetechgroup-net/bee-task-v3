@@ -4,7 +4,7 @@ export interface ReportSectionOutput {
   id: number
   sectionKey: string
   title: string
-  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST'
+  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE'
   defaultValue?: string
   dateFormat?: string
   filterCategoryId?: number

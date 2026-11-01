@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.UUID;
 import net.beetechgroup.beetask.entities.Project;
 import net.beetechgroup.beetask.entities.User;
+import net.beetechgroup.beetask.entities.UserSignature;
 import net.beetechgroup.beetask.entities.organization.Organization;
 import net.beetechgroup.beetask.entities.report.GeneratedReport;
 import net.beetechgroup.beetask.entities.report.ReportSection;
@@ -33,6 +34,7 @@ import net.beetechgroup.beetask.usecase.repository.ReportTemplateRepository;
 import net.beetechgroup.beetask.usecase.repository.StorageRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
+import net.beetechgroup.beetask.usecase.repository.UserSignatureRepository;
 import org.jboss.logging.Logger;
 
 public class GenerateReportUseCase {
@@ -47,6 +49,7 @@ public class GenerateReportUseCase {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final StorageRepository storageRepository;
+    private final UserSignatureRepository userSignatureRepository;
     private final AuthorizeOrganizationMemberUseCase authorizer;
 
     public GenerateReportUseCase(
@@ -57,6 +60,7 @@ public class GenerateReportUseCase {
             ProjectRepository projectRepository,
             UserRepository userRepository,
             StorageRepository storageRepository,
+            UserSignatureRepository userSignatureRepository,
             AuthorizeOrganizationMemberUseCase authorizer
     ) {
         this.reportTemplateRepository = reportTemplateRepository;
@@ -66,6 +70,7 @@ public class GenerateReportUseCase {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.storageRepository = storageRepository;
+        this.userSignatureRepository = userSignatureRepository;
         this.authorizer = authorizer;
     }
 
@@ -251,16 +256,66 @@ public class GenerateReportUseCase {
             }
         }
 
-        // 5. Baixar o template do MinIO e gerar o documento preenchido
+        // 5. Carregar assinatura padrão do usuário (se houver)
+        byte[] defaultSignatureBytes = null;
+        if (userSignatureRepository != null) {
+            List<UserSignature> userSignatures = userSignatureRepository.findByUserId(user.getId());
+            UserSignature defaultSig = userSignatures.stream()
+                    .filter(UserSignature::isDefault)
+                    .findFirst()
+                    .or(() -> userSignatures.stream().findFirst())
+                    .orElse(null);
+
+            if (defaultSig != null && defaultSig.getStorageKey() != null) {
+                try (InputStream sigStream = storageRepository.download(defaultSig.getStorageKey())) {
+                    if (sigStream != null) {
+                        defaultSignatureBytes = sigStream.readAllBytes();
+                        LOGGER.infof("Assinatura padrão do usuário %s carregada com sucesso (%d bytes)", user.getEmail(), defaultSignatureBytes.length);
+                    }
+                } catch (Exception e) {
+                    LOGGER.warnf("Não foi possível carregar imagem da assinatura padrão: %s", e.getMessage());
+                }
+            }
+        }
+
+        // Mapear imagens e assinaturas para inserção no Word
+        Map<String, byte[]> images = new HashMap<>();
+
+        if (defaultSignatureBytes != null) {
+            images.put("assinatura", defaultSignatureBytes);
+            images.put("assinatura_usuario", defaultSignatureBytes);
+            images.put("assinatura_colaborador", defaultSignatureBytes);
+        } else {
+            // "se nao tem, nao assina": remove as tags do documento
+            variables.put("assinatura", "");
+            variables.put("assinatura_usuario", "");
+            variables.put("assinatura_colaborador", "");
+        }
+
+        // Processar seções configuradas no modelo do tipo SIGNATURE ou IMAGE
+        if (template.getSections() != null) {
+            for (ReportSection section : template.getSections()) {
+                if ("SIGNATURE".equalsIgnoreCase(section.getSectionType()) || "IMAGE".equalsIgnoreCase(section.getSectionType())) {
+                    if (defaultSignatureBytes != null) {
+                        images.put(section.getSectionKey(), defaultSignatureBytes);
+                    } else {
+                        // "se nao tem, nao assina": substitui por vazio
+                        variables.put(section.getSectionKey(), "");
+                    }
+                }
+            }
+        }
+
+        // 6. Baixar o template do MinIO e gerar o documento preenchido
         byte[] docxBytes;
         try (InputStream templateStream = storageRepository.download(template.getStorageKey())) {
-            docxBytes = DocxReportEngine.generate(templateStream, variables, listSections);
+            docxBytes = DocxReportEngine.generate(templateStream, variables, listSections, images);
         } catch (Exception e) {
             LOGGER.errorf("Erro ao processar template .docx %d: %s", template.getId(), e.getMessage());
             throw new RuntimeException("Falha ao gerar o documento Word: " + e.getMessage(), e);
         }
 
-        // 6. Fazer upload do relatório gerado para o MinIO
+        // 7. Fazer upload do relatório gerado para o MinIO
         String cleanTitle = (template.getName() + "_" + strStart.replace("/", "-") + "_" + strEnd.replace("/", "-"))
                 .replaceAll("[^a-zA-Z0-9._-]", "_");
         String generatedFileName = cleanTitle + ".docx";

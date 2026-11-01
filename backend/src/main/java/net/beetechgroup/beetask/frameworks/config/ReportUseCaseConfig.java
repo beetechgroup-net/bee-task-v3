@@ -85,6 +85,7 @@ public class ReportUseCaseConfig {
             ProjectRepository projectRepository,
             UserRepository userRepository,
             StorageRepository storageRepository,
+            net.beetechgroup.beetask.usecase.repository.UserSignatureRepository userSignatureRepository,
             AuthorizeOrganizationMemberUseCase authorizer
     ) {
         return new GenerateReportUseCase(
@@ -95,6 +96,7 @@ public class ReportUseCaseConfig {
                 projectRepository,
                 userRepository,
                 storageRepository,
+                userSignatureRepository,
                 authorizer
         );
     }

@@ -11,6 +11,7 @@ import {
   Calendar,
   Sparkles,
   Info,
+  PenTool,
 } from 'lucide-react'
 import { CustomSelect } from '../ui/Select'
 import { reportService, type ReportTemplateOutput } from '../../services/reportService'
@@ -28,7 +29,7 @@ interface CreateTemplateModalProps {
 interface SectionFormItem {
   sectionKey: string
   title: string
-  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST'
+  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE'
   defaultValue?: string
   dateFormat?: string
   filterCategoryId?: number
@@ -376,18 +377,32 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                           value={section.sectionType}
                           onChange={(val) =>
                             handleUpdateSection(idx, {
-                              sectionType: val as 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST',
+                              sectionType: val as 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE',
                             })
                           }
                           options={[
                             { value: 'FREE_TEXT', label: 'Texto Livre (Preenchido na emissão)' },
                             { value: 'FIXED_TEXT', label: 'Texto Fixo (Pré-preenchido no cadastro)' },
                             { value: 'DATE', label: 'Data (Com formato personalizado)' },
+                            { value: 'SIGNATURE', label: '✍️ Assinatura Digital (Assinatura do usuário)' },
                             { value: 'TASK_LIST', label: 'Lista de Tarefas do Período' },
                           ]}
                         />
                       </div>
                     </div>
+
+                    {/* Configuração de Campo de Tipo ASSINATURA */}
+                    {section.sectionType === 'SIGNATURE' && (
+                      <div className="p-3 rounded-xl bg-brand/5 border border-brand/15 text-[11px] text-foreground/80 flex items-start gap-2.5 animate-in fade-in duration-150">
+                        <PenTool className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-brand">Preenchimento Automático com Assinatura Digital</p>
+                          <p className="text-muted mt-0.5">
+                            O BeeTask buscará automaticamente a <strong>assinatura padrão</strong> cadastrada no perfil do usuário que gerar o relatório e inserirá a imagem no Word na tag <code className="text-brand font-mono font-bold">{`{{${section.sectionKey || 'assinatura'}}}`}</code>. Se o usuário não tiver assinatura cadastrada, o campo ficará em branco (não assina).
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Configuração de Campo de Tipo DATA */}
                     {section.sectionType === 'DATE' && (

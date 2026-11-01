@@ -98,6 +98,7 @@ export const ReportsPage: React.FC = () => {
 
   const standardTags = [
     { tag: '{{nome}}', desc: 'Nome do colaborador (pega automaticamente do usuário logado)' },
+    { tag: '{{assinatura}}', desc: 'Assinatura digital padrão do usuário logado (se não tiver cadastrada, fica em branco)' },
     { tag: '{{data_inicio}}', desc: 'Data inicial do período escolhido (ex: 01/10/2026)' },
     { tag: '{{data_fim}}', desc: 'Data final do período escolhido (ex: 31/10/2026)' },
     { tag: '{{mes_ano}}', desc: 'Mês e ano por extenso (ex: Outubro/2026)' },

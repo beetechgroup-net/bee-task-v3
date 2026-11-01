@@ -1,14 +1,17 @@
 package net.beetechgroup.beetask.usecase.report.docengine;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.poi.xwpf.usermodel.IBodyElement;
+import org.apache.poi.util.Units;
+import org.apache.poi.xwpf.usermodel.Document;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFHeader;
 import org.apache.poi.xwpf.usermodel.XWPFFooter;
+import org.apache.poi.xwpf.usermodel.XWPFHeader;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -44,29 +47,38 @@ public class DocxReportEngine {
             Map<String, String> variables,
             Map<String, List<TaskItem>> listSections
     ) throws Exception {
+        return generate(templateStream, variables, listSections, Collections.emptyMap());
+    }
+
+    public static byte[] generate(
+            InputStream templateStream,
+            Map<String, String> variables,
+            Map<String, List<TaskItem>> listSections,
+            Map<String, byte[]> images
+    ) throws Exception {
         try (XWPFDocument doc = new XWPFDocument(templateStream)) {
-            // 1. Processar Tabelas Dinâmicas primeiro (linhas com tags de lista)
-            processTables(doc, variables, listSections);
+            // 1. Processar Tabelas Dinâmicas primeiro (linhas com tags de lista ou campos)
+            processTables(doc, variables, listSections, images);
 
             // 2. Processar Parágrafos do corpo do documento
-            processParagraphs(doc, variables, listSections);
+            processParagraphs(doc, variables, listSections, images);
 
             // 3. Processar Cabeçalhos e Rodapés
             for (XWPFHeader header : doc.getHeaderList()) {
                 for (XWPFParagraph p : header.getParagraphs()) {
-                    replaceTextInParagraph(p, variables, null);
+                    replaceTextInParagraph(p, variables, null, images);
                 }
                 for (XWPFTable table : header.getTables()) {
-                    replaceTextInTableCells(table, variables);
+                    replaceTextInTableCells(table, variables, images);
                 }
             }
 
             for (XWPFFooter footer : doc.getFooterList()) {
                 for (XWPFParagraph p : footer.getParagraphs()) {
-                    replaceTextInParagraph(p, variables, null);
+                    replaceTextInParagraph(p, variables, null, images);
                 }
                 for (XWPFTable table : footer.getTables()) {
-                    replaceTextInTableCells(table, variables);
+                    replaceTextInTableCells(table, variables, images);
                 }
             }
 
@@ -79,18 +91,20 @@ public class DocxReportEngine {
     private static void processParagraphs(
             XWPFDocument doc,
             Map<String, String> variables,
-            Map<String, List<TaskItem>> listSections
+            Map<String, List<TaskItem>> listSections,
+            Map<String, byte[]> images
     ) {
         List<XWPFParagraph> paragraphs = new ArrayList<>(doc.getParagraphs());
         for (XWPFParagraph p : paragraphs) {
-            replaceTextInParagraph(p, variables, listSections);
+            replaceTextInParagraph(p, variables, listSections, images);
         }
     }
 
     private static void processTables(
             XWPFDocument doc,
             Map<String, String> variables,
-            Map<String, List<TaskItem>> listSections
+            Map<String, List<TaskItem>> listSections,
+            Map<String, byte[]> images
     ) {
         for (XWPFTable table : doc.getTables()) {
             List<XWPFTableRow> rows = new ArrayList<>(table.getRows());
@@ -132,10 +146,10 @@ public class DocxReportEngine {
                     table.removeRow(r);
                     r += items.size() - 1; // Ajustar índice
                 } else {
-                    // Linha normal: substituir variáveis simples
+                    // Linha normal: substituir variáveis simples e imagens/assinaturas
                     for (XWPFTableCell cell : row.getTableCells()) {
                         for (XWPFParagraph p : cell.getParagraphs()) {
-                            replaceTextInParagraph(p, variables, null);
+                            replaceTextInParagraph(p, variables, null, images);
                         }
                     }
                 }
@@ -143,11 +157,11 @@ public class DocxReportEngine {
         }
     }
 
-    private static void replaceTextInTableCells(XWPFTable table, Map<String, String> variables) {
+    private static void replaceTextInTableCells(XWPFTable table, Map<String, String> variables, Map<String, byte[]> images) {
         for (XWPFTableRow row : table.getRows()) {
             for (XWPFTableCell cell : row.getTableCells()) {
                 for (XWPFParagraph p : cell.getParagraphs()) {
-                    replaceTextInParagraph(p, variables, null);
+                    replaceTextInParagraph(p, variables, null, images);
                 }
             }
         }
@@ -156,7 +170,8 @@ public class DocxReportEngine {
     private static void replaceTextInParagraph(
             XWPFParagraph p,
             Map<String, String> variables,
-            Map<String, List<TaskItem>> listSections
+            Map<String, List<TaskItem>> listSections,
+            Map<String, byte[]> images
     ) {
         String text = p.getText();
         if (text == null || !text.contains("{{")) {
@@ -196,7 +211,27 @@ public class DocxReportEngine {
             }
         }
 
-        // 2. Substituir variáveis simples ou campos de texto livre
+        // 2. Processar imagens / assinaturas (ex: {{assinatura}}, {{assinatura_responsavel}})
+        if (images != null && !images.isEmpty()) {
+            for (Map.Entry<String, byte[]> imgEntry : images.entrySet()) {
+                String tag = "{{" + imgEntry.getKey() + "}}";
+                if (text.contains(tag)) {
+                    byte[] imgBytes = imgEntry.getValue();
+                    if (imgBytes != null && imgBytes.length > 0) {
+                        insertImageIntoParagraph(p, tag, imgBytes);
+                        text = p.getText();
+                        if (text == null || !text.contains("{{")) {
+                            return;
+                        }
+                    } else {
+                        // "se nao tem, nao assina": remove a tag para não ficar visível no documento
+                        text = text.replace(tag, "");
+                    }
+                }
+            }
+        }
+
+        // 3. Substituir variáveis simples ou campos de texto livre
         String replaced = text;
         if (variables != null) {
             for (Map.Entry<String, String> var : variables.entrySet()) {
@@ -208,7 +243,7 @@ public class DocxReportEngine {
         }
 
         // Se o texto mudou, reaplicamos no parágrafo preservando o estilo original do run 0
-        if (!replaced.equals(text)) {
+        if (!replaced.equals(p.getText())) {
             String font = null;
             int fontSize = -1;
             String color = null;
@@ -241,6 +276,40 @@ public class DocxReportEngine {
                     run.addBreak();
                 }
             }
+        }
+    }
+
+    private static void insertImageIntoParagraph(XWPFParagraph p, String tag, byte[] imgBytes) {
+        String fullText = p.getText();
+        if (fullText == null || !fullText.contains(tag)) return;
+
+        int tagIndex = fullText.indexOf(tag);
+        String before = fullText.substring(0, tagIndex);
+        String after = fullText.substring(tagIndex + tag.length());
+
+        clearRuns(p);
+
+        if (!before.isEmpty()) {
+            XWPFRun rBefore = p.createRun();
+            rBefore.setText(before);
+        }
+
+        XWPFRun imgRun = p.createRun();
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes)) {
+            int format = Document.PICTURE_TYPE_PNG;
+            if (imgBytes.length > 2 && (imgBytes[0] & 0xFF) == 0xFF && (imgBytes[1] & 0xFF) == 0xD8) {
+                format = Document.PICTURE_TYPE_JPEG;
+            }
+            int width = Units.toEMU(160);
+            int height = Units.toEMU(60);
+            imgRun.addPicture(bais, format, "signature.png", width, height);
+        } catch (Exception e) {
+            LOGGER.errorf("Erro ao inserir imagem no docx: %s", e.getMessage());
+        }
+
+        if (!after.isEmpty()) {
+            XWPFRun rAfter = p.createRun();
+            rAfter.setText(after);
         }
     }
 
