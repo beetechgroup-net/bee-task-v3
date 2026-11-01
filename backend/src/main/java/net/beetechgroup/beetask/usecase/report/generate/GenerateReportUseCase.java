@@ -251,24 +251,6 @@ public class GenerateReportUseCase {
             }
         }
 
-        // Fallbacks para tags comuns se não foram explicitamente seções
-        if (!listSections.containsKey("atividades")) {
-            List<DocxReportEngine.TaskItem> allItems = new ArrayList<>();
-            for (Task t : taskList) {
-                long sec = calculateTaskSecondsInPeriod(t, user.getEmail(), startDt, endDt);
-                allItems.add(new DocxReportEngine.TaskItem(
-                        t.getTitle(),
-                        t.getFinishedAt() != null ? t.getFinishedAt().format(DATE_FORMATTER) : strEnd,
-                        sec > 0 ? formatDuration(sec) : "",
-                        formatStatus(t.getStatus()),
-                        t.getCategory() != null ? t.getCategory().getName() : "",
-                        t.getProject() != null ? t.getProject().getName() : "",
-                        t.getDescription()
-                ));
-            }
-            listSections.put("atividades", allItems);
-        }
-
         // 5. Baixar o template do MinIO e gerar o documento preenchido
         byte[] docxBytes;
         try (InputStream templateStream = storageRepository.download(template.getStorageKey())) {

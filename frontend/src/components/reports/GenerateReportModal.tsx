@@ -476,24 +476,26 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
             </div>
           )}
 
-          {/* Listagens de Atividades e Tarefas Preenchidas Automaticamente */}
-          <div className="p-4 rounded-2xl bg-surface-raised/40 border border-border-soft space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                Atividades Realizadas (Preenchimento Automático)
-              </span>
-              <span className="text-[10px] text-muted font-mono font-semibold">{'{{atividades}}'}</span>
-            </div>
+          {/* Listagens de Tarefas Configuradas no Modelo */}
+          {taskListSections.length > 0 && (
+            <div className="p-4 rounded-2xl bg-surface-raised/40 border border-border-soft space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  Listagens de Tarefas Configuradas
+                </span>
+                <span className="text-[10px] text-muted font-mono font-semibold">
+                  {taskListSections.map((s) => `{{${s.sectionKey}}}`).join(', ')}
+                </span>
+              </div>
 
-            <p className="text-[11px] text-muted leading-relaxed">
-              O BeeTask busca todas as atividades que você trabalhou ou concluiu no período de vigência selecionado e preenche automaticamente as tabelas e listas no Word sob a tag <code className="text-brand font-bold bg-brand/10 px-1 py-0.5 rounded">{'{{atividades}}'}</code>.
-            </p>
+              <p className="text-[11px] text-muted leading-relaxed">
+                O BeeTask busca as tarefas trabalhadas ou concluídas no período de acordo com as seções e filtros configurados neste modelo.
+              </p>
 
-            {taskListSections.length > 0 && (
               <div className="pt-2 border-t border-border-soft/60 space-y-1.5">
                 <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
-                  Listagens filtradas por categoria configuradas no modelo:
+                  Seções de listagem presentes no relatório:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {taskListSections.map((sec) => (
@@ -511,8 +513,8 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
                   ))}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </form>
 
         {/* Footer */}
