@@ -98,16 +98,12 @@ export const ReportsPage: React.FC = () => {
 
   const standardTags = [
     { tag: '{{atividades}}', desc: 'Lista de todas as atividades/tarefas trabalhadas ou concluídas no período' },
-    { tag: '{{tarefas}}', desc: 'Alias alternativo para a listagem geral de atividades no período' },
     { tag: '{{nome}}', desc: 'Nome do colaborador (pega automaticamente do usuário logado)' },
-    { tag: '{{periodo}}', desc: 'Período formatado no padrão escolhido no modelo (ex.: 01/10/2026 até 31/10/2026)' },
     { tag: '{{data_inicio}}', desc: 'Data inicial do período escolhido (ex: 01/10/2026)' },
     { tag: '{{data_fim}}', desc: 'Data final do período escolhido (ex: 31/10/2026)' },
-    { tag: '{{periodo_vigencia}}', desc: 'Intervalo formatado no modelo (ex: 01/10/2026 até 31/10/2026)' },
     { tag: '{{mes_ano}}', desc: 'Mês e ano por extenso (ex: Outubro/2026)' },
     { tag: '{{email_usuario}}', desc: 'E-mail do usuário logado' },
     { tag: '{{organizacao}}', desc: 'Nome da organização / workspace ativo' },
-    { tag: '{{total_horas}}', desc: 'Total de horas trabalhadas no período (ex: 142h 30m)' },
     { tag: '{{data_emissao}}', desc: 'Data de geração do relatório (ex: 31/10/2026)' },
   ]
 

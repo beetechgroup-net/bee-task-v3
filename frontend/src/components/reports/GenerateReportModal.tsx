@@ -358,8 +358,7 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
             <div className="text-[11px] text-muted flex items-center gap-1.5 pt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
               <span>
-                Refletirá nas tags: <code className="text-brand font-semibold">{'{{periodo}}'}</code>,{' '}
-                <code className="text-brand font-semibold">{'{{data_inicio}}'}</code> e{' '}
+                Refletirá nas tags: <code className="text-brand font-semibold">{'{{data_inicio}}'}</code> e{' '}
                 <code className="text-brand font-semibold">{'{{data_fim}}'}</code>.
               </span>
             </div>
@@ -482,9 +481,9 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                Atividades e Tarefas (Preenchimento Automático)
+                Atividades Realizadas (Preenchimento Automático)
               </span>
-              <span className="text-[10px] text-muted font-mono font-semibold">{'{{atividades}}'} / {'{{tarefas}}'}</span>
+              <span className="text-[10px] text-muted font-mono font-semibold">{'{{atividades}}'}</span>
             </div>
 
             <p className="text-[11px] text-muted leading-relaxed">

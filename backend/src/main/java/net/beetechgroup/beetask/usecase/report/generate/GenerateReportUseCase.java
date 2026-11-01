@@ -129,21 +129,10 @@ public class GenerateReportUseCase {
 
         List<Task> taskList = new ArrayList<>(uniqueTasks.values());
 
-        // 2. Calcular tempo total trabalhado no período
-        long totalSecondsInPeriod = 0;
-        for (Task t : taskList) {
-            totalSecondsInPeriod += calculateTaskSecondsInPeriod(t, user.getEmail(), startDt, endDt);
-        }
-
-        String formattedTotalTime = formatDuration(totalSecondsInPeriod);
-
-        // 3. Montar variáveis globais
+        // 2. Montar variáveis globais
         Map<String, String> variables = new HashMap<>();
         String strStart = input.startDate().format(DATE_FORMATTER);
         String strEnd = input.endDate().format(DATE_FORMATTER);
-
-        String pattern = template.getDateFormatPattern();
-        String formattedPeriod = formatPeriodWithPattern(input.startDate(), input.endDate(), pattern);
 
         String monthName = input.startDate().getMonth().getDisplayName(TextStyle.FULL, PT_BR);
         String mesAno = capitalize(monthName) + "/" + input.startDate().getYear();
@@ -169,14 +158,10 @@ public class GenerateReportUseCase {
         variables.put("nome_projeto", projectName);
         variables.put("organizacao", org.getName());
 
-        // Período
-        variables.put("periodo", formattedPeriod);
-        variables.put("periodo_vigencia", formattedPeriod);
+        // Datas
         variables.put("data_inicio", strStart);
         variables.put("data_fim", strEnd);
         variables.put("mes_ano", mesAno);
-
-        variables.put("total_horas", formattedTotalTime);
         variables.put("data_emissao", LocalDate.now().format(DATE_FORMATTER));
 
         // Valores padrão das seções configuradas no modelo
@@ -214,10 +199,6 @@ public class GenerateReportUseCase {
                         }
                     }
                     variables.put(sec.getSectionKey(), formattedVal);
-                    if ("periodo".equalsIgnoreCase(sec.getSectionKey()) || "periodo_vigencia".equalsIgnoreCase(sec.getSectionKey())) {
-                        variables.put("periodo", formattedVal);
-                        variables.put("periodo_vigencia", formattedVal);
-                    }
                 }
             }
         }
@@ -286,7 +267,6 @@ public class GenerateReportUseCase {
                 ));
             }
             listSections.put("atividades", allItems);
-            listSections.put("tarefas", allItems);
         }
 
         // 5. Baixar o template do MinIO e gerar o documento preenchido
@@ -318,7 +298,7 @@ public class GenerateReportUseCase {
         generated.setOrganization(org);
         generated.setProject(project);
         generated.setUser(user);
-        generated.setTitle(template.getName() + " (" + formattedPeriod + ")");
+        generated.setTitle(template.getName() + " (" + strStart + " a " + strEnd + ")");
         generated.setStartDate(input.startDate());
         generated.setEndDate(input.endDate());
         generated.setFileUrl(fileUrl);
