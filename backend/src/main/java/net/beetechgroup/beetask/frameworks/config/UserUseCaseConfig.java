@@ -68,4 +68,38 @@ public class UserUseCaseConfig {
     public net.beetechgroup.beetask.usecase.user.list.ListAllUsersUseCase listAllUsersUseCase(UserRepository userRepository) {
         return new net.beetechgroup.beetask.usecase.user.list.ListAllUsersUseCase(userRepository);
     }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.signature.ListUserSignaturesUseCase listUserSignaturesUseCase(
+            UserRepository userRepository,
+            net.beetechgroup.beetask.usecase.repository.UserSignatureRepository userSignatureRepository
+    ) {
+        return new net.beetechgroup.beetask.usecase.user.signature.ListUserSignaturesUseCase(userRepository, userSignatureRepository);
+    }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.signature.CreateUserSignatureUseCase createUserSignatureUseCase(
+            UserRepository userRepository,
+            net.beetechgroup.beetask.usecase.repository.UserSignatureRepository userSignatureRepository,
+            StorageRepository storageRepository
+    ) {
+        return new net.beetechgroup.beetask.usecase.user.signature.CreateUserSignatureUseCase(userRepository, userSignatureRepository, storageRepository);
+    }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.signature.SetDefaultUserSignatureUseCase setDefaultUserSignatureUseCase(
+            UserRepository userRepository,
+            net.beetechgroup.beetask.usecase.repository.UserSignatureRepository userSignatureRepository
+    ) {
+        return new net.beetechgroup.beetask.usecase.user.signature.SetDefaultUserSignatureUseCase(userRepository, userSignatureRepository);
+    }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.signature.DeleteUserSignatureUseCase deleteUserSignatureUseCase(
+            UserRepository userRepository,
+            net.beetechgroup.beetask.usecase.repository.UserSignatureRepository userSignatureRepository,
+            StorageRepository storageRepository
+    ) {
+        return new net.beetechgroup.beetask.usecase.user.signature.DeleteUserSignatureUseCase(userRepository, userSignatureRepository, storageRepository);
+    }
 }

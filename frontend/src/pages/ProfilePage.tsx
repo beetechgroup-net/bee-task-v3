@@ -14,10 +14,16 @@ import {
   AlertCircle,
   X,
   Check,
+  PenTool,
+  Star,
+  Trash2,
+  Plus,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { taskService } from '../services/taskService'
 import { authService } from '../services/authService'
+import { signatureService, type UserSignature } from '../services/signatureService'
+import { CreateSignatureModal } from '../components/profile/CreateSignatureModal'
 import type { Task } from '../types/task'
 import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer } from '../lib/timeUtils'
 import { CustomSelect } from '../components/ui/Select'
@@ -58,6 +64,73 @@ export const ProfilePage: React.FC = () => {
   const [goalPeriod, setGoalPeriod] = useState<WorkGoalPeriod>('DAILY')
   const [goalHours, setGoalHours] = useState<number>(8)
   const [savedSuccess, setSavedSuccess] = useState(false)
+
+  // Signatures state
+  const [signatures, setSignatures] = useState<UserSignature[]>([])
+  const [loadingSignatures, setLoadingSignatures] = useState(true)
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false)
+  const [signatureActionLoading, setSignatureActionLoading] = useState<number | null>(null)
+  const [signatureSuccessMsg, setSignatureSuccessMsg] = useState<string | null>(null)
+  const [signatureErrorMsg, setSignatureErrorMsg] = useState<string | null>(null)
+
+  const loadSignatures = async () => {
+    try {
+      setLoadingSignatures(true)
+      const data = await signatureService.listSignatures()
+      setSignatures(data || [])
+    } catch (err: unknown) {
+      console.error('Failed to load user signatures', err)
+    } finally {
+      setLoadingSignatures(false)
+    }
+  }
+
+  useEffect(() => {
+    loadSignatures()
+  }, [])
+
+  const handleSetDefaultSignature = async (id: number) => {
+    try {
+      setSignatureActionLoading(id)
+      setSignatureErrorMsg(null)
+      await signatureService.setDefault(id)
+      setSignatures((prev) =>
+        prev.map((s) => ({
+          ...s,
+          isDefault: s.id === id,
+        }))
+      )
+      setSignatureSuccessMsg('Assinatura padrão atualizada!')
+      setTimeout(() => setSignatureSuccessMsg(null), 3000)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao definir assinatura padrão.'
+      setSignatureErrorMsg(msg)
+      setTimeout(() => setSignatureErrorMsg(null), 4000)
+    } finally {
+      setSignatureActionLoading(null)
+    }
+  }
+
+  const handleDeleteSignature = async (id: number) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta assinatura?')) return
+
+    try {
+      setSignatureActionLoading(id)
+      setSignatureErrorMsg(null)
+      await signatureService.deleteSignature(id)
+      setSignatures((prev) => prev.filter((s) => s.id !== id))
+      setSignatureSuccessMsg('Assinatura excluída com sucesso!')
+      setTimeout(() => setSignatureSuccessMsg(null), 3000)
+      // Reload in case another was promoted to default
+      loadSignatures()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao excluir assinatura.'
+      setSignatureErrorMsg(msg)
+      setTimeout(() => setSignatureErrorMsg(null), 4000)
+    } finally {
+      setSignatureActionLoading(null)
+    }
+  }
 
   const handlePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -543,6 +616,160 @@ export const ProfilePage: React.FC = () => {
           </form>
         </div>
 
+        {/* Assinaturas Digitais */}
+        <div className="p-6 rounded-3xl border border-border-soft bg-surface-raised/60 backdrop-blur-md shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-brand/10 text-brand border border-brand/20 flex items-center justify-center shrink-0">
+                <PenTool className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  Minhas Assinaturas Digitais
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand/10 text-brand border border-brand/20">
+                    {signatures.length} {signatures.length === 1 ? 'cadastrada' : 'cadastradas'}
+                  </span>
+                </h3>
+                <p className="text-xs text-muted">
+                  Cadastre suas assinaturas (upload, desenho na tela ou fontes cursivas) para autenticação de relatórios e documentos.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsSignatureModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand text-white text-xs font-bold hover:bg-brand-hover shadow-md shadow-brand/20 transition-all cursor-pointer self-start sm:self-auto"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nova Assinatura</span>
+            </button>
+          </div>
+
+          {signatureSuccessMsg && (
+            <div className="flex items-center gap-2 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{signatureSuccessMsg}</span>
+            </div>
+          )}
+
+          {signatureErrorMsg && (
+            <div className="flex items-center gap-2 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{signatureErrorMsg}</span>
+            </div>
+          )}
+
+          {loadingSignatures ? (
+            <div className="flex items-center justify-center py-8 text-muted gap-2 text-xs rounded-2xl bg-surface/40 border border-border-soft">
+              <Loader2 className="w-4 h-4 animate-spin text-brand" />
+              <span>Carregando assinaturas digitais...</span>
+            </div>
+          ) : signatures.length === 0 ? (
+            <div className="p-8 rounded-2xl border border-dashed border-border-soft bg-surface/30 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-surface-sunken border border-border-soft text-muted flex items-center justify-center mx-auto">
+                <PenTool className="w-5 h-5 text-muted" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">
+                  Nenhuma assinatura cadastrada ainda
+                </p>
+                <p className="text-[11px] text-muted mt-0.5 max-w-sm mx-auto">
+                  Você pode desenhar com o mouse, escolher modelos de caligrafia cursiva ou fazer upload da sua assinatura escaneada.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSignatureModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-brand/10 hover:bg-brand/20 border border-brand/30 text-xs font-bold text-brand transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Adicionar Minha Primeira Assinatura</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {signatures.map((sig) => (
+                <div
+                  key={sig.id}
+                  className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 bg-surface/80 relative group shadow-xs ${
+                    sig.isDefault
+                      ? 'border-brand/60 ring-2 ring-brand/20 bg-brand/5'
+                      : 'border-border-soft hover:border-brand/40'
+                  }`}
+                >
+                  {/* Top Bar: Title & Badges */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-foreground truncate" title={sig.name}>
+                        {sig.name}
+                      </h4>
+                      <span className="text-[10px] text-muted font-medium">
+                        {sig.signatureType === 'DRAW'
+                          ? '✍️ Desenhada'
+                          : sig.signatureType === 'TEMPLATE'
+                          ? '✨ Fonte Cursiva'
+                          : '📁 Upload de Imagem'}
+                      </span>
+                    </div>
+
+                    {sig.isDefault && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25 shrink-0">
+                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                        <span>Padrão</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Visual Signature Preview Box */}
+                  <div className="h-24 px-3 py-2 rounded-xl bg-white/40 dark:bg-black/30 border border-border-soft/60 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={sig.imageUrl}
+                      alt={sig.name}
+                      className="max-h-20 max-w-full object-contain filter drop-shadow-xs"
+                    />
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="flex items-center justify-between pt-1 border-t border-border-soft/60 gap-2">
+                    {!sig.isDefault ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSetDefaultSignature(sig.id)}
+                        disabled={signatureActionLoading === sig.id}
+                        className="text-[11px] font-semibold text-brand hover:underline inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      >
+                        {signatureActionLoading === sig.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Star className="w-3 h-3" />
+                        )}
+                        <span>Definir como padrão</span>
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-muted italic">Assinatura ativa</span>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSignature(sig.id)}
+                      disabled={signatureActionLoading === sig.id}
+                      title="Excluir assinatura"
+                      className="p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-50 ml-auto"
+                    >
+                      {signatureActionLoading === sig.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* My Workspaces */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -599,6 +826,24 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Create Signature Modal */}
+      <CreateSignatureModal
+        isOpen={isSignatureModalOpen}
+        onClose={() => setIsSignatureModalOpen(false)}
+        onSuccess={(newSig) => {
+          setSignatures((prev) => {
+            if (newSig.isDefault) {
+              return [newSig, ...prev.map((s) => ({ ...s, isDefault: false }))]
+            }
+            return [...prev, newSig]
+          })
+          setSignatureSuccessMsg('Assinatura adicionada com sucesso!')
+          setTimeout(() => setSignatureSuccessMsg(null), 3000)
+        }}
+        userName={user.name || ''}
+        hasExistingSignatures={signatures.length > 0}
+      />
     </div>
   )
 }
