@@ -61,6 +61,7 @@ export interface GenerateReportPayload {
   startDate: string // YYYY-MM-DD
   endDate: string   // YYYY-MM-DD
   customFields?: Record<string, string>
+  format?: 'docx' | 'pdf'
 }
 
 export interface GenerateAiSummaryPayload {
@@ -124,7 +125,8 @@ export const reportService = {
 
     // Obter nome do arquivo do header Content-Disposition ou gerar fallback
     const disposition = res.headers.get('content-disposition')
-    let fileName = `Relatorio_${payload.startDate}_a_${payload.endDate}.docx`
+    const ext = payload.format === 'pdf' ? 'pdf' : 'docx'
+    let fileName = `Relatorio_${payload.startDate}_a_${payload.endDate}.${ext}`
     if (disposition && disposition.includes('filename=')) {
       const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
       if (match && match[1]) {

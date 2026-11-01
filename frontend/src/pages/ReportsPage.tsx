@@ -151,7 +151,7 @@ export const ReportsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-soft hover:border-brand/40 bg-surface/80 hover:bg-surface-raised text-foreground text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-soft hover:border-brand/40 bg-surface/80 hover:bg-surface-raised text-foreground text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4 text-brand" />
             <span>Novo Modelo .DOCX</span>
@@ -161,7 +161,7 @@ export const ReportsPage: React.FC = () => {
             type="button"
             onClick={() => handleOpenGenerate()}
             disabled={templates.length === 0}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-teal-700 hover:from-brand-hover hover:to-teal-800 text-white text-xs font-bold shadow-md shadow-brand/20 transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-teal-700 hover:from-brand-hover hover:to-teal-800 text-white text-xs font-bold shadow-md shadow-brand/20 transition-all cursor-pointer disabled:opacity-50 shrink-0"
           >
             <FileDown className="w-4 h-4" />
             <span>Gerar Relatório</span>
@@ -414,7 +414,7 @@ export const ReportsPage: React.FC = () => {
                           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-brand/10 hover:bg-brand text-brand hover:text-white text-xs font-bold transition-all"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          <span>Baixar (.DOCX)</span>
+                          <span>Baixar ({rep.fileName?.toLowerCase().endsWith('.pdf') ? '.PDF' : '.DOCX'})</span>
                         </a>
                       </td>
                     </tr>

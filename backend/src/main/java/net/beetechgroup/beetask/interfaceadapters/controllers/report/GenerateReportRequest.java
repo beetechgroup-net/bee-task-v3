@@ -9,4 +9,5 @@ public class GenerateReportRequest {
     public LocalDate startDate;
     public LocalDate endDate;
     public Map<String, String> customFields;
+    public String format;
 }

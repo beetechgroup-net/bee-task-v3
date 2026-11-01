@@ -323,19 +323,18 @@ export const DashboardPage: React.FC = () => {
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-brand' : ''}`} />
           </button>
 
-          <Link to="/tasks">
-            <button
-              type="button"
-              className="px-4 py-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-xs font-bold text-foreground hover:bg-surface-raised hover:border-brand/40 transition-all shadow-xs"
+          <Link to="/tasks" className="inline-flex shrink-0">
+            <span
+              className="px-4 py-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-xs font-bold text-foreground hover:bg-surface-raised hover:border-brand/40 transition-all shadow-xs inline-flex items-center cursor-pointer"
             >
               Quadro Kanban
-            </button>
+            </span>
           </Link>
 
           <button
             type="button"
             onClick={() => setIsReportModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand/30 bg-brand/10 hover:bg-brand/20 text-brand text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand/30 bg-brand/10 hover:bg-brand/20 text-brand text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
           >
             <FileDown className="w-4 h-4" />
             <span>Gerar Relatório</span>
@@ -344,7 +343,7 @@ export const DashboardPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs shadow-lg shadow-brand/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs shadow-lg shadow-brand/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Nova Tarefa</span>

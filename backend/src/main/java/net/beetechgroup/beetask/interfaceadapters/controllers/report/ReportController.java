@@ -216,7 +216,8 @@ public class ReportController {
                 req.projectId,
                 req.startDate,
                 req.endDate,
-                req.customFields
+                req.customFields,
+                req.format
         );
 
         GenerateReportOutput output = generateReportUseCase.execute(input);

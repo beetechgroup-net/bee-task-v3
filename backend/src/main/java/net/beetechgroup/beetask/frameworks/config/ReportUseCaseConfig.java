@@ -3,6 +3,7 @@ package net.beetechgroup.beetask.frameworks.config;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import net.beetechgroup.beetask.frameworks.ai.OllamaService;
+import net.beetechgroup.beetask.frameworks.report.PdfConverterService;
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationMemberUseCase;
 import net.beetechgroup.beetask.usecase.report.ai.GenerateAiSummaryUseCase;
 import net.beetechgroup.beetask.usecase.report.create.CreateReportTemplateUseCase;
@@ -89,7 +90,8 @@ public class ReportUseCaseConfig {
             StorageRepository storageRepository,
             net.beetechgroup.beetask.usecase.repository.UserSignatureRepository userSignatureRepository,
             AuthorizeOrganizationMemberUseCase authorizer,
-            OllamaService ollamaService
+            OllamaService ollamaService,
+            PdfConverterService pdfConverterService
     ) {
         return new GenerateReportUseCase(
                 reportTemplateRepository,
@@ -101,7 +103,8 @@ public class ReportUseCaseConfig {
                 storageRepository,
                 userSignatureRepository,
                 authorizer,
-                ollamaService
+                ollamaService,
+                pdfConverterService
         );
     }
 

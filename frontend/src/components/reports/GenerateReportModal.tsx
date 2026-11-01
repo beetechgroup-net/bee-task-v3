@@ -55,6 +55,7 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
   const [customFields, setCustomFields] = useState<Record<string, string>>({})
   const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({})
   const [aiError, setAiError] = useState<Record<string, string | null>>({})
+  const [formatTarget, setFormatTarget] = useState<'docx' | 'pdf'>('pdf')
 
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -170,8 +171,7 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
     setCustomFields((prev) => ({ ...prev, [key]: value }))
   }
 
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleGenerate = async (format: 'docx' | 'pdf' = 'pdf') => {
     if (!selectedTemplateId) {
       setError('Selecione um modelo de relatório')
       return
@@ -186,6 +186,7 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
     }
 
     try {
+      setFormatTarget(format)
       setGenerating(true)
       setError(null)
       setSuccess(false)
@@ -196,6 +197,7 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
         startDate,
         endDate,
         customFields,
+        format,
       })
 
       // Download do arquivo gerado
@@ -254,7 +256,7 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleGenerate} className="p-6 overflow-y-auto space-y-5 flex-1">
+        <form onSubmit={(e) => { e.preventDefault(); handleGenerate(formatTarget); }} className="p-6 overflow-y-auto space-y-5 flex-1">
           {error && (
             <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -652,7 +654,7 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-5 border-t border-border-soft bg-surface-raised/40">
+        <div className="flex items-center justify-between gap-3 p-5 border-t border-border-soft bg-surface-raised/40 flex-wrap">
           <button
             type="button"
             onClick={onClose}
@@ -661,24 +663,46 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
           >
             Cancelar
           </button>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating || templates.length === 0}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-teal-700 hover:from-brand-hover hover:to-teal-800 text-white text-xs font-bold shadow-md shadow-brand/20 transition-all cursor-pointer disabled:opacity-50"
-          >
-            {generating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Preenchendo e Gerando .DOCX...</span>
-              </>
-            ) : (
-              <>
-                <FileDown className="w-4 h-4" />
-                <span>Gerar e Baixar (.DOCX)</span>
-              </>
-            )}
-          </button>
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => handleGenerate('docx')}
+              disabled={generating || templates.length === 0}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-soft hover:border-blue-500/40 bg-surface hover:bg-surface-raised text-foreground text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {generating && formatTarget === 'docx' ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                  <span>Gerando Word...</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4 text-blue-500" />
+                  <span>Baixar (.DOCX)</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleGenerate('pdf')}
+              disabled={generating || templates.length === 0}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-teal-700 hover:from-brand-hover hover:to-teal-800 text-white text-xs font-bold shadow-md shadow-brand/20 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {generating && formatTarget === 'pdf' ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Convertendo e Gerando PDF...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4" />
+                  <span>Baixar (.PDF)</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

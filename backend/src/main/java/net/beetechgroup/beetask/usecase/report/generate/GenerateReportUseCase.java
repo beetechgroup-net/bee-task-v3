@@ -52,6 +52,7 @@ public class GenerateReportUseCase {
     private final UserSignatureRepository userSignatureRepository;
     private final AuthorizeOrganizationMemberUseCase authorizer;
     private final net.beetechgroup.beetask.frameworks.ai.OllamaService ollamaService;
+    private final net.beetechgroup.beetask.frameworks.report.PdfConverterService pdfConverterService;
 
     public GenerateReportUseCase(
             ReportTemplateRepository reportTemplateRepository,
@@ -63,7 +64,8 @@ public class GenerateReportUseCase {
             StorageRepository storageRepository,
             UserSignatureRepository userSignatureRepository,
             AuthorizeOrganizationMemberUseCase authorizer,
-            net.beetechgroup.beetask.frameworks.ai.OllamaService ollamaService
+            net.beetechgroup.beetask.frameworks.ai.OllamaService ollamaService,
+            net.beetechgroup.beetask.frameworks.report.PdfConverterService pdfConverterService
     ) {
         this.reportTemplateRepository = reportTemplateRepository;
         this.generatedReportRepository = generatedReportRepository;
@@ -75,6 +77,7 @@ public class GenerateReportUseCase {
         this.userSignatureRepository = userSignatureRepository;
         this.authorizer = authorizer;
         this.ollamaService = ollamaService;
+        this.pdfConverterService = pdfConverterService;
     }
 
     public GenerateReportOutput execute(GenerateReportInput input) {
@@ -332,21 +335,35 @@ public class GenerateReportUseCase {
             throw new RuntimeException("Falha ao gerar o documento Word: " + e.getMessage(), e);
         }
 
-        // 7. Fazer upload do relatório gerado para o MinIO
+        // 7. Fazer conversão para PDF se solicitado e upload do relatório gerado para o MinIO
+        byte[] finalBytes = docxBytes;
+        String extension = ".docx";
+        String contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+        if ("pdf".equalsIgnoreCase(input.format())) {
+            if (pdfConverterService != null) {
+                LOGGER.infof("Convertendo relatório para PDF...");
+                finalBytes = pdfConverterService.convertDocxToPdf(docxBytes);
+                extension = ".pdf";
+                contentType = "application/pdf";
+            } else {
+                LOGGER.warn("PdfConverterService não configurado. Retornando documento como .docx.");
+            }
+        }
+
         String cleanTitle = (template.getName() + "_" + strStart.replace("/", "-") + "_" + strEnd.replace("/", "-"))
                 .replaceAll("[^a-zA-Z0-9._-]", "_");
-        String generatedFileName = cleanTitle + ".docx";
+        String generatedFileName = cleanTitle + extension;
         String generatedStorageKey = "reports/generated/" + org.getId() + "/" + UUID.randomUUID() + "_" + generatedFileName;
-        String contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
         String fileUrl = storageRepository.upload(
                 generatedStorageKey,
-                new ByteArrayInputStream(docxBytes),
+                new ByteArrayInputStream(finalBytes),
                 contentType,
-                docxBytes.length
+                finalBytes.length
         );
 
-        // 7. Persistir histórico do relatório gerado
+        // 8. Persistir histórico do relatório gerado
         GeneratedReport generated = new GeneratedReport();
         generated.setReportTemplateId(template.getId());
         generated.setOrganization(org);
@@ -364,7 +381,7 @@ public class GenerateReportUseCase {
         LOGGER.infof("Relatório gerado com sucesso! ID: %d, Arquivo: %s", savedReport.getId(), generatedFileName);
 
         return new GenerateReportOutput(
-                docxBytes,
+                finalBytes,
                 generatedFileName,
                 contentType,
                 fileUrl,

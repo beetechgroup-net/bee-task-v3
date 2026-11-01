@@ -10,5 +10,6 @@ public record GenerateReportInput(
         Long projectId,
         LocalDate startDate,
         LocalDate endDate,
-        Map<String, String> customFields
+        Map<String, String> customFields,
+        String format
 ) {}
