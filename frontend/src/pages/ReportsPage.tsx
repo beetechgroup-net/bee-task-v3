@@ -304,6 +304,12 @@ export const ReportsPage: React.FC = () => {
                             className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-surface-raised border border-border-soft text-foreground/80 inline-flex items-center gap-1"
                           >
                             <span>{`{{${s.sectionKey}}}`}</span>
+                            {s.sectionType === 'AI_TEXT' && (
+                              <span className="text-[9px] text-purple-600 dark:text-purple-400 font-sans font-bold">✨ IA</span>
+                            )}
+                            {s.sectionType === 'SIGNATURE' && (
+                              <span className="text-[9px] text-brand font-sans font-bold">✍️</span>
+                            )}
                             {s.sectionType === 'DATE' && (
                               <span className="text-[9px] text-brand font-sans font-bold">[{s.dateFormat || 'data'}]</span>
                             )}

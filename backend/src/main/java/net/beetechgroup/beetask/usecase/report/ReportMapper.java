@@ -48,6 +48,7 @@ public class ReportMapper {
                 section.getSectionType(),
                 section.getDefaultValue(),
                 section.getDateFormat(),
+                section.getAiPrompt(),
                 section.getFilterCategory() != null ? section.getFilterCategory().getId() : null,
                 section.getFilterCategory() != null ? section.getFilterCategory().getName() : null,
                 section.getFilterStatus(),

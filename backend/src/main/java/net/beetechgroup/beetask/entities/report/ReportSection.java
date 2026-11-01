@@ -11,6 +11,7 @@ public class ReportSection {
     private String sectionType; // 'FREE_TEXT', 'FIXED_TEXT', 'DATE', 'TASK_LIST'
     private String defaultValue;
     private String dateFormat;
+    private String aiPrompt;
     private Category filterCategory;
     private String filterStatus; // 'ALL', 'COMPLETED', 'IN_PROGRESS'
     private Boolean includeTime;
@@ -103,6 +104,14 @@ public class ReportSection {
 
     public void setDateFormat(String dateFormat) {
         this.dateFormat = dateFormat;
+    }
+
+    public String getAiPrompt() {
+        return aiPrompt;
+    }
+
+    public void setAiPrompt(String aiPrompt) {
+        this.aiPrompt = aiPrompt;
     }
 
     public LocalDateTime getCreatedAt() {

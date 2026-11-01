@@ -9,6 +9,7 @@ public record ReportSectionOutput(
         String sectionType,
         String defaultValue,
         String dateFormat,
+        String aiPrompt,
         Long filterCategoryId,
         String filterCategoryName,
         String filterStatus,

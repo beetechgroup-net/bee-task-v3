@@ -2,7 +2,9 @@ package net.beetechgroup.beetask.frameworks.config;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
+import net.beetechgroup.beetask.frameworks.ai.OllamaService;
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationMemberUseCase;
+import net.beetechgroup.beetask.usecase.report.ai.GenerateAiSummaryUseCase;
 import net.beetechgroup.beetask.usecase.report.create.CreateReportTemplateUseCase;
 import net.beetechgroup.beetask.usecase.report.update.UpdateReportTemplateUseCase;
 import net.beetechgroup.beetask.usecase.report.delete.DeleteReportTemplateUseCase;
@@ -86,7 +88,8 @@ public class ReportUseCaseConfig {
             UserRepository userRepository,
             StorageRepository storageRepository,
             net.beetechgroup.beetask.usecase.repository.UserSignatureRepository userSignatureRepository,
-            AuthorizeOrganizationMemberUseCase authorizer
+            AuthorizeOrganizationMemberUseCase authorizer,
+            OllamaService ollamaService
     ) {
         return new GenerateReportUseCase(
                 reportTemplateRepository,
@@ -97,7 +100,25 @@ public class ReportUseCaseConfig {
                 userRepository,
                 storageRepository,
                 userSignatureRepository,
-                authorizer
+                authorizer,
+                ollamaService
+        );
+    }
+
+    @Produces
+    public GenerateAiSummaryUseCase generateAiSummaryUseCase(
+            ReportTemplateRepository reportTemplateRepository,
+            TaskRepository taskRepository,
+            UserRepository userRepository,
+            AuthorizeOrganizationMemberUseCase authorizer,
+            OllamaService ollamaService
+    ) {
+        return new GenerateAiSummaryUseCase(
+                reportTemplateRepository,
+                taskRepository,
+                userRepository,
+                authorizer,
+                ollamaService
         );
     }
 

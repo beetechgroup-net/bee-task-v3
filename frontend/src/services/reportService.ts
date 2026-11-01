@@ -4,9 +4,10 @@ export interface ReportSectionOutput {
   id: number
   sectionKey: string
   title: string
-  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE'
+  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE' | 'AI_TEXT'
   defaultValue?: string
   dateFormat?: string
+  aiPrompt?: string
   filterCategoryId?: number
   filterCategoryName?: string
   filterStatus?: 'ALL' | 'COMPLETED' | 'IN_PROGRESS'
@@ -60,6 +61,14 @@ export interface GenerateReportPayload {
   startDate: string // YYYY-MM-DD
   endDate: string   // YYYY-MM-DD
   customFields?: Record<string, string>
+}
+
+export interface GenerateAiSummaryPayload {
+  templateId?: number
+  sectionKey?: string
+  startDate?: string
+  endDate?: string
+  customPrompt?: string
 }
 
 export const reportService = {
@@ -129,5 +138,12 @@ export const reportService = {
 
   async listHistory(orgId: number): Promise<GeneratedReportOutput[]> {
     return apiFetch<GeneratedReportOutput[]>(`/organizations/${orgId}/reports/history`)
+  },
+
+  async generateAiSummary(orgId: number, payload: GenerateAiSummaryPayload): Promise<{ summary: string }> {
+    return apiFetch<{ summary: string }>(`/organizations/${orgId}/reports/ai-summary`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
 }

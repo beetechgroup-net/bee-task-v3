@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import net.beetechgroup.beetask.entities.report.GeneratedReport;
 import net.beetechgroup.beetask.usecase.report.ReportTemplateOutput;
+import net.beetechgroup.beetask.usecase.report.ai.GenerateAiSummaryUseCase;
 import net.beetechgroup.beetask.usecase.report.create.CreateReportTemplateInput;
 import net.beetechgroup.beetask.usecase.report.create.CreateReportTemplateUseCase;
 import net.beetechgroup.beetask.usecase.report.update.UpdateReportTemplateInput;
@@ -61,6 +62,9 @@ public class ReportController {
 
     @Inject
     GenerateReportUseCase generateReportUseCase;
+
+    @Inject
+    GenerateAiSummaryUseCase generateAiSummaryUseCase;
 
     @Inject
     ListGeneratedReportsUseCase listGeneratedReportsUseCase;
@@ -225,6 +229,26 @@ public class ReportController {
                 .header("X-Report-Id", String.valueOf(output.generatedReportId()))
                 .header("X-Report-Url", output.fileUrl())
                 .build();
+    }
+
+    @POST
+    @Path("/ai-summary")
+    @Operation(summary = "Generate AI summary for report section", description = "Generates text summary for tasks in period using Ollama")
+    public GenerateAiSummaryResponse generateAiSummary(
+            @PathParam("orgId") Long orgId,
+            GenerateAiSummaryRequest req
+    ) {
+        String email = securityIdentity.getPrincipal().getName();
+        String summary = generateAiSummaryUseCase.execute(
+                email,
+                orgId,
+                req.templateId,
+                req.sectionKey,
+                req.startDate,
+                req.endDate,
+                req.customPrompt
+        );
+        return new GenerateAiSummaryResponse(summary);
     }
 
     @GET

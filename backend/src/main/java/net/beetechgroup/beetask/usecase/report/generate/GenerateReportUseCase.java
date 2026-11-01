@@ -51,6 +51,7 @@ public class GenerateReportUseCase {
     private final StorageRepository storageRepository;
     private final UserSignatureRepository userSignatureRepository;
     private final AuthorizeOrganizationMemberUseCase authorizer;
+    private final net.beetechgroup.beetask.frameworks.ai.OllamaService ollamaService;
 
     public GenerateReportUseCase(
             ReportTemplateRepository reportTemplateRepository,
@@ -61,7 +62,8 @@ public class GenerateReportUseCase {
             UserRepository userRepository,
             StorageRepository storageRepository,
             UserSignatureRepository userSignatureRepository,
-            AuthorizeOrganizationMemberUseCase authorizer
+            AuthorizeOrganizationMemberUseCase authorizer,
+            net.beetechgroup.beetask.frameworks.ai.OllamaService ollamaService
     ) {
         this.reportTemplateRepository = reportTemplateRepository;
         this.generatedReportRepository = generatedReportRepository;
@@ -72,6 +74,7 @@ public class GenerateReportUseCase {
         this.storageRepository = storageRepository;
         this.userSignatureRepository = userSignatureRepository;
         this.authorizer = authorizer;
+        this.ollamaService = ollamaService;
     }
 
     public GenerateReportOutput execute(GenerateReportInput input) {
@@ -251,6 +254,20 @@ public class GenerateReportUseCase {
                     // Garantir que a chave existe nas variáveis mesmo se veio vazia
                     if (!variables.containsKey(section.getSectionKey())) {
                         variables.put(section.getSectionKey(), "");
+                    }
+                } else if ("AI_TEXT".equalsIgnoreCase(section.getSectionType()) || "AI_SUMMARY".equalsIgnoreCase(section.getSectionType())) {
+                    String existing = variables.get(section.getSectionKey());
+                    if (existing == null || existing.isBlank()) {
+                        List<Task> aiTasks = taskList;
+                        if (section.getFilterCategory() != null) {
+                            Long catId = section.getFilterCategory().getId();
+                            aiTasks = taskList.stream()
+                                    .filter(t -> t.getCategory() != null && Objects.equals(t.getCategory().getId(), catId))
+                                    .toList();
+                        }
+                        String ctx = buildAiTasksContext(aiTasks, input.startDate(), input.endDate());
+                        String summary = ollamaService != null ? ollamaService.generateSummary(section.getAiPrompt(), ctx) : null;
+                        variables.put(section.getSectionKey(), summary != null ? summary : "");
                     }
                 }
             }
@@ -503,5 +520,35 @@ public class GenerateReportUseCase {
             case "AAAA-MM-DD" -> start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
             default -> strSlashStart + " até " + strSlashEnd;
         };
+    }
+
+    private String buildAiTasksContext(List<Task> tasks, LocalDate start, LocalDate end) {
+        if (tasks == null || tasks.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tarefas do período (")
+                .append(start != null ? start.format(DATE_FORMATTER) : "")
+                .append(" a ")
+                .append(end != null ? end.format(DATE_FORMATTER) : "")
+                .append("):\n");
+
+        for (int i = 0; i < tasks.size(); i++) {
+            Task t = tasks.get(i);
+            sb.append(i + 1).append(". ");
+            if (t.getCategory() != null) {
+                sb.append("[").append(t.getCategory().getName()).append("] ");
+            }
+            sb.append(t.getTitle());
+            if (t.getProject() != null) {
+                sb.append(" (Projeto: ").append(t.getProject().getName()).append(")");
+            }
+            if (t.getDescription() != null && !t.getDescription().isBlank()) {
+                String cleanDesc = t.getDescription().replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim();
+                if (!cleanDesc.isEmpty()) {
+                    sb.append(" - ").append(cleanDesc);
+                }
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 }

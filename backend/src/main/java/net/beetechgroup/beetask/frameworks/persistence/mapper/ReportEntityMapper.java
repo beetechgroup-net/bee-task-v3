@@ -54,6 +54,7 @@ public class ReportEntityMapper {
         entity.setSectionType(domain.getSectionType());
         entity.setDefaultValue(domain.getDefaultValue());
         entity.setDateFormat(domain.getDateFormat());
+        entity.setAiPrompt(domain.getAiPrompt());
         entity.setFilterStatus(domain.getFilterStatus());
         entity.setIncludeTime(domain.getIncludeTime());
         entity.setOrderIndex(domain.getOrderIndex());
@@ -108,6 +109,7 @@ public class ReportEntityMapper {
         domain.setSectionType(entity.getSectionType());
         domain.setDefaultValue(entity.getDefaultValue());
         domain.setDateFormat(entity.getDateFormat());
+        domain.setAiPrompt(entity.getAiPrompt());
         domain.setFilterStatus(entity.getFilterStatus());
         domain.setIncludeTime(entity.getIncludeTime());
         domain.setOrderIndex(entity.getOrderIndex());

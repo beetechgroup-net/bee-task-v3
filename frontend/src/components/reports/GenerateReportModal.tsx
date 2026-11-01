@@ -11,9 +11,10 @@ import {
   Lock,
   Tag,
   PenTool,
+  Sparkles,
 } from 'lucide-react'
 import { CustomSelect } from '../ui/Select'
-import { reportService, type ReportTemplateOutput } from '../../services/reportService'
+import { reportService, type ReportTemplateOutput, type ReportSectionOutput } from '../../services/reportService'
 import type { Project } from '../../types/task'
 
 interface GenerateReportModalProps {
@@ -52,6 +53,8 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
   const [endDate, setEndDate] = useState(defaultDates.end)
   const [periodPreset, setPeriodPreset] = useState<'current_month' | 'last_month' | 'custom'>('current_month')
   const [customFields, setCustomFields] = useState<Record<string, string>>({})
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({})
+  const [aiError, setAiError] = useState<Record<string, string | null>>({})
 
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -113,6 +116,37 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
     if (!selectedTemplate) return []
     return selectedTemplate.sections.filter((s) => s.sectionType === 'SIGNATURE')
   }, [selectedTemplate])
+
+  // Seções com Inteligência Artificial (Ollama / Qwen)
+  const aiSections = useMemo(() => {
+    if (!selectedTemplate) return []
+    return selectedTemplate.sections.filter((s) => s.sectionType === 'AI_TEXT')
+  }, [selectedTemplate])
+
+  const handleGenerateAi = async (section: ReportSectionOutput) => {
+    if (!selectedTemplateId) return
+    try {
+      setAiLoading((prev) => ({ ...prev, [section.sectionKey]: true }))
+      setAiError((prev) => ({ ...prev, [section.sectionKey]: null }))
+      const res = await reportService.generateAiSummary(orgId, {
+        templateId: selectedTemplateId,
+        sectionKey: section.sectionKey,
+        startDate,
+        endDate,
+      })
+      if (res.summary) {
+        setCustomFields((prev) => ({ ...prev, [section.sectionKey]: res.summary }))
+      }
+    } catch (err: unknown) {
+      console.error(err)
+      setAiError((prev) => ({
+        ...prev,
+        [section.sectionKey]: err instanceof Error ? err.message : 'Falha ao gerar resumo com IA',
+      }))
+    } finally {
+      setAiLoading((prev) => ({ ...prev, [section.sectionKey]: false }))
+    }
+  }
 
   // Preset Handlers
   const handlePresetChange = (preset: 'current_month' | 'last_month' | 'custom') => {
@@ -480,6 +514,81 @@ export const GenerateReportModal: React.FC<GenerateReportModalProps> = ({
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Seções com Inteligência Artificial (Ollama / Qwen) */}
+          {aiSections.length > 0 && (
+            <div className="space-y-4">
+              <div className="border-b border-border-soft pb-1">
+                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                  Campos com Inteligência Artificial
+                </h4>
+                <p className="text-[11px] text-muted">
+                  Gere o resumo de atividades com IA local (Ollama). Você pode revisar e editar o texto livremente antes de gerar o Word.
+                </p>
+              </div>
+
+              {aiSections.map((sec) => {
+                const isLoading = Boolean(aiLoading[sec.sectionKey])
+                const hasValue = Boolean(customFields[sec.sectionKey]?.trim())
+                const errorMsg = aiError[sec.sectionKey]
+
+                return (
+                  <div
+                    key={sec.sectionKey}
+                    className="p-4 rounded-2xl border border-purple-500/20 bg-purple-500/5 space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-foreground">{sec.title}</span>
+                        <code className="text-[10px] text-purple-700 dark:text-purple-300 font-mono bg-purple-500/10 px-1.5 py-0.5 rounded">
+                          {`{{${sec.sectionKey}}}`}
+                        </code>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateAi(sec)}
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Gerando resumo...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>{hasValue ? 'Regerar com IA' : 'Gerar com IA'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {errorMsg && (
+                      <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{errorMsg}</span>
+                      </div>
+                    )}
+
+                    <textarea
+                      rows={4}
+                      value={customFields[sec.sectionKey] || ''}
+                      onChange={(e) => handleCustomFieldChange(sec.sectionKey, e.target.value)}
+                      placeholder="Clique em 'Gerar com IA' para produzir o resumo a partir das tarefas do período, ou digite aqui..."
+                      className="w-full p-3 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-purple-500 focus:ring-1 focus:ring-purple-500 shadow-xs resize-y"
+                    />
+
+                    <p className="text-[10px] text-muted">
+                      💡 Caso não clique em "Gerar com IA" e deixe este campo vazio, o backend tentará gerá-lo automaticamente ao compor o documento .DOCX.
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           )}
 

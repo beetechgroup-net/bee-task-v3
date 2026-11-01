@@ -38,6 +38,9 @@ public class ReportSectionEntity {
     @Column(name = "date_format", length = 100)
     private String dateFormat;
 
+    @Column(name = "ai_prompt", columnDefinition = "TEXT")
+    private String aiPrompt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filter_category_id")
     private CategoryEntity filterCategory;
@@ -140,6 +143,14 @@ public class ReportSectionEntity {
 
     public void setDateFormat(String dateFormat) {
         this.dateFormat = dateFormat;
+    }
+
+    public String getAiPrompt() {
+        return aiPrompt;
+    }
+
+    public void setAiPrompt(String aiPrompt) {
+        this.aiPrompt = aiPrompt;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -97,6 +97,7 @@ public class UpdateReportTemplateUseCase {
                 section.setSectionType(sInput.sectionType() != null ? sInput.sectionType() : "FREE_TEXT");
                 section.setDefaultValue(sInput.defaultValue() != null ? sInput.defaultValue().trim() : null);
                 section.setDateFormat(sInput.dateFormat() != null ? sInput.dateFormat().trim() : null);
+                section.setAiPrompt(sInput.aiPrompt() != null ? sInput.aiPrompt().trim() : null);
                 section.setFilterStatus(sInput.filterStatus() != null ? sInput.filterStatus() : "ALL");
                 section.setIncludeTime(sInput.includeTime() != null ? sInput.includeTime() : true);
                 section.setOrderIndex(sInput.orderIndex() != null ? sInput.orderIndex() : order++);

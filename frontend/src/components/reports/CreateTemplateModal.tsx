@@ -29,9 +29,10 @@ interface CreateTemplateModalProps {
 interface SectionFormItem {
   sectionKey: string
   title: string
-  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE'
+  sectionType: 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE' | 'AI_TEXT'
   defaultValue?: string
   dateFormat?: string
+  aiPrompt?: string
   filterCategoryId?: number
   filterStatus?: 'ALL' | 'COMPLETED' | 'IN_PROGRESS'
   includeTime: boolean
@@ -128,6 +129,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         sectionType: s.sectionType,
         defaultValue: s.defaultValue ? s.defaultValue.trim() : '',
         dateFormat: s.sectionType === 'DATE' ? (s.dateFormat || 'DD/MM/AAAA') : undefined,
+        aiPrompt: s.sectionType === 'AI_TEXT' ? (s.aiPrompt?.trim() || undefined) : undefined,
         filterCategoryId: s.filterCategoryId,
         filterStatus: s.filterStatus || 'ALL',
         includeTime: s.includeTime ?? true,
@@ -377,7 +379,7 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                           value={section.sectionType}
                           onChange={(val) =>
                             handleUpdateSection(idx, {
-                              sectionType: val as 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE',
+                              sectionType: val as 'FREE_TEXT' | 'FIXED_TEXT' | 'DATE' | 'TASK_LIST' | 'SIGNATURE' | 'AI_TEXT',
                             })
                           }
                           options={[
@@ -385,11 +387,66 @@ export const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                             { value: 'FIXED_TEXT', label: 'Texto Fixo (Pré-preenchido no cadastro)' },
                             { value: 'DATE', label: 'Data (Com formato personalizado)' },
                             { value: 'SIGNATURE', label: '✍️ Assinatura Digital (Assinatura do usuário)' },
+                            { value: 'AI_TEXT', label: '✨ Resumo / Texto com IA (Ollama)' },
                             { value: 'TASK_LIST', label: 'Lista de Tarefas do Período' },
                           ]}
                         />
                       </div>
                     </div>
+
+                    {/* Configuração de Campo de Tipo IA */}
+                    {section.sectionType === 'AI_TEXT' && (
+                      <div className="pt-2 border-t border-border-soft/60 space-y-3 animate-in fade-in duration-150">
+                        <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[11px] text-foreground/80 flex items-start gap-2.5">
+                          <Sparkles className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-bold text-purple-700 dark:text-purple-400">Geração Inteligente com IA Local (Ollama / Qwen)</p>
+                            <p className="text-muted mt-0.5">
+                              A IA lerá as tarefas do colaborador no período (título, descrição, categoria, projeto) e gerará o resumo conforme o prompt configurado abaixo. Na emissão do relatório, o usuário poderá clicar em <strong>"Gerar com IA"</strong> e editar o resultado antes de baixar o documento.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-semibold text-muted block mb-1">
+                            Instruções para a IA (Prompt personalizado)
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={section.aiPrompt || ''}
+                            onChange={(e) => handleUpdateSection(idx, { aiPrompt: e.target.value })}
+                            placeholder="Ex.: Resuma as atividades realizadas pelo colaborador de forma clara, técnica e concisa, destacando as entregas principais. Responda em português sem introduções ou saudações."
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-purple-500 font-mono shadow-xs resize-y"
+                          />
+                          <span className="text-[9px] text-muted block mt-0.5">
+                            Deixe em branco para usar a instrução técnica padrão do sistema.
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-semibold text-muted block mb-1">
+                            Filtrar tarefas enviadas para a IA por Categoria (Opcional)
+                          </label>
+                          <CustomSelect
+                            size="sm"
+                            value={section.filterCategoryId ?? 0}
+                            onChange={(val) =>
+                              handleUpdateSection(idx, {
+                                filterCategoryId: Number(val) === 0 ? undefined : Number(val),
+                              })
+                            }
+                            options={[
+                              { value: 0, label: 'Todas as Categorias' },
+                              ...categories.map((c) => ({
+                                value: c.id,
+                                label: c.name,
+                                color: c.color,
+                              })),
+                            ]}
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     {/* Configuração de Campo de Tipo ASSINATURA */}
                     {section.sectionType === 'SIGNATURE' && (
