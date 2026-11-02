@@ -25,7 +25,18 @@ export type BiMetricType =
   | 'ACTIVE_TIMER'
   | 'TOP_TASKS'
 
-export type BiPeriodFilter = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH'
+export type BiPeriodFilter =
+  | 'INHERIT'
+  | 'ALL'
+  | 'TODAY'
+  | 'YESTERDAY'
+  | 'WEEK'
+  | 'LAST_WEEK'
+  | 'MONTH'
+  | 'LAST_MONTH'
+  | 'LAST_3_MONTHS'
+  | 'LAST_6_MONTHS'
+  | 'YEAR'
 
 export type BiCardScope = 'INHERIT' | 'MINE' | 'TEAM'
 

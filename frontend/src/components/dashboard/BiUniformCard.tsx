@@ -22,17 +22,18 @@ import {
 import type { DashboardV2Card } from '../../lib/userPreferences'
 import type { Task, Project, Category } from '../../types/task'
 import {
-  calculateTaskTotalSeconds,
   formatSecondsToHuman,
   formatSecondsToTimer,
 } from '../../lib/timeUtils'
 import {
   calculateUserPeriodWorkedSeconds,
-  isSameDay,
-  isSameWeek,
-  isSameMonth,
   type WorkGoal,
 } from '../../lib/userGoals'
+import {
+  type PeriodPreset,
+  getDateRangeForPreset,
+  calculateTaskSecondsInRange,
+} from '../../lib/periodUtils'
 import { useAuth } from '../../contexts/AuthContext'
 
 interface BiUniformCardProps {
@@ -46,6 +47,9 @@ interface BiUniformCardProps {
   activeSeconds: number
   workGoal: WorkGoal
   globalScope?: 'mine' | 'team'
+  globalPeriod?: PeriodPreset
+  globalCustomStart?: string
+  globalCustomEnd?: string
   isBeingDragged?: boolean
   isDragOver?: boolean
   onToggleTimer: (task: Task) => void
@@ -124,6 +128,9 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
   activeSeconds,
   workGoal,
   globalScope = 'team',
+  globalPeriod = 'this_month',
+  globalCustomStart,
+  globalCustomEnd,
   isBeingDragged = false,
   isDragOver = false,
   onToggleTimer,
@@ -138,7 +145,6 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
 }) => {
   const { user } = useAuth()
   const theme = THEME_STYLES[card.colorTheme || 'brand']
-  const now = new Date()
 
   // Resolve scope: Card's specific scope takes precedence, otherwise fallback to page's globalScope
   const effectiveScope: 'mine' | 'team' =
@@ -147,6 +153,28 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
         ? 'mine'
         : 'team'
       : globalScope
+
+  // Resolve period: Card's specific period takes precedence, otherwise fallback to page's globalPeriod
+  const effectivePreset: PeriodPreset = (() => {
+    if (!card.period || card.period === 'INHERIT') {
+      return globalPeriod || 'this_month'
+    }
+    switch (card.period) {
+      case 'TODAY': return 'today'
+      case 'YESTERDAY': return 'yesterday'
+      case 'WEEK': return 'this_week'
+      case 'LAST_WEEK': return 'last_week'
+      case 'MONTH': return 'this_month'
+      case 'LAST_MONTH': return 'last_month'
+      case 'LAST_3_MONTHS': return 'last_3_months'
+      case 'LAST_6_MONTHS': return 'last_6_months'
+      case 'YEAR': return 'this_year'
+      case 'ALL': return 'all'
+      default: return 'all'
+    }
+  })()
+
+  const currentRange = getDateRangeForPreset(effectivePreset, globalCustomStart, globalCustomEnd)
 
   // 1. Filter Tasks based on scope and card's combined dimensions
   const filteredTasks = tasks.filter((t) => {
@@ -168,46 +196,39 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
     return true
   })
 
-  // Period-aware seconds calculation
+  // Period-aware seconds calculation using exact range intersection
   const periodSeconds = filteredTasks.reduce((acc, t) => {
-    let taskSec = 0
-    if (card.period === 'ALL') {
-      taskSec = calculateTaskTotalSeconds(t)
-    } else {
-      for (const item of t.history || []) {
-        if (!item.startAt) continue
-        const itemDate = new Date(item.startAt)
-        let matches = false
-        if (card.period === 'TODAY') matches = isSameDay(itemDate, now)
-        else if (card.period === 'WEEK') matches = isSameWeek(itemDate, now)
-        else if (card.period === 'MONTH') matches = isSameMonth(itemDate, now)
-
-        if (matches) {
-          const startMs = itemDate.getTime()
-          const endMs = item.endAt ? new Date(item.endAt).getTime() : startMs
-          const duration = Math.max(0, Math.floor((endMs - startMs) / 1000))
-          taskSec += duration
-        }
-      }
-    }
-
-    if (activeTask?.id === t.id && card.period !== 'ALL') {
-      taskSec += activeSeconds
-    }
-
-    return acc + taskSec
+    return acc + calculateTaskSecondsInRange(
+      t,
+      currentRange.startDate,
+      currentRange.endDate,
+      activeTask?.id,
+      activeSeconds
+    )
   }, 0)
 
   // Associated names
   const projectName = projects.find((p) => p.id === card.projectId)?.name
   const categoryName = categories.find((c) => c.id === card.categoryId)?.name
 
-  const periodLabels: Record<string, string> = {
-    ALL: 'Total',
-    TODAY: 'Hoje',
-    WEEK: 'Esta Semana',
-    MONTH: 'Este Mês',
-  }
+  const periodBadgeLabel = (() => {
+    if (!card.period || card.period === 'INHERIT') {
+      return currentRange.label
+    }
+    switch (card.period) {
+      case 'TODAY': return 'Hoje'
+      case 'YESTERDAY': return 'Ontem'
+      case 'WEEK': return 'Esta Semana'
+      case 'LAST_WEEK': return 'Semana Passada'
+      case 'MONTH': return 'Este Mês'
+      case 'LAST_MONTH': return 'Mês Passado'
+      case 'LAST_3_MONTHS': return 'Últimos 3 Meses'
+      case 'LAST_6_MONTHS': return 'Últimos 6 Meses'
+      case 'YEAR': return 'Este Ano'
+      case 'ALL': return 'Total'
+      default: return 'Total'
+    }
+  })()
 
   // Render Body based on metricType
   const renderCardBody = () => {
@@ -420,21 +441,32 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
 
       case 'TOP_TASKS': {
         const top2 = [...filteredTasks]
-          .sort((a, b) => calculateTaskTotalSeconds(b) - calculateTaskTotalSeconds(a))
+          .map((t) => ({
+            task: t,
+            sec: calculateTaskSecondsInRange(
+              t,
+              currentRange.startDate,
+              currentRange.endDate,
+              activeTask?.id,
+              activeSeconds
+            ),
+          }))
+          .filter((item) => item.sec > 0)
+          .sort((a, b) => b.sec - a.sec)
           .slice(0, 2)
 
         return (
           <div className="space-y-1 my-auto">
             {top2.length === 0 ? (
-              <p className="text-[11px] text-muted italic">Nenhuma tarefa encontrada.</p>
+              <p className="text-[11px] text-muted italic">Nenhuma atividade no período.</p>
             ) : (
-              top2.map((t, i) => (
+              top2.map(({ task: t, sec }, i) => (
                 <div key={t.id} className="flex items-center justify-between text-[10px] gap-2">
                   <span className="truncate text-foreground font-semibold">
                     <strong className="text-muted mr-1">#{i + 1}</strong> {t.title}
                   </span>
                   <span className="font-mono text-muted shrink-0">
-                    {formatSecondsToTimer(calculateTaskTotalSeconds(t))}
+                    {formatSecondsToTimer(sec)}
                   </span>
                 </div>
               ))
@@ -576,7 +608,7 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
         </span>
 
         <span className={`px-1.5 py-0.2 rounded font-semibold border ${theme.badge}`}>
-          {periodLabels[card.period]}
+          {periodBadgeLabel}
         </span>
 
         {projectName && (

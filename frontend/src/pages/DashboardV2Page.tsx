@@ -26,8 +26,10 @@ import {
   type DashboardV2Card,
 } from '../lib/userPreferences'
 import { getUserWorkGoal, type WorkGoal } from '../lib/userGoals'
+import { type PeriodPreset } from '../lib/periodUtils'
 import { BiUniformCard } from '../components/dashboard/BiUniformCard'
 import { CreateBiCardModal } from '../components/dashboard/CreateBiCardModal'
+import { PeriodSelector } from '../components/dashboard/PeriodSelector'
 
 export const DashboardV2Page: React.FC = () => {
   const { user, activeOrg } = useAuth()
@@ -60,6 +62,28 @@ export const DashboardV2Page: React.FC = () => {
     (localStorage.getItem('beetask_bi_scope') as 'mine' | 'team') ||
     'team'
   const [viewScope, setViewScope] = useState<'mine' | 'team'>(initialScope)
+
+  // Global Period State
+  const [globalPeriod, setGlobalPeriod] = useState<PeriodPreset>(() => {
+    return (localStorage.getItem('beetask_bi_period') as PeriodPreset) || 'this_month'
+  })
+  const [globalCustomStart, setGlobalCustomStart] = useState<string | undefined>(() => {
+    return localStorage.getItem('beetask_bi_custom_start') || undefined
+  })
+  const [globalCustomEnd, setGlobalCustomEnd] = useState<string | undefined>(() => {
+    return localStorage.getItem('beetask_bi_custom_end') || undefined
+  })
+
+  const handleGlobalPeriodChange = (preset: PeriodPreset, start?: string, end?: string) => {
+    setGlobalPeriod(preset)
+    setGlobalCustomStart(start)
+    setGlobalCustomEnd(end)
+    try {
+      localStorage.setItem('beetask_bi_period', preset)
+      if (start) localStorage.setItem('beetask_bi_custom_start', start)
+      if (end) localStorage.setItem('beetask_bi_custom_end', end)
+    } catch (_) {}
+  }
 
   const handleScopeChange = (newScope: 'mine' | 'team') => {
     setViewScope(newScope)
@@ -410,6 +434,14 @@ export const DashboardV2Page: React.FC = () => {
         </div>
       </div>
 
+      {/* Global Period Selector */}
+      <PeriodSelector
+        value={globalPeriod}
+        customStart={globalCustomStart}
+        customEnd={globalCustomEnd}
+        onChange={handleGlobalPeriodChange}
+      />
+
       {/* Uniform Modular Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -463,6 +495,9 @@ export const DashboardV2Page: React.FC = () => {
               activeSeconds={activeSeconds}
               workGoal={workGoal}
               globalScope={viewScope}
+              globalPeriod={globalPeriod}
+              globalCustomStart={globalCustomStart}
+              globalCustomEnd={globalCustomEnd}
               isBeingDragged={draggedCardId === card.id}
               isDragOver={dragOverCardId === card.id}
               onToggleTimer={handleToggleTimer}

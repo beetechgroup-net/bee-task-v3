@@ -258,10 +258,17 @@ export const CreateBiCardModal: React.FC<CreateBiCardModalProps> = ({
                   value={period}
                   onChange={(val) => setPeriod(val as BiPeriodFilter)}
                   options={[
-                    { value: 'ALL', label: 'Todo o Histórico' },
-                    { value: 'TODAY', label: 'Apenas Hoje' },
+                    { value: 'INHERIT', label: '🔗 Seguir Período da Página (Recomendado)' },
+                    { value: 'TODAY', label: '📅 Apenas Hoje' },
+                    { value: 'YESTERDAY', label: 'Ontem' },
                     { value: 'WEEK', label: 'Esta Semana' },
+                    { value: 'LAST_WEEK', label: 'Semana Passada' },
                     { value: 'MONTH', label: 'Este Mês' },
+                    { value: 'LAST_MONTH', label: 'Mês Passado' },
+                    { value: 'LAST_3_MONTHS', label: 'Últimos 3 Meses (Trimestre)' },
+                    { value: 'LAST_6_MONTHS', label: 'Últimos 6 Meses (Semestre)' },
+                    { value: 'YEAR', label: 'Este Ano' },
+                    { value: 'ALL', label: 'Todo o Histórico' },
                   ]}
                 />
               </div>

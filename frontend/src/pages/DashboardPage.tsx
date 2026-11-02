@@ -34,6 +34,14 @@ import type { Task, Project } from '../types/task'
 import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer } from '../lib/timeUtils'
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
 import { GenerateReportModal } from '../components/reports/GenerateReportModal'
+import { PeriodSelector } from '../components/dashboard/PeriodSelector'
+import {
+  type PeriodPreset,
+  getDateRangeForPreset,
+  calculateTaskSecondsInRange,
+  isTaskFinishedInRange,
+  hasTaskActivityInRange,
+} from '../lib/periodUtils'
 import {
   getUserWorkGoal,
   calculateUserPeriodWorkedSeconds,
@@ -110,6 +118,32 @@ export const DashboardPage: React.FC = () => {
     )
   }
 
+  // Period Preset State (Hoje, Esta Semana, Este Mês, Trimestre, Ano, etc.)
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>(() => {
+    return (localStorage.getItem('beetask_dashboard_period') as PeriodPreset) || 'this_month'
+  })
+  const [customStart, setCustomStart] = useState<string | undefined>(() => {
+    return localStorage.getItem('beetask_dashboard_custom_start') || undefined
+  })
+  const [customEnd, setCustomEnd] = useState<string | undefined>(() => {
+    return localStorage.getItem('beetask_dashboard_custom_end') || undefined
+  })
+
+  const handlePeriodChange = (preset: PeriodPreset, start?: string, end?: string) => {
+    setPeriodPreset(preset)
+    setCustomStart(start)
+    setCustomEnd(end)
+    try {
+      localStorage.setItem('beetask_dashboard_period', preset)
+      if (start) localStorage.setItem('beetask_dashboard_custom_start', start)
+      if (end) localStorage.setItem('beetask_dashboard_custom_end', end)
+    } catch (_) {}
+  }
+
+  const activeDateRange = useMemo(() => {
+    return getDateRangeForPreset(periodPreset, customStart, customEnd)
+  }, [periodPreset, customStart, customEnd])
+
   const activeOrgId = activeOrg?.id
 
   const loadData = useCallback(async () => {
@@ -161,15 +195,50 @@ export const DashboardPage: React.FC = () => {
   // Scope tasks based on viewScope
   const scopeTasks = viewScope === 'mine' ? myTasks : tasks
 
-  // KPIs dynamically calculated based on active scope
+  // KPIs dynamically calculated based on active scope AND active period
   const stats = useMemo(() => {
-    const inProgress = scopeTasks.filter((t) => t.status === 'IN_PROGRESS').length
-    const completed = scopeTasks.filter((t) => t.status === 'COMPLETED').length
-    const notStarted = scopeTasks.filter((t) => t.status === 'NOT_STARTED').length
-    const totalSeconds = scopeTasks.reduce((acc, t) => acc + calculateTaskTotalSeconds(t), 0)
+    const isAll = periodPreset === 'all'
+    const start = activeDateRange.startDate
+    const end = activeDateRange.endDate
 
-    const uniqueProjectIds = new Set(scopeTasks.map((t) => t.project?.id).filter(Boolean))
-    const projectsCount = viewScope === 'mine' ? uniqueProjectIds.size : projects.length
+    let inProgress = 0
+    let completed = 0
+    let notStarted = 0
+    let totalSeconds = 0
+    const activeProjectIds = new Set<number>()
+
+    for (const t of scopeTasks) {
+      // Calculate period-accurate seconds
+      const sec = isAll
+        ? calculateTaskTotalSeconds(t)
+        : calculateTaskSecondsInRange(t, start, end, currentActiveTask?.id, activeSeconds)
+      totalSeconds += sec
+
+      const hadActivity = isAll || sec > 0 || hasTaskActivityInRange(t, start, end)
+
+      // Completed in period
+      if (isAll) {
+        if (t.status === 'COMPLETED') completed++
+        else if (t.status === 'IN_PROGRESS') inProgress++
+        else if (t.status === 'NOT_STARTED') notStarted++
+      } else {
+        if (isTaskFinishedInRange(t, start, end)) {
+          completed++
+        } else if (t.status === 'IN_PROGRESS' || sec > 0) {
+          inProgress++
+        } else if (t.status === 'NOT_STARTED') {
+          notStarted++
+        }
+      }
+
+      if (hadActivity && t.project?.id) {
+        activeProjectIds.add(t.project.id)
+      }
+    }
+
+    const projectsCount = isAll
+      ? (viewScope === 'mine' ? new Set(scopeTasks.map((t) => t.project?.id).filter(Boolean)).size : projects.length)
+      : activeProjectIds.size
 
     return {
       inProgress,
@@ -177,8 +246,17 @@ export const DashboardPage: React.FC = () => {
       notStarted,
       totalSeconds,
       projectsCount,
+      periodLabel: activeDateRange.label,
     }
-  }, [scopeTasks, projects, viewScope])
+  }, [
+    scopeTasks,
+    projects,
+    viewScope,
+    periodPreset,
+    activeDateRange,
+    currentActiveTask?.id,
+    activeSeconds,
+  ])
 
   // Work Goal Progress in Current Period
   const goalProgress = useMemo(() => {
@@ -216,10 +294,19 @@ export const DashboardPage: React.FC = () => {
     }
   }, [tasks, workGoal, currentActiveTask?.id, activeSeconds])
 
-  // Recent 5 tasks based on active scope
+  // Recent tasks based on active scope & period activity
   const recentTasks = useMemo(() => {
+    if (periodPreset === 'all') {
+      return [...scopeTasks].slice(0, 5)
+    }
+    const withActivity = scopeTasks.filter((t) =>
+      hasTaskActivityInRange(t, activeDateRange.startDate, activeDateRange.endDate)
+    )
+    if (withActivity.length > 0) {
+      return withActivity.slice(0, 5)
+    }
     return [...scopeTasks].slice(0, 5)
-  }, [scopeTasks])
+  }, [scopeTasks, periodPreset, activeDateRange])
 
   // Toggle timer on a task
   const handleToggleTimer = async (task: Task) => {
@@ -425,6 +512,14 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Global Period Selector */}
+      <PeriodSelector
+        value={periodPreset}
+        customStart={customStart}
+        customEnd={customEnd}
+        onChange={handlePeriodChange}
+      />
+
       {/* 4 Premium KPI Cards with shadow-panel & backdrop-blur */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -466,9 +561,11 @@ export const DashboardPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-muted font-medium mt-1">
-                {viewScope === 'mine'
-                  ? `${stats.notStarted} na sua fila aguardando`
-                  : `${stats.notStarted} tarefas aguardando no backlog`}
+                {periodPreset === 'all'
+                  ? (viewScope === 'mine'
+                      ? `${stats.notStarted} na sua fila aguardando`
+                      : `${stats.notStarted} tarefas aguardando no backlog`)
+                  : `Ativas no período (${stats.periodLabel})`}
               </p>
             </div>
           </div>
@@ -500,9 +597,11 @@ export const DashboardPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-muted font-medium mt-1">
-                {viewScope === 'mine'
-                  ? `de ${myTasks.length} demandas suas`
-                  : `de ${tasks.length} demandas cadastradas`}
+                {periodPreset === 'all'
+                  ? (viewScope === 'mine'
+                      ? `de ${myTasks.length} demandas suas`
+                      : `de ${tasks.length} demandas cadastradas`)
+                  : `Entregas no período (${stats.periodLabel})`}
               </p>
             </div>
           </div>
@@ -534,9 +633,7 @@ export const DashboardPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-muted font-medium mt-1">
-                {viewScope === 'mine'
-                  ? `${formatSecondsToHuman(stats.totalSeconds)} auditadas por você`
-                  : `${formatSecondsToHuman(stats.totalSeconds)} auditadas no time`}
+                {formatSecondsToHuman(stats.totalSeconds)} em {stats.periodLabel}
               </p>
             </div>
           </div>
@@ -568,9 +665,11 @@ export const DashboardPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-muted font-medium mt-1">
-                {viewScope === 'mine'
-                  ? 'Iniciativas com tarefas suas'
-                  : 'Iniciativas ativas no workspace'}
+                {periodPreset === 'all'
+                  ? (viewScope === 'mine'
+                      ? 'Iniciativas com tarefas suas'
+                      : 'Iniciativas ativas no workspace')
+                  : `Com atuação no período (${stats.periodLabel})`}
               </p>
             </div>
           </div>
@@ -808,9 +907,12 @@ export const DashboardPage: React.FC = () => {
         {/* Recent Sprint Tasks (Right 7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2 flex-wrap">
               <Zap className="w-4 h-4 text-accent" />
-              {viewScope === 'mine' ? 'Minhas Demandas Recentes' : 'Demandas Recentes da Equipe'}
+              <span>{viewScope === 'mine' ? 'Minhas Demandas' : 'Demandas da Equipe'}</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand border border-brand/20">
+                {stats.periodLabel}
+              </span>
             </h2>
             <Link
               to="/tasks"
