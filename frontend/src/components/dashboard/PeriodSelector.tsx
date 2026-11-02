@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Calendar,
   ChevronDown,
@@ -94,7 +95,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const isSecondaryActive = SECONDARY_PRESETS.includes(value)
 
   return (
-    <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl bg-surface/90 border border-border-soft backdrop-blur-md shadow-panel ${className}`}>
+    <div className={`relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl bg-surface/90 border border-border-soft backdrop-blur-md shadow-panel ${className}`}>
       {/* Left: Buttons & Presets */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <div className="flex items-center gap-1 text-xs font-bold text-muted mr-1">
@@ -197,119 +198,121 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       </div>
 
       {/* Modal / Dialog for Custom Date Range */}
-      {customModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div
-            className="w-full max-w-md bg-surface border border-border-soft rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
-            role="dialog"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-border-soft">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-accent/15 text-accent border border-accent/25 flex items-center justify-center">
-                  <CalendarRange className="w-4 h-4" />
+      {customModalOpen && typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+            <div
+              className="w-full max-w-md bg-surface border border-border-soft rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+              role="dialog"
+            >
+              <div className="flex items-center justify-between p-5 border-b border-border-soft">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-accent/15 text-accent border border-accent/25 flex items-center justify-center">
+                    <CalendarRange className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-foreground">
+                      Definir Período Personalizado
+                    </h3>
+                    <p className="text-[11px] text-muted">
+                      Selecione a data de início e término desejadas.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-extrabold text-foreground">
-                    Definir Período Personalizado
-                  </h3>
-                  <p className="text-[11px] text-muted">
-                    Selecione a data de início e término desejadas.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCustomModalOpen(false)}
-                className="p-1.5 rounded-xl text-muted hover:text-foreground hover:bg-surface-raised transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleApplyCustom} className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">Data Inicial</label>
-                  <input
-                    type="date"
-                    value={tempStart}
-                    onChange={(e) => setTempStart(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">Data Final</label>
-                  <input
-                    type="date"
-                    value={tempEnd}
-                    onChange={(e) => setTempEnd(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
-                  />
-                </div>
-              </div>
-
-              {/* Quick shortcut pills inside modal */}
-              <div className="pt-2 border-t border-border-soft/60 space-y-1.5">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
-                  Atalhos de Meses:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    {
-                      label: 'Últimos 30 dias',
-                      days: 30,
-                    },
-                    {
-                      label: 'Últimos 60 dias',
-                      days: 60,
-                    },
-                    {
-                      label: 'Últimos 90 dias',
-                      days: 90,
-                    },
-                    {
-                      label: 'Últimos 180 dias',
-                      days: 180,
-                    },
-                  ].map((shortcut) => (
-                    <button
-                      key={shortcut.label}
-                      type="button"
-                      onClick={() => {
-                        const now = new Date()
-                        const s = new Date(now.getTime() - shortcut.days * 24 * 60 * 60 * 1000)
-                        setTempStart(formatDateYmd(s))
-                        setTempEnd(formatDateYmd(now))
-                      }}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-surface-raised hover:bg-brand/10 hover:text-brand border border-border-soft transition-colors cursor-pointer"
-                    >
-                      {shortcut.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border-soft">
                 <button
                   type="button"
                   onClick={() => setCustomModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-raised transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl text-muted hover:text-foreground hover:bg-surface-raised transition-colors cursor-pointer"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md shadow-brand/20 transition-all cursor-pointer"
-                >
-                  Aplicar Período
+                  ✕
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+              <form onSubmit={handleApplyCustom} className="p-5 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground">Data Inicial</label>
+                    <input
+                      type="date"
+                      value={tempStart}
+                      onChange={(e) => setTempStart(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground">Data Final</label>
+                    <input
+                      type="date"
+                      value={tempEnd}
+                      onChange={(e) => setTempEnd(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 rounded-xl border border-border-soft bg-surface text-xs text-foreground focus:outline-hidden focus:border-brand shadow-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick shortcut pills inside modal */}
+                <div className="pt-2 border-t border-border-soft/60 space-y-1.5">
+                  <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
+                    Atalhos de Meses:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      {
+                        label: 'Últimos 30 dias',
+                        days: 30,
+                      },
+                      {
+                        label: 'Últimos 60 dias',
+                        days: 60,
+                      },
+                      {
+                        label: 'Últimos 90 dias',
+                        days: 90,
+                      },
+                      {
+                        label: 'Últimos 180 dias',
+                        days: 180,
+                      },
+                    ].map((shortcut) => (
+                      <button
+                        key={shortcut.label}
+                        type="button"
+                        onClick={() => {
+                          const now = new Date()
+                          const s = new Date(now.getTime() - shortcut.days * 24 * 60 * 60 * 1000)
+                          setTempStart(formatDateYmd(s))
+                          setTempEnd(formatDateYmd(now))
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-surface-raised hover:bg-brand/10 hover:text-brand border border-border-soft transition-colors cursor-pointer"
+                      >
+                        {shortcut.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border-soft">
+                  <button
+                    type="button"
+                    onClick={() => setCustomModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-muted hover:text-foreground hover:bg-surface-raised transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-brand hover:bg-brand-strong text-white text-xs font-bold shadow-md shadow-brand/20 transition-all cursor-pointer"
+                  >
+                    Aplicar Período
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
