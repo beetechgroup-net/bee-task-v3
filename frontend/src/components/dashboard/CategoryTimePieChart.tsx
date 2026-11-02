@@ -103,10 +103,10 @@ export const CategoryTimePieChart: React.FC<CategoryTimePieChartProps> = ({
   }, [tasks, startDate, endDate, isAllPeriod, activeTaskId, activeSeconds])
 
   // SVG Donut geometry
-  const size = 180
+  const size = 190
   const center = size / 2
-  const radius = 64
-  const strokeWidth = 22
+  const radius = 68
+  const strokeWidth = 24
   const circumference = 2 * Math.PI * radius
 
   const hoveredItem = categoryList.find((c) => c.id === hoveredId) || null
@@ -156,92 +156,97 @@ export const CategoryTimePieChart: React.FC<CategoryTimePieChartProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           {/* Donut Chart (Left 5 cols) */}
-          <div className="md:col-span-5 flex flex-col items-center justify-center relative select-none">
-            <svg
-              width={size}
-              height={size}
-              viewBox={`0 0 ${size} ${size}`}
-              className="transform -rotate-90"
-            >
-              {/* Background Track Circle */}
-              <circle
-                cx={center}
-                cy={center}
-                r={radius}
-                fill="transparent"
-                stroke="currentColor"
-                strokeWidth={strokeWidth}
-                className="text-surface-sunken"
-              />
-
-              {/* Slices */}
-              {categoryList.map((item) => {
-                const sliceRatio = item.seconds / totalSeconds
-                const sliceLength = sliceRatio * circumference
-                const gap = categoryList.length > 1 ? 2.5 : 0
-                const actualLength = Math.max(0, sliceLength - gap)
-                const offset = -accumulatedLength
-                accumulatedLength += sliceLength
-
-                const isHovered = hoveredId === item.id
-                const currentStrokeWidth = isHovered ? strokeWidth + 4 : strokeWidth
-
-                return (
-                  <circle
-                    key={item.id}
-                    cx={center}
-                    cy={center}
-                    r={radius}
-                    fill="transparent"
-                    stroke={item.color}
-                    strokeWidth={currentStrokeWidth}
-                    strokeDasharray={`${actualLength} ${circumference}`}
-                    strokeDashoffset={offset}
-                    className="transition-all duration-200 cursor-pointer"
-                    style={{
-                      opacity: hoveredId !== null && !isHovered ? 0.35 : 1,
-                      filter: isHovered ? 'drop-shadow(0px 0px 4px rgba(0,0,0,0.35))' : undefined,
-                    }}
-                    onMouseEnter={() => setHoveredId(item.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                  />
-                )
-              })}
-            </svg>
-
-            {/* Donut Hole Center Content (Absolute) */}
+          <div className="md:col-span-5 flex items-center justify-center py-2">
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-3"
+              className="relative shrink-0 flex items-center justify-center select-none"
               style={{ width: size, height: size }}
             >
-              {hoveredItem ? (
-                <div className="space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-                  <span
-                    className="text-[10px] font-bold uppercase tracking-wider truncate max-w-[90px] block"
-                    style={{ color: hoveredItem.color }}
-                  >
-                    {hoveredItem.name}
-                  </span>
-                  <p className="text-base font-extrabold font-mono text-foreground leading-tight">
-                    {formatSecondsToTimer(hoveredItem.seconds)}
-                  </p>
-                  <span className="text-[10px] font-semibold text-muted block">
-                    {hoveredItem.percentage.toFixed(1)}% do tempo
-                  </span>
-                </div>
-              ) : (
-                <div className="space-y-0.5 animate-in fade-in duration-150">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted block">
-                    Total Auditado
-                  </span>
-                  <p className="text-base font-extrabold font-mono text-foreground leading-tight">
-                    {formatSecondsToTimer(totalSeconds)}
-                  </p>
-                  <span className="text-[10px] font-semibold text-muted block">
-                    {categoryList.length} {categoryList.length === 1 ? 'categoria' : 'categorias'}
-                  </span>
-                </div>
-              )}
+              <svg
+                width={size}
+                height={size}
+                viewBox={`0 0 ${size} ${size}`}
+                className="transform -rotate-90 block"
+              >
+                {/* Background Track Circle */}
+                <circle
+                  cx={center}
+                  cy={center}
+                  r={radius}
+                  fill="transparent"
+                  stroke="currentColor"
+                  strokeWidth={strokeWidth}
+                  className="text-surface-sunken"
+                />
+
+                {/* Slices */}
+                {categoryList.map((item) => {
+                  const sliceRatio = item.seconds / totalSeconds
+                  const sliceLength = sliceRatio * circumference
+                  const gap = categoryList.length > 1 ? 2.5 : 0
+                  const actualLength = Math.max(0, sliceLength - gap)
+                  const offset = -accumulatedLength
+                  accumulatedLength += sliceLength
+
+                  const isHovered = hoveredId === item.id
+                  const currentStrokeWidth = isHovered ? strokeWidth + 4 : strokeWidth
+
+                  return (
+                    <circle
+                      key={item.id}
+                      cx={center}
+                      cy={center}
+                      r={radius}
+                      fill="transparent"
+                      stroke={item.color}
+                      strokeWidth={currentStrokeWidth}
+                      strokeDasharray={`${actualLength} ${circumference}`}
+                      strokeDashoffset={offset}
+                      className="transition-all duration-200 cursor-pointer"
+                      style={{
+                        opacity: hoveredId !== null && !isHovered ? 0.35 : 1,
+                        filter: isHovered ? 'drop-shadow(0px 0px 4px rgba(0,0,0,0.35))' : undefined,
+                      }}
+                      onMouseEnter={() => setHoveredId(item.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                    />
+                  )
+                })}
+              </svg>
+
+              {/* Donut Hole Center Content (Absolute & Dead Centered) */}
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-2"
+              >
+                {hoveredItem ? (
+                  <div className="flex flex-col items-center justify-center space-y-0.5 max-w-[105px] animate-in fade-in zoom-in-95 duration-150">
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider truncate w-full text-center block"
+                      style={{ color: hoveredItem.color }}
+                      title={hoveredItem.name}
+                    >
+                      {hoveredItem.name}
+                    </span>
+                    <p className="text-sm sm:text-base font-extrabold font-mono text-foreground leading-none">
+                      {formatSecondsToTimer(hoveredItem.seconds)}
+                    </p>
+                    <span className="text-[10px] font-semibold text-muted block leading-none pt-0.5">
+                      {hoveredItem.percentage.toFixed(1)}% do tempo
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center space-y-0.5 max-w-[105px] animate-in fade-in duration-150">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted block leading-none">
+                      Total Auditado
+                    </span>
+                    <p className="text-sm sm:text-base font-extrabold font-mono text-foreground leading-none">
+                      {formatSecondsToTimer(totalSeconds)}
+                    </p>
+                    <span className="text-[10px] font-semibold text-muted block leading-none pt-0.5">
+                      {categoryList.length} {categoryList.length === 1 ? 'categoria' : 'categorias'}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
