@@ -18,6 +18,7 @@ import {
   GripVertical,
   User,
   Users,
+  Tag,
 } from 'lucide-react'
 import type { DashboardV2Card } from '../../lib/userPreferences'
 import type { Task, Project, Category } from '../../types/task'
@@ -365,6 +366,65 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
         )
       }
 
+      case 'CATEGORY_BREAKDOWN': {
+        const catMap = new Map<string, { name: string; color: string; sec: number }>()
+        let total = 0
+        filteredTasks.forEach((t) => {
+          const sec = calculateTaskSecondsInRange(
+            t,
+            currentRange.startDate,
+            currentRange.endDate,
+            activeTask?.id,
+            activeSeconds
+          )
+          if (sec <= 0) return
+          total += sec
+          const name = t.category?.name || 'Sem Categoria'
+          const color = t.category?.color || '#d97706'
+          const curr = catMap.get(name) || { name, color, sec: 0 }
+          curr.sec += sec
+          catMap.set(name, curr)
+        })
+
+        const topCats = Array.from(catMap.values())
+          .sort((a, b) => b.sec - a.sec)
+          .slice(0, 2)
+
+        return (
+          <div className="space-y-1.5 my-auto">
+            {topCats.length === 0 ? (
+              <p className="text-[11px] text-muted italic">Nenhuma atividade por categoria.</p>
+            ) : (
+              topCats.map((c) => {
+                const pct = total > 0 ? Math.round((c.sec / total) * 100) : 0
+                return (
+                  <div key={c.name} className="space-y-0.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-semibold text-foreground truncate max-w-[130px] flex items-center gap-1.5">
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: c.color }}
+                        />
+                        {c.name}
+                      </span>
+                      <span className="font-mono text-muted text-[10px] font-bold">
+                        {formatSecondsToTimer(c.sec)} ({pct}%)
+                      </span>
+                    </div>
+                    <div className="w-full h-1 rounded-full bg-surface-sunken overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${pct}%`, backgroundColor: c.color }}
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        )
+      }
+
       case 'WORK_GOAL': {
         const targetSeconds = (workGoal?.targetHours || 8) * 3600
         const workedSeconds = calculateUserPeriodWorkedSeconds(
@@ -492,6 +552,8 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
         return PieChart
       case 'PROJECT_BREAKDOWN':
         return BarChart3
+      case 'CATEGORY_BREAKDOWN':
+        return Tag
       case 'WORK_GOAL':
         return Target
       case 'ACTIVE_TIMER':

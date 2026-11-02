@@ -35,6 +35,7 @@ import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer }
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
 import { GenerateReportModal } from '../components/reports/GenerateReportModal'
 import { PeriodSelector } from '../components/dashboard/PeriodSelector'
+import { CategoryTimePieChart } from '../components/dashboard/CategoryTimePieChart'
 import {
   type PeriodPreset,
   getDateRangeForPreset,
@@ -904,24 +905,38 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Sprint Tasks (Right 7 cols) */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2 flex-wrap">
-              <Zap className="w-4 h-4 text-accent" />
-              <span>{viewScope === 'mine' ? 'Minhas Demandas' : 'Demandas da Equipe'}</span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand border border-brand/20">
-                {stats.periodLabel}
-              </span>
-            </h2>
-            <Link
-              to="/tasks"
-              className="text-xs font-bold text-brand hover:underline flex items-center gap-1"
-            >
-              <span>Ver todas</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        {/* Right 7 cols: Category Time Pie Chart + Recent Tasks */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Pie Chart: Time Worked by Category */}
+          <CategoryTimePieChart
+            tasks={scopeTasks}
+            startDate={activeDateRange.startDate}
+            endDate={activeDateRange.endDate}
+            isAllPeriod={periodPreset === 'all'}
+            activeTaskId={currentActiveTask?.id}
+            activeSeconds={activeSeconds}
+            viewScope={viewScope}
+            periodLabel={stats.periodLabel}
+          />
+
+          {/* Recent Sprint Tasks */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 flex-wrap">
+                <Zap className="w-4 h-4 text-accent" />
+                <span>{viewScope === 'mine' ? 'Minhas Demandas' : 'Demandas da Equipe'}</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand border border-brand/20">
+                  {stats.periodLabel}
+                </span>
+              </h2>
+              <Link
+                to="/tasks"
+                className="text-xs font-bold text-brand hover:underline flex items-center gap-1"
+              >
+                <span>Ver todas</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
 
           {loading ? (
             <div className="space-y-3">
@@ -1095,6 +1110,7 @@ export const DashboardPage: React.FC = () => {
               })}
             </div>
           )}
+          </div>
         </div>
       </div>
 

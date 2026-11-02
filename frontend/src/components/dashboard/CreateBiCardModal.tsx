@@ -10,6 +10,7 @@ import {
   Flame,
   ListOrdered,
   Layers,
+  Tag,
 } from 'lucide-react'
 import type { DashboardV2Card, BiMetricType, BiPeriodFilter, BiCardScope } from '../../lib/userPreferences'
 import type { Project, Category } from '../../types/task'
@@ -53,6 +54,12 @@ const METRIC_OPTIONS: {
     label: 'Distribuição por Projeto',
     desc: 'Comparativo visual de horas e tarefas por iniciativa.',
     icon: BarChart3,
+  },
+  {
+    type: 'CATEGORY_BREAKDOWN',
+    label: 'Distribuição por Categoria',
+    desc: 'Divisão de horas dedicadas por categoria de tarefa.',
+    icon: Tag,
   },
   {
     type: 'STATUS_DISTRIBUTION',
