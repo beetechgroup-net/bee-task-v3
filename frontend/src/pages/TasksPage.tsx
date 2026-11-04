@@ -24,10 +24,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { useTimer } from '../contexts/TimerContext'
 import { taskService } from '../services/taskService'
 import { projectService } from '../services/projectService'
-import type { Task, TaskStatus, Project } from '../types/task'
+import type { Task, TaskStatus, Project, ParsedAiTask } from '../types/task'
 import { TaskKanbanView, COLUMNS } from '../components/tasks/TaskKanbanView'
 import { TaskListView } from '../components/tasks/TaskListView'
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
+import { CreateWithAiModal } from '../components/tasks/CreateWithAiModal'
 import { CustomSelect } from '../components/ui/Select'
 import {
   getLocalPreferences,
@@ -88,6 +89,8 @@ export const TasksPage: React.FC = () => {
   const [modalInitialStatus, setModalInitialStatus] = useState<TaskStatus>('NOT_STARTED')
   const [modalInitialTab, setModalInitialTab] = useState<'details' | 'history'>('details')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false)
+  const [aiDraftTask, setAiDraftTask] = useState<ParsedAiTask | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   // Load user preferences for hidden columns from backend
@@ -517,10 +520,24 @@ export const TasksPage: React.FC = () => {
             </div>
           )}
 
+          {/* Create with AI Button */}
+          <button
+            type="button"
+            onClick={() => setIsAiModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-purple-600/15 border border-purple-500/30 text-purple-300 font-semibold text-xs hover:bg-purple-600/25 hover:text-purple-200 shadow-sm transition-all hover:-translate-y-0.5 active:translate-y-0"
+            title="Criar tarefa em linguagem natural com inteligência artificial"
+          >
+            <Sparkles className="w-4 h-4 text-purple-400" />
+            <span>Criar com IA</span>
+          </button>
+
           {/* New Task Button */}
           <button
             type="button"
-            onClick={() => handleOpenCreateModal('NOT_STARTED')}
+            onClick={() => {
+              setAiDraftTask(null)
+              handleOpenCreateModal('NOT_STARTED')
+            }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand text-white font-semibold text-xs hover:bg-brand-hover shadow-md shadow-brand/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
           >
             <Plus className="w-4 h-4" />
@@ -818,6 +835,7 @@ export const TasksPage: React.FC = () => {
           onClose={() => {
             setIsModalOpen(false)
             setEditingTask(null)
+            setAiDraftTask(null)
           }}
           onSubmit={handleModalSubmit}
           onDelete={handleDeleteTask}
@@ -825,6 +843,22 @@ export const TasksPage: React.FC = () => {
           initialStatus={modalInitialStatus}
           initialTask={editingTask}
           initialTab={modalInitialTab}
+          initialDraft={aiDraftTask}
+        />
+      )}
+
+      {/* Create with AI Modal */}
+      {activeOrgId && (
+        <CreateWithAiModal
+          isOpen={isAiModalOpen}
+          onClose={() => setIsAiModalOpen(false)}
+          organizationId={activeOrgId}
+          onSuccess={(parsed) => {
+            setAiDraftTask(parsed)
+            setEditingTask(null)
+            setModalInitialStatus(parsed.status || 'NOT_STARTED')
+            setIsModalOpen(true)
+          }}
         />
       )}
     </div>

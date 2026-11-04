@@ -60,6 +60,15 @@ export interface CreateTaskPayload {
   externalUrl?: string;
 }
 
+export interface ParsedAiTask {
+  title: string;
+  description: string;
+  projectId?: number;
+  categoryId?: number;
+  assigneeUserId?: number;
+  status?: TaskStatus;
+}
+
 export interface ListTasksFilter {
   organizationId?: number;
   text?: string;

@@ -15,12 +15,14 @@ import {
   FileText,
   AlertCircle,
   ExternalLink,
+  Wand2,
 } from 'lucide-react'
-import type { Task, TaskStatus, Project, Category, TaskHistoryItem, TaskHistoryItemInput } from '../../types/task'
+import type { Task, TaskStatus, Project, Category, TaskHistoryItem, TaskHistoryItemInput, ParsedAiTask } from '../../types/task'
 import type { OrganizationMember } from '../../services/organizationService'
 import { projectService } from '../../services/projectService'
 import { categoryService } from '../../services/categoryService'
 import { organizationService } from '../../services/organizationService'
+import { taskService } from '../../services/taskService'
 import { CustomSelect } from '../ui/Select'
 import { useAuth } from '../../contexts/AuthContext'
 import { canDeleteTask } from '../../lib/taskPermissions'
@@ -52,6 +54,7 @@ interface CreateTaskModalProps {
   initialStatus?: TaskStatus
   initialTask?: Task | null
   initialTab?: 'details' | 'history'
+  initialDraft?: Partial<ParsedAiTask> | null
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
@@ -63,6 +66,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   initialStatus = 'NOT_STARTED',
   initialTask = null,
   initialTab = 'details',
+  initialDraft = null,
 }) => {
   const { user, activeOrg } = useAuth()
   const [activeTab, setActiveTab] = useState<'details' | 'history'>('details')
@@ -103,6 +107,57 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [newCategoryName, setNewCategoryName] = useState('')
   const [showAddCategory, setShowAddCategory] = useState(false)
 
+  // AI Helper states
+  const [aiQuickPrompt, setAiQuickPrompt] = useState('')
+  const [isParsingInline, setIsParsingInline] = useState(false)
+  const [isEnriching, setIsEnriching] = useState(false)
+  const [enrichMessage, setEnrichMessage] = useState<string | null>(null)
+
+  const handleInlineAiParse = async () => {
+    if (!aiQuickPrompt.trim() || isParsingInline) return
+    setIsParsingInline(true)
+    setError(null)
+    try {
+      const parsed = await taskService.parseTaskWithAi(organizationId, aiQuickPrompt.trim())
+      if (parsed.title) setTitle(parsed.title)
+      if (parsed.description) setDescription(parsed.description)
+      if (parsed.projectId !== undefined) setProjectId(parsed.projectId)
+      if (parsed.categoryId !== undefined) setCategoryId(parsed.categoryId)
+      if (parsed.assigneeUserId !== undefined) setAssigneeUserId(parsed.assigneeUserId)
+      setAiQuickPrompt('')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao processar com IA.'
+      setError(msg)
+    } finally {
+      setIsParsingInline(false)
+    }
+  }
+
+  const handleEnrichDescription = async () => {
+    if (!title.trim() || isEnriching) return
+    setIsEnriching(true)
+    setEnrichMessage(null)
+    try {
+      const res = await taskService.enrichTaskDescription({
+        organizationId,
+        title: title.trim(),
+        currentDescription: description.trim(),
+        projectId,
+        categoryId,
+      })
+      if (res?.description) {
+        setDescription(res.description)
+        setEnrichMessage('Descrição estruturada com IA com sucesso!')
+        setTimeout(() => setEnrichMessage(null), 3500)
+      }
+    } catch (err: unknown) {
+      console.error('Erro ao enriquecer descrição:', err)
+      setError('Não foi possível gerar a descrição com IA no momento.')
+    } finally {
+      setIsEnriching(false)
+    }
+  }
+
   // Populate data when modal opens
   useEffect(() => {
     if (!isOpen) return
@@ -117,6 +172,16 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       setExternalUrl(initialTask.externalUrl || '')
       setLocalHistory(initialTask.history ? [...initialTask.history] : [])
       setActiveTab(initialTab)
+    } else if (initialDraft) {
+      setTitle(initialDraft.title || '')
+      setDescription(initialDraft.description || '')
+      setStatus(initialDraft.status || initialStatus)
+      setProjectId(initialDraft.projectId)
+      setCategoryId(initialDraft.categoryId)
+      setAssigneeUserId(initialDraft.assigneeUserId)
+      setExternalUrl('')
+      setLocalHistory([])
+      setActiveTab('details')
     } else {
       setTitle('')
       setDescription('')
@@ -134,6 +199,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     }
 
     setError(null)
+    setEnrichMessage(null)
+    setAiQuickPrompt('')
+    setIsParsingInline(false)
+    setIsEnriching(false)
     setShowAddProject(false)
     setShowAddCategory(false)
     setIsHistoryFormOpen(false)
@@ -456,6 +525,53 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           {/* TAB 1: General Details */}
           {activeTab === 'details' && (
             <div className="space-y-4">
+              {/* Inline AI Quick Prompt (for creating new tasks) */}
+              {!initialTask && (
+                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-semibold text-purple-300">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Preencher com IA</span>
+                    </div>
+                    <span className="text-[10px] text-purple-400/80">Linguagem Natural</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      disabled={isParsingInline}
+                      value={aiQuickPrompt}
+                      onChange={(e) => setAiQuickPrompt(e.target.value)}
+                      placeholder="Ex: Corrigir erro no login, categoria Bugfix, projeto BeeTask..."
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-surface text-xs text-foreground placeholder-muted/60 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleInlineAiParse()
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={isParsingInline || !aiQuickPrompt.trim()}
+                      onClick={handleInlineAiParse}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs shadow-sm transition-all disabled:opacity-50 shrink-0"
+                    >
+                      {isParsingInline ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Processando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-3 h-3" />
+                          <span>Preencher</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Title */}
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1.5">
@@ -473,11 +589,38 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Descrição detalhada
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-foreground">
+                    Descrição detalhada
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleEnrichDescription}
+                    disabled={isEnriching || !title.trim()}
+                    title={!title.trim() ? "Preencha o título da tarefa primeiro" : "Gerar descrição estruturada e critérios de aceitação com IA"}
+                    className="flex items-center gap-1 text-[11px] font-medium text-purple-400 hover:text-purple-300 disabled:opacity-40 transition-colors"
+                  >
+                    {isEnriching ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Estruturando com IA...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3 text-purple-400" />
+                        <span>Melhorar com IA ✨</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                {enrichMessage && (
+                  <div className="mb-2 text-[11px] text-emerald-400 flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    <span>{enrichMessage}</span>
+                  </div>
+                )}
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descreva o escopo, critérios de aceite ou observações importantes..."

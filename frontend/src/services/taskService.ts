@@ -1,5 +1,5 @@
 import { apiFetch } from '../lib/api'
-import type { Task, TaskStatus, CreateTaskPayload, ListTasksFilter } from '../types/task'
+import type { Task, TaskStatus, CreateTaskPayload, ListTasksFilter, ParsedAiTask } from '../types/task'
 
 function buildQueryParams(filter?: ListTasksFilter): string {
   if (!filter) return ''
@@ -79,6 +79,26 @@ export const taskService = {
   async deleteTask(id: number): Promise<void> {
     return apiFetch<void>(`/tasks/${id}`, {
       method: 'DELETE',
+    })
+  },
+
+  async parseTaskWithAi(organizationId: number, prompt: string): Promise<ParsedAiTask> {
+    return apiFetch<ParsedAiTask>('/tasks/ai/parse', {
+      method: 'POST',
+      body: { organizationId, prompt },
+    })
+  },
+
+  async enrichTaskDescription(payload: {
+    organizationId: number
+    title: string
+    currentDescription?: string
+    projectId?: number
+    categoryId?: number
+  }): Promise<{ description: string }> {
+    return apiFetch<{ description: string }>('/tasks/ai/enrich', {
+      method: 'POST',
+      body: payload,
     })
   },
 }

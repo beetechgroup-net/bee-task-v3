@@ -35,6 +35,12 @@ import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskStatusUseCase;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskUseCase;
+import net.beetechgroup.beetask.usecase.task.ai.EnrichTaskDescriptionInput;
+import net.beetechgroup.beetask.usecase.task.ai.EnrichTaskDescriptionOutput;
+import net.beetechgroup.beetask.usecase.task.ai.EnrichTaskDescriptionUseCase;
+import net.beetechgroup.beetask.usecase.task.ai.ParseTaskWithAiInput;
+import net.beetechgroup.beetask.usecase.task.ai.ParsedTaskOutput;
+import net.beetechgroup.beetask.usecase.task.ai.ParseTaskWithAiUseCase;
 import net.beetechgroup.beetask.usecase.task.get.GetTaskUseCase;
 
 @Path("/tasks")
@@ -71,6 +77,12 @@ public class TaskController {
 
     @Inject
     DeleteTaskUseCase deleteTaskUseCase;
+
+    @Inject
+    ParseTaskWithAiUseCase parseTaskWithAiUseCase;
+
+    @Inject
+    EnrichTaskDescriptionUseCase enrichTaskDescriptionUseCase;
 
     @Inject
     SecurityIdentity securityIdentity;
@@ -177,6 +189,46 @@ public class TaskController {
                 .stream().map(TaskControllerMapper::toCreateTaskResponse).toList();
         LOGGER.infof("Listed %d tasks for user %s", tasks.size(), email);
         return tasks;
+    }
+
+    @POST
+    @Path("/ai/parse")
+    @Operation(summary = "Parse natural language task", description = "Extracts task details from natural language using AI")
+    @APIResponse(responseCode = "200", description = "Task parsed successfully")
+    public ParsedTaskResponse parseTaskWithAi(ParseTaskWithAiRequest request) {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("User %s requested AI task parsing for org %d", email, request.organizationId());
+        ParsedTaskOutput output = parseTaskWithAiUseCase.execute(
+                new ParseTaskWithAiInput(email, request.organizationId(), request.prompt())
+        );
+        return new ParsedTaskResponse(
+                output.title(),
+                output.description(),
+                output.projectId(),
+                output.categoryId(),
+                output.assigneeUserId(),
+                output.status()
+        );
+    }
+
+    @POST
+    @Path("/ai/enrich")
+    @Operation(summary = "Enrich task description", description = "Generates structured description and acceptance criteria using AI")
+    @APIResponse(responseCode = "200", description = "Task description enriched successfully")
+    public EnrichTaskDescriptionResponse enrichTaskDescription(EnrichTaskDescriptionRequest request) {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("User %s requested AI description enrichment for task '%s'", email, request.title());
+        EnrichTaskDescriptionOutput output = enrichTaskDescriptionUseCase.execute(
+                new EnrichTaskDescriptionInput(
+                        email,
+                        request.organizationId(),
+                        request.title(),
+                        request.currentDescription(),
+                        request.projectId(),
+                        request.categoryId()
+                )
+        );
+        return new EnrichTaskDescriptionResponse(output.description());
     }
 
 }

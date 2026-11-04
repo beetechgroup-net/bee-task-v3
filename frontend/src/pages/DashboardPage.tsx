@@ -30,9 +30,10 @@ import { useTimer } from '../contexts/TimerContext'
 import { taskService } from '../services/taskService'
 import { projectService } from '../services/projectService'
 import { reportService, type ReportTemplateOutput } from '../services/reportService'
-import type { Task, Project } from '../types/task'
+import type { Task, Project, ParsedAiTask } from '../types/task'
 import { calculateTaskTotalSeconds, formatSecondsToHuman, formatSecondsToTimer } from '../lib/timeUtils'
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
+import { CreateWithAiModal } from '../components/tasks/CreateWithAiModal'
 import { GenerateReportModal } from '../components/reports/GenerateReportModal'
 import { PeriodSelector } from '../components/dashboard/PeriodSelector'
 import { CategoryTimePieChart } from '../components/dashboard/CategoryTimePieChart'
@@ -67,6 +68,8 @@ export const DashboardPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [reportTemplates, setReportTemplates] = useState<ReportTemplateOutput[]>([])
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false)
+  const [aiDraftTask, setAiDraftTask] = useState<ParsedAiTask | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -430,7 +433,20 @@ export const DashboardPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsAiModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-purple-600/15 border border-purple-500/30 text-purple-300 font-bold text-xs hover:bg-purple-600/25 hover:text-purple-200 shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0"
+            title="Criar tarefa em linguagem natural com inteligência artificial"
+          >
+            <Sparkles className="w-4 h-4 text-purple-400" />
+            <span>Criar com IA</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAiDraftTask(null)
+              setIsModalOpen(true)
+            }}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-strong text-white font-bold text-xs shadow-lg shadow-brand/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -1119,10 +1135,24 @@ export const DashboardPage: React.FC = () => {
         <>
           <CreateTaskModal
             isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
+            onClose={() => {
+              setIsModalOpen(false)
+              setAiDraftTask(null)
+            }}
             onSubmit={handleModalSubmit}
             organizationId={activeOrgId}
             initialStatus="NOT_STARTED"
+            initialDraft={aiDraftTask}
+          />
+
+          <CreateWithAiModal
+            isOpen={isAiModalOpen}
+            onClose={() => setIsAiModalOpen(false)}
+            organizationId={activeOrgId}
+            onSuccess={(parsed) => {
+              setAiDraftTask(parsed)
+              setIsModalOpen(true)
+            }}
           />
 
           <GenerateReportModal

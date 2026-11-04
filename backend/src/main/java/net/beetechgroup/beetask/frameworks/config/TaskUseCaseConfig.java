@@ -15,6 +15,10 @@ import net.beetechgroup.beetask.usecase.task.start.StartTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.stop.StopTaskUseCase;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskStatusUseCase;
 import net.beetechgroup.beetask.usecase.task.update.UpdateTaskUseCase;
+import net.beetechgroup.beetask.usecase.task.ai.EnrichTaskDescriptionUseCase;
+import net.beetechgroup.beetask.usecase.task.ai.ParseTaskWithAiUseCase;
+import net.beetechgroup.beetask.frameworks.ai.OllamaService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.beetechgroup.beetask.usecase.task.get.GetTaskUseCase;
 
 @ApplicationScoped
@@ -72,6 +76,26 @@ public class TaskUseCaseConfig {
             UserRepository userRepository,
             UserOrganizationRepository userOrganizationRepository) {
         return new net.beetechgroup.beetask.usecase.task.delete.DeleteTaskUseCase(taskRepository, userRepository, userOrganizationRepository);
+    }
+
+    @Produces
+    public ParseTaskWithAiUseCase parseTaskWithAiUseCase(
+            OllamaService ollamaService,
+            ProjectRepository projectRepository,
+            CategoryRepository categoryRepository,
+            UserOrganizationRepository userOrganizationRepository,
+            AuthorizeOrganizationMemberUseCase authorizer,
+            ObjectMapper objectMapper) {
+        return new ParseTaskWithAiUseCase(ollamaService, projectRepository, categoryRepository, userOrganizationRepository, authorizer, objectMapper);
+    }
+
+    @Produces
+    public EnrichTaskDescriptionUseCase enrichTaskDescriptionUseCase(
+            OllamaService ollamaService,
+            ProjectRepository projectRepository,
+            CategoryRepository categoryRepository,
+            AuthorizeOrganizationMemberUseCase authorizer) {
+        return new EnrichTaskDescriptionUseCase(ollamaService, projectRepository, categoryRepository, authorizer);
     }
 }
 

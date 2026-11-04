@@ -36,30 +36,30 @@ public class OllamaService {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    public String generateSummary(String systemPrompt, String tasksContext) {
-        if (tasksContext == null || tasksContext.isBlank()) {
-            return "Nenhuma atividade registrada no período para resumo.";
+    public String chat(String systemPrompt, String userPrompt, boolean jsonFormat) {
+        if (userPrompt == null || userPrompt.isBlank()) {
+            return null;
         }
-
-        String effectiveSystemPrompt = (systemPrompt != null && !systemPrompt.isBlank())
-                ? systemPrompt
-                : "Você é um assistente corporativo. Com base na lista de tarefas realizadas pelo colaborador abaixo, elabore um resumo conciso e profissional em um ou dois parágrafos destacando as principais entregas.";
 
         try {
             Map<String, Object> payload = new HashMap<>();
             payload.put("model", model);
             payload.put("stream", false);
             payload.put("think", false);
+            if (jsonFormat) {
+                payload.put("format", "json");
+            }
 
-            List<Map<String, String>> messages = List.of(
-                    Map.of("role", "system", "content", effectiveSystemPrompt),
-                    Map.of("role", "user", "content", tasksContext)
-            );
+            List<Map<String, String>> messages = new java.util.ArrayList<>();
+            if (systemPrompt != null && !systemPrompt.isBlank()) {
+                messages.add(Map.of("role", "system", "content", systemPrompt));
+            }
+            messages.add(Map.of("role", "user", "content", userPrompt));
             payload.put("messages", messages);
 
             Map<String, Object> options = Map.of(
-                    "num_ctx", 8192,
-                    "temperature", 0.3
+                    "num_ctx", 4096,
+                    "temperature", 0.2
             );
             payload.put("options", options);
 
@@ -73,7 +73,7 @@ public class OllamaService {
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
-            LOGGER.infof("Enviando requisição de resumo para Ollama (%s) no modelo %s...", url, model);
+            LOGGER.infof("Enviando requisição para Ollama (%s) no modelo %s...", url, model);
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
@@ -86,15 +86,28 @@ public class OllamaService {
                     sanitized = sanitized.substring(sanitized.indexOf("\n\n") + 2).trim();
                 }
 
-                LOGGER.infof("Resumo com IA gerado com sucesso pelo Ollama (%d caracteres)", sanitized.length());
+                LOGGER.infof("Resposta da IA gerada com sucesso pelo Ollama (%d caracteres)", sanitized.length());
                 return sanitized;
             } else {
                 LOGGER.warnf("Ollama retornou status HTTP %d: %s", response.statusCode(), response.body());
                 return null;
             }
         } catch (Exception e) {
-            LOGGER.warnf("Não foi possível conectar ao Ollama para gerar resumo com IA: %s", e.getMessage());
+            LOGGER.warnf("Erro ao conectar ou processar requisição no Ollama: %s", e.getMessage());
             return null;
         }
+    }
+
+    public String generateSummary(String systemPrompt, String tasksContext) {
+        if (tasksContext == null || tasksContext.isBlank()) {
+            return "Nenhuma atividade registrada no período para resumo.";
+        }
+
+        String effectiveSystemPrompt = (systemPrompt != null && !systemPrompt.isBlank())
+                ? systemPrompt
+                : "Você é um assistente corporativo. Com base na lista de tarefas realizadas pelo colaborador abaixo, elabore um resumo conciso e profissional em um ou dois parágrafos destacando as principais entregas.";
+
+        String result = chat(effectiveSystemPrompt, tasksContext, false);
+        return result != null ? result : "Não foi possível gerar o resumo com IA neste momento.";
     }
 }
