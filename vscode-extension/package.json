@@ -1,0 +1,172 @@
+{
+  "name": "beetask-vscode",
+  "displayName": "BeeTask",
+  "description": "Gerenciamento e rastreamento de tarefas com cronômetro integrado ao VS Code",
+  "version": "1.0.0",
+  "publisher": "beetech",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beetechgroup-net/bee-task-v3.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Productivity",
+    "Other"
+  ],
+  "keywords": [
+    "tasks",
+    "timer",
+    "beetask",
+    "time-tracking",
+    "productivity"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "beetask.login",
+        "title": "BeeTask: Conectar Conta (Login)"
+      },
+      {
+        "command": "beetask.logout",
+        "title": "BeeTask: Desconectar (Logout)"
+      },
+      {
+        "command": "beetask.selectOrg",
+        "title": "BeeTask: Selecionar Organização"
+      },
+      {
+        "command": "beetask.refreshTasks",
+        "title": "BeeTask: Atualizar Lista de Tarefas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "beetask.createTask",
+        "title": "BeeTask: Nova Tarefa",
+        "icon": "$(plus)"
+      },
+      {
+        "command": "beetask.createTaskAi",
+        "title": "BeeTask: Criar Tarefa com IA",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "beetask.startTask",
+        "title": "Iniciar Tarefa (Play)",
+        "icon": "$(play)"
+      },
+      {
+        "command": "beetask.stopTask",
+        "title": "Pausar Tarefa (Pause)",
+        "icon": "$(debug-pause)"
+      },
+      {
+        "command": "beetask.completeTask",
+        "title": "Concluir Tarefa",
+        "icon": "$(check)"
+      },
+      {
+        "command": "beetask.openInBrowser",
+        "title": "Abrir no Navegador",
+        "icon": "$(link-external)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "beetask-explorer",
+          "title": "BeeTask",
+          "icon": "media/bee.svg"
+        }
+      ]
+    },
+    "views": {
+      "beetask-explorer": [
+        {
+          "id": "beetask.tasksView",
+          "name": "Minhas Tarefas"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "beetask.refreshTasks",
+          "when": "view == beetask.tasksView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "beetask.createTask",
+          "when": "view == beetask.tasksView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "beetask.createTaskAi",
+          "when": "view == beetask.tasksView",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "beetask.startTask",
+          "when": "view == beetask.tasksView && viewItem == task-not-started",
+          "group": "inline@1"
+        },
+        {
+          "command": "beetask.startTask",
+          "when": "view == beetask.tasksView && viewItem == task-stopped",
+          "group": "inline@1"
+        },
+        {
+          "command": "beetask.stopTask",
+          "when": "view == beetask.tasksView && viewItem == task-running",
+          "group": "inline@1"
+        },
+        {
+          "command": "beetask.completeTask",
+          "when": "view == beetask.tasksView && viewItem =~ /^task-/",
+          "group": "inline@2"
+        },
+        {
+          "command": "beetask.openInBrowser",
+          "when": "view == beetask.tasksView && viewItem =~ /^task-/",
+          "group": "inline@3"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "BeeTask",
+      "properties": {
+        "beetask.serverUrl": {
+          "type": "string",
+          "default": "https://api-task.beetech.dev",
+          "description": "URL base da API do BeeTask"
+        },
+        "beetask.webUrl": {
+          "type": "string",
+          "default": "https://task.beetech.dev",
+          "description": "URL da interface web do BeeTask"
+        },
+        "beetask.refreshIntervalSeconds": {
+          "type": "number",
+          "default": 30,
+          "description": "Intervalo de atualização automática das tarefas (em segundos)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.1",
+    "typescript": "^5.3.3"
+  }
+}

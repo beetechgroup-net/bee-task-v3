@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.vsix
+!beetask-vscode-1.0.0.vsix
+
