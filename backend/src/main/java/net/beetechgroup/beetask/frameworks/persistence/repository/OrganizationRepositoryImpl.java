@@ -59,6 +59,16 @@ public class OrganizationRepositoryImpl implements OrganizationRepository, Panac
     }
 
     @Override
+    public Optional<Organization> findByNameIgnoreCase(String name) {
+        if (Objects.isNull(name) || name.isBlank()) {
+            return Optional.empty();
+        }
+        return find("lower(trim(name)) = ?1", name.trim().toLowerCase())
+                .firstResultOptional()
+                .map(OrganizationEntityMapper::toDomain);
+    }
+
+    @Override
     public long countAll() {
         return count();
     }

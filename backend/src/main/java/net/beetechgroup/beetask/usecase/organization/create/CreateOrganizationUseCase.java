@@ -27,6 +27,17 @@ public class CreateOrganizationUseCase {
     }
 
     public CreateOrganizationOutput execute(CreateOrganizationInput input) {
+        String trimmedName = input.name() != null ? input.name().trim() : "";
+        if (trimmedName.isBlank()) {
+            LOGGER.warnf("Organization creation failed because name is blank");
+            throw new IllegalArgumentException("O nome da organização é obrigatório.");
+        }
+
+        if (organizationRepository.findByNameIgnoreCase(trimmedName).isPresent()) {
+            LOGGER.warnf("Organization creation rejected because name '%s' already exists", trimmedName);
+            throw new IllegalStateException("Já existe uma organização com o nome '" + trimmedName + "'.");
+        }
+
         Optional<User> userOptional = userRepository.findByEmail(input.userEmail());
         if (userOptional.isEmpty()) {
             LOGGER.warnf("Organization creation failed because user %s was not found", input.userEmail());
@@ -34,9 +45,9 @@ public class CreateOrganizationUseCase {
         }
         User user = userOptional.get();
 
-        LOGGER.infof("Creating organization '%s' for owner %s", input.name(), input.userEmail());
+        LOGGER.infof("Creating organization '%s' for owner %s", trimmedName, input.userEmail());
         Organization organization = new Organization();
-        organization.setName(input.name());
+        organization.setName(trimmedName);
         organization = organizationRepository.saveOrganization(organization);
 
         UserOrganization userOrganization = new UserOrganization();

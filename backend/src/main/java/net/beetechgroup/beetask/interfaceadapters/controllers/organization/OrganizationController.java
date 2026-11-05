@@ -4,6 +4,7 @@ import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PATCH;
@@ -63,6 +64,7 @@ public class OrganizationController {
 
     @POST
     @Authenticated
+    @Transactional
     @Operation(summary = "Create organization", description = "Creates a new organization")
     public CreateOrganizationResponse createOrganization(CreateOrganizationRequest request) {
         String userEmail = securityIdentity.getPrincipal().getName();

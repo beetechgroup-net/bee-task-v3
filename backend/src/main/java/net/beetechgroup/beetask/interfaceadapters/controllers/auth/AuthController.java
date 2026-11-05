@@ -11,6 +11,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import net.beetechgroup.beetask.usecase.auth.login.LoginInput;
 import net.beetechgroup.beetask.usecase.auth.login.LoginOutput;
 import net.beetechgroup.beetask.usecase.auth.login.LoginUseCase;
@@ -129,6 +130,7 @@ public class AuthController {
 
     @Path("/register")
     @POST
+    @Transactional
     @Operation(summary = "Register", description = "Creates a new user account")
     public CreateAccountResponse register(CreateAccountRequest request) {
         LOGGER.infof("Registration requested for email %s", request.email());

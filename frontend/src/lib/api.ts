@@ -53,8 +53,11 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     let errorMessage = text || 'Não foi possível concluir a requisição.'
     try {
       const parsed = JSON.parse(text)
-      if (parsed.message) errorMessage = parsed.message
-      if (parsed.error) errorMessage = parsed.error
+      if (parsed.message) {
+        errorMessage = parsed.message
+      } else if (parsed.error) {
+        errorMessage = parsed.error
+      }
     } catch {
       // Usar texto puro
     }
