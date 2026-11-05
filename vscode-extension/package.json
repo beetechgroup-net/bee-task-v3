@@ -2,7 +2,7 @@
   "name": "beetask-vscode",
   "displayName": "BeeTask",
   "description": "Gerenciamento e rastreamento de tarefas com cronômetro integrado ao VS Code",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "beetech",
   "icon": "media/icon.png",
   "repository": {
@@ -163,6 +163,16 @@
           "type": "number",
           "default": 10,
           "description": "Tempo limite de inatividade em minutos para pausar a tarefa ativa (padrão: 10 minutos)"
+        },
+        "beetask.enableNoActiveTaskPrompt": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lembrar de iniciar uma tarefa ao começar a codar sem nenhuma tarefa ativa"
+        },
+        "beetask.noActiveTaskCooldownMinutes": {
+          "type": "number",
+          "default": 15,
+          "description": "Intervalo mínimo em minutos entre lembretes de início de tarefa (padrão: 15 minutos)"
         }
       }
     }

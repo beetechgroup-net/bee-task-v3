@@ -11,6 +11,11 @@ export class IdleDetector implements vscode.Disposable {
   private isPrompting: boolean = false;
   private disposables: vscode.Disposable[] = [];
 
+  // Lembrete de codar sem tarefa ativa
+  private lastNoActivePromptTime: number = 0;
+  private isPromptingNoActive: boolean = false;
+  private pendingActivityTimer: NodeJS.Timeout | null = null;
+
   private api: BeeTaskApiClient;
   private authManager: AuthManager;
   private statusBar: StatusBarManager;
@@ -31,44 +36,119 @@ export class IdleDetector implements vscode.Disposable {
     this.startPeriodicCheck();
   }
 
-  public recordActivity(): void {
+  public recordActivity(isCodeEdit: boolean = false): void {
     this.lastActivityTime = Date.now();
+
+    if (isCodeEdit) {
+      this.scheduleNoActiveTaskCheck();
+    }
   }
 
   private registerActivityListeners(): void {
-    // 1. Digitação ou alteração de código
+    // 1. Digitação ou alteração de código (edição real de código)
     this.disposables.push(
-      vscode.workspace.onDidChangeTextDocument(() => this.recordActivity())
+      vscode.workspace.onDidChangeTextDocument((e) => {
+        // Ignora alterações em esquemas que não sejam arquivos reais (ex: output, git, etc)
+        if (e.document.uri.scheme === 'file') {
+          this.recordActivity(true);
+        } else {
+          this.recordActivity(false);
+        }
+      })
     );
 
     // 2. Movimentação de cursor ou seleção de texto
     this.disposables.push(
-      vscode.window.onDidChangeTextEditorSelection(() => this.recordActivity())
+      vscode.window.onDidChangeTextEditorSelection(() => this.recordActivity(false))
     );
 
     // 3. Troca de arquivo / aba ativa
     this.disposables.push(
-      vscode.window.onDidChangeActiveTextEditor(() => this.recordActivity())
+      vscode.window.onDidChangeActiveTextEditor(() => this.recordActivity(false))
     );
 
     // 4. Rolagem da página (scroll)
     this.disposables.push(
-      vscode.window.onDidChangeTextEditorVisibleRanges(() => this.recordActivity())
+      vscode.window.onDidChangeTextEditorVisibleRanges(() => this.recordActivity(false))
     );
 
     // 5. Salvamento de arquivo
     this.disposables.push(
-      vscode.workspace.onDidSaveTextDocument(() => this.recordActivity())
+      vscode.workspace.onDidSaveTextDocument((doc) => {
+        if (doc.uri.scheme === 'file') {
+          this.recordActivity(true);
+        } else {
+          this.recordActivity(false);
+        }
+      })
     );
 
     // 6. Janela do VS Code ganhou foco
     this.disposables.push(
       vscode.window.onDidChangeWindowState((state) => {
         if (state.focused) {
-          this.recordActivity();
+          this.recordActivity(false);
         }
       })
     );
+  }
+
+  private scheduleNoActiveTaskCheck(): void {
+    if (this.pendingActivityTimer) return;
+
+    // Aguarda 3 segundos de digitação contínua para exibir o lembrete de forma suave
+    this.pendingActivityTimer = setTimeout(async () => {
+      this.pendingActivityTimer = null;
+      await this.checkNoActiveTask();
+    }, 3000);
+  }
+
+  private async checkNoActiveTask(): Promise<void> {
+    const config = vscode.workspace.getConfiguration('beetask');
+    const enabled = config.get<boolean>('enableNoActiveTaskPrompt', true);
+    const cooldownMinutes = config.get<number>('noActiveTaskCooldownMinutes', 15);
+
+    if (!enabled || this.isPromptingNoActive || this.isPrompting) {
+      return;
+    }
+
+    const isAuth = await this.authManager.isAuthenticated();
+    if (!isAuth) {
+      return;
+    }
+
+    const activeTask = this.statusBar.getActiveTask();
+    if (activeTask) {
+      // Já está com uma tarefa rodando, nada a fazer
+      return;
+    }
+
+    const now = Date.now();
+    if (now - this.lastNoActivePromptTime < cooldownMinutes * 60000) {
+      return; // Ainda dentro do período de cooldown
+    }
+
+    this.isPromptingNoActive = true;
+    this.lastNoActivePromptTime = now;
+
+    try {
+      const choice = await vscode.window.showInformationMessage(
+        '🐝 BeeTask: Você começou a mexer no código sem nenhuma tarefa ativa. Qual demanda você está trabalhando?',
+        'Selecionar Tarefa',
+        'Criar Nova Tarefa',
+        'Lembrar mais tarde'
+      );
+
+      if (choice === 'Selecionar Tarefa') {
+        await vscode.commands.executeCommand('beetask.startTask');
+      } else if (choice === 'Criar Nova Tarefa') {
+        await vscode.commands.executeCommand('beetask.createTask');
+      }
+    } catch (err: any) {
+      console.error('[BeeTask] Erro ao exibir lembrete de tarefa ativa:', err);
+    } finally {
+      this.isPromptingNoActive = false;
+    }
   }
 
   private startPeriodicCheck(): void {
@@ -158,6 +238,10 @@ export class IdleDetector implements vscode.Disposable {
   }
 
   public dispose(): void {
+    if (this.pendingActivityTimer) {
+      clearTimeout(this.pendingActivityTimer);
+      this.pendingActivityTimer = null;
+    }
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
       this.checkInterval = null;
