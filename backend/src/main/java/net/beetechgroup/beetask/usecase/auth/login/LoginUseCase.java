@@ -31,7 +31,7 @@ public class LoginUseCase {
 
         if (userOptional.isEmpty()) {
             LOGGER.warnf("Login failed because email %s was not found", input.email());
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException("E-mail ou senha incorretos.");
         }
 
         User user = userOptional.get();
@@ -56,7 +56,7 @@ public class LoginUseCase {
 
         if (!passwordMatches) {
             LOGGER.warnf("Login failed because password did not match for email %s", input.email());
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException("E-mail ou senha incorretos.");
         }
 
         LOGGER.infof("Login authenticated for user %s", input.email());

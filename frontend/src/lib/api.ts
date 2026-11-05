@@ -55,8 +55,12 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       const parsed = JSON.parse(text)
       if (parsed.message) {
         errorMessage = parsed.message
-      } else if (parsed.error) {
+      } else if (parsed.error && typeof parsed.error === 'string') {
         errorMessage = parsed.error
+      } else if (parsed.details) {
+        errorMessage = response.status >= 500
+          ? 'Ocorreu um erro interno no servidor. Tente novamente em instantes.'
+          : parsed.details
       }
     } catch {
       // Usar texto puro

@@ -91,11 +91,19 @@ export const AuthPage = () => {
 
     try {
       await register(name, email, password)
-      setSuccessMessage('Conta criada com sucesso! Faça login para acessar seu workspace.')
-      setMode('login')
-      setSearchParams({ mode: 'login' })
-      setPassword('')
-      setConfirmPassword('')
+      try {
+        const response = await login(email, password)
+        if (!response.organizations || response.organizations.length === 0) {
+          navigate('/organizations')
+        } else {
+          navigate('/dashboard')
+        }
+        return
+      } catch {
+        setSuccessMessage('Conta criada com sucesso! Faça login para acessar seu workspace.')
+        setMode('login')
+        setSearchParams({ mode: 'login' })
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao criar conta. Tente novamente.'
       setErrorMessage(msg)
