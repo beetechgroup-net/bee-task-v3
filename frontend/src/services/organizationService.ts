@@ -3,7 +3,7 @@ import { apiFetch } from '../lib/api'
 export type CreateOrgResponse = {
   id: number
   name: string
-  ownerId: number
+  isPrivate?: boolean
 }
 
 export type SearchOrgOutput = {
@@ -33,10 +33,10 @@ export type PendingJoinRequest = {
 }
 
 export const organizationService = {
-  async create(name: string): Promise<CreateOrgResponse> {
+  async create(name: string, isPrivate: boolean = false): Promise<CreateOrgResponse> {
     return apiFetch<CreateOrgResponse>('/organizations', {
       method: 'POST',
-      body: { name },
+      body: { name, isPrivate },
     })
   },
 

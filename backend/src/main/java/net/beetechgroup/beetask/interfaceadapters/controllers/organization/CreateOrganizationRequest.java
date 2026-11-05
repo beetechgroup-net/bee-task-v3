@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.interfaceadapters.controllers.organization;
 
 public record CreateOrganizationRequest(
-        String name) {
+        String name,
+        Boolean isPrivate) {
 }

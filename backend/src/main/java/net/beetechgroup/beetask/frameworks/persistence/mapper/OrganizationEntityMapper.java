@@ -10,6 +10,7 @@ public class OrganizationEntityMapper {
         OrganizationEntity entity = new OrganizationEntity();
         entity.setId(organization.getId());
         entity.setName(organization.getName());
+        entity.setPrivate(organization.isPrivate());
         return entity;
     }
 
@@ -19,6 +20,7 @@ public class OrganizationEntityMapper {
         Organization organization = new Organization();
         organization.setId(entity.getId());
         organization.setName(entity.getName());
+        organization.setPrivate(entity.isPrivate());
         return organization;
     }
 }

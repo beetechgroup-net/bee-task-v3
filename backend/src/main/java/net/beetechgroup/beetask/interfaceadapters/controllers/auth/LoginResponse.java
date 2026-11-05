@@ -15,6 +15,7 @@ public record LoginResponse(
     public record Organization(
         Long id,
         String name,
-        List<String> roles
+        List<String> roles,
+        boolean isPrivate
     ) {}
 }

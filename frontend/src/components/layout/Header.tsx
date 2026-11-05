@@ -20,6 +20,7 @@ import {
   Square,
   Sun,
   Moon,
+  Lock,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -152,7 +153,10 @@ export const Header = ({ onToggleMobileSidebar }: HeaderProps) => {
                           {org.name.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="truncate">
-                          <p className="truncate leading-tight">{org.name}</p>
+                          <p className="truncate leading-tight flex items-center gap-1">
+                            <span>{org.name}</span>
+                            {org.isPrivate && <Lock className="w-2.5 h-2.5 text-amber-500/80 shrink-0" />}
+                          </p>
                           <p className="text-[10px] opacity-75 font-medium">
                             {org.roles.join(', ')}
                           </p>

@@ -20,6 +20,7 @@ import {
   User,
   LogOut,
   FileText,
+  Lock,
 } from 'lucide-react'
 import { Chip, ChipLabel } from '@heroui/react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -211,7 +212,10 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
                         {org.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="truncate">
-                        <p className="truncate leading-tight">{org.name}</p>
+                        <p className="truncate leading-tight flex items-center gap-1">
+                          <span>{org.name}</span>
+                          {org.isPrivate && <Lock className="w-2.5 h-2.5 text-amber-500/80 shrink-0" />}
+                        </p>
                         <p className="text-[9px] text-muted font-normal">
                           {org.roles.join(', ')}
                         </p>

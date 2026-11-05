@@ -34,17 +34,17 @@ public class OrganizationRepositoryImpl implements OrganizationRepository, Panac
     @Override
     public List<Organization> search(String query) {
         if (Objects.isNull(query) || query.isBlank()) {
-            List<Organization> organizations = findAll().list().stream()
+            List<Organization> organizations = find("isPrivate = false").list().stream()
                     .map(OrganizationEntityMapper::toDomain)
                     .toList();
-            LOGGER.infof("Loaded %d organizations with empty search query", organizations.size());
+            LOGGER.infof("Loaded %d public organizations with empty search query", organizations.size());
             return organizations;
         }
 
-        List<Organization> organizations = find("lower(name) like ?1", "%" + query.toLowerCase() + "%").stream()
+        List<Organization> organizations = find("isPrivate = false and lower(name) like ?1", "%" + query.toLowerCase() + "%").stream()
                 .map(OrganizationEntityMapper::toDomain)
                 .toList();
-        LOGGER.infof("Loaded %d organizations for search query '%s'", organizations.size(), query);
+        LOGGER.infof("Loaded %d public organizations for search query '%s'", organizations.size(), query);
         return organizations;
     }
 

@@ -45,9 +45,10 @@ public class CreateOrganizationUseCase {
         }
         User user = userOptional.get();
 
-        LOGGER.infof("Creating organization '%s' for owner %s", trimmedName, input.userEmail());
+        LOGGER.infof("Creating organization '%s' (private=%b) for owner %s", trimmedName, input.isPrivate(), input.userEmail());
         Organization organization = new Organization();
         organization.setName(trimmedName);
+        organization.setPrivate(input.isPrivate());
         organization = organizationRepository.saveOrganization(organization);
 
         UserOrganization userOrganization = new UserOrganization();

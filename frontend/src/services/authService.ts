@@ -4,6 +4,7 @@ export type OrganizationMembership = {
   id: number
   name: string
   roles: string[]
+  isPrivate?: boolean
 }
 
 export type LoginResponse = {

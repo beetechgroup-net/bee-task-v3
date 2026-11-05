@@ -5,10 +5,11 @@ import net.beetechgroup.beetask.usecase.organization.create.CreateOrganizationOu
 
 public class OrganizationControllerMapper {
     public static CreateOrganizationInput toCreateOrganizationInput(CreateOrganizationRequest request, String userEmail) {
-        return new CreateOrganizationInput(request.name(), userEmail);
+        boolean isPrivate = request.isPrivate() != null ? request.isPrivate() : false;
+        return new CreateOrganizationInput(request.name(), userEmail, isPrivate);
     }
 
     public static CreateOrganizationResponse toCreateOrganizationResponse(CreateOrganizationOutput output) {
-        return new CreateOrganizationResponse(output.id(), output.name());
+        return new CreateOrganizationResponse(output.id(), output.name(), output.isPrivate());
     }
 }

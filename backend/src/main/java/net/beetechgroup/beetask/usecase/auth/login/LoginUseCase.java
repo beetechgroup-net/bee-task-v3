@@ -80,7 +80,8 @@ public class LoginUseCase {
                     return new LoginOutput.OrganizationOutput(
                             entry.getKey(),
                             first.getOrganization().getName(),
-                            entry.getValue().stream().map(uo -> uo.getRole().name()).toList()
+                            entry.getValue().stream().map(uo -> uo.getRole().name()).toList(),
+                            first.getOrganization().isPrivate()
                     );
                 })
                 .toList();

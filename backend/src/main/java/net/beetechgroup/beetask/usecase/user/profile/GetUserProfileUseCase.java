@@ -39,7 +39,8 @@ public class GetUserProfileUseCase {
                     return new UserProfileOutput.OrganizationProfileOutput(
                         entry.getKey(),
                         firstUo.getOrganization().getName(),
-                        entry.getValue().stream().map(uo -> uo.getRole().name()).collect(Collectors.toList())
+                        entry.getValue().stream().map(uo -> uo.getRole().name()).collect(Collectors.toList()),
+                        firstUo.getOrganization().isPrivate()
                     );
                 })
                 .collect(Collectors.toList());

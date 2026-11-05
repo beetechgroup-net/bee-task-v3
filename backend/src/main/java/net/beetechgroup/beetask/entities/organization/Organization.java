@@ -7,6 +7,7 @@ import net.beetechgroup.beetask.entities.Project;
 public class Organization {
     private Long id;
     private String name;
+    private boolean isPrivate;
     private List<Project> projects;
     private List<UserOrganization> users;
 
@@ -24,6 +25,14 @@ public class Organization {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(boolean isPrivate) {
+        this.isPrivate = isPrivate;
     }
 
     public List<Project> getProjects() {

@@ -15,6 +15,7 @@ public record LoginOutput(
     public record OrganizationOutput(
         Long id,
         String name,
-        List<String> roles
+        List<String> roles,
+        boolean isPrivate
     ) {}
 }

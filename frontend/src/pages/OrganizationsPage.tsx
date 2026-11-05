@@ -14,6 +14,8 @@ import {
   Check,
   Loader2,
   Inbox,
+  Lock,
+  Globe,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -32,6 +34,7 @@ export const OrganizationsPage = () => {
 
   // Create Org states
   const [newOrgName, setNewOrgName] = useState('')
+  const [isPrivateOrg, setIsPrivateOrg] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
 
   // Search & Join states
@@ -75,11 +78,12 @@ export const OrganizationsPage = () => {
     setSuccessMessage(null)
 
     try {
-      const created = await organizationService.create(newOrgName.trim())
+      const created = await organizationService.create(newOrgName.trim(), isPrivateOrg)
       await refreshUser()
       setActiveOrg(created.id)
       setSuccessMessage(`Workspace "${newOrgName}" criado com sucesso!`)
       setNewOrgName('')
+      setIsPrivateOrg(false)
       setTimeout(() => {
         navigate('/dashboard')
       }, 800)
@@ -322,6 +326,17 @@ export const OrganizationsPage = () => {
                           {isActive && (
                             <span className="px-2 py-0.5 rounded-full bg-brand/15 text-brand text-[10px] font-extrabold tracking-wide uppercase border border-brand/30">
                               Ativo
+                            </span>
+                          )}
+                          {org.isPrivate ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[10px] font-medium border border-amber-500/20">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>Privado</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-medium border border-blue-500/20">
+                              <Globe className="w-2.5 h-2.5" />
+                              <span>Público</span>
                             </span>
                           )}
                         </div>
@@ -640,6 +655,57 @@ export const OrganizationsPage = () => {
                 placeholder="Ex: Minha Empresa Corp, Tech Labs..."
                 className="w-full px-3.5 py-2.5 bg-surface border border-border-soft rounded-xl text-xs text-foreground placeholder-muted/60 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
               />
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-bold text-foreground block">
+                Visibilidade do Workspace
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsPrivateOrg(false)}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                    !isPrivateOrg
+                      ? 'border-brand bg-brand/10 ring-1 ring-brand/40 shadow-xs'
+                      : 'border-border-soft bg-surface hover:bg-surface-raised'
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-lg shrink-0 ${!isPrivateOrg ? 'bg-brand text-white' : 'bg-surface-sunken text-muted'}`}>
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-bold ${!isPrivateOrg ? 'text-brand' : 'text-foreground'}`}>
+                      Público (Corporativo)
+                    </p>
+                    <p className="text-[11px] text-muted leading-tight mt-0.5">
+                      Aparece nas buscas para seus colaboradores solicitarem entrada.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPrivateOrg(true)}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                    isPrivateOrg
+                      ? 'border-amber-500/80 bg-amber-500/10 ring-1 ring-amber-500/40 shadow-xs'
+                      : 'border-border-soft bg-surface hover:bg-surface-raised'
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-lg shrink-0 ${isPrivateOrg ? 'bg-amber-500 text-white' : 'bg-surface-sunken text-muted'}`}>
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-xs font-bold ${isPrivateOrg ? 'text-amber-400' : 'text-foreground'}`}>
+                      Privado
+                    </p>
+                    <p className="text-[11px] text-muted leading-tight mt-0.5">
+                      Oculto nas buscas. Não aceita pedidos de entrada externos.
+                    </p>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <button

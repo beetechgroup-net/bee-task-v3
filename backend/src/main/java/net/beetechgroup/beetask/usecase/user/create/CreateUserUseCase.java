@@ -55,9 +55,10 @@ public class CreateUserUseCase {
             counter++;
         }
 
-        LOGGER.infof("Creating initial workspace '%s' for newly registered user %d (%s)", uniqueWorkspaceName, user.getId(), user.getEmail());
+        LOGGER.infof("Creating initial private workspace '%s' for newly registered user %d (%s)", uniqueWorkspaceName, user.getId(), user.getEmail());
         Organization organization = new Organization();
         organization.setName(uniqueWorkspaceName);
+        organization.setPrivate(true); // Workspace pessoal do usuário é sempre privado
         organization = organizationRepository.saveOrganization(organization);
 
         UserOrganization userOrganization = new UserOrganization();

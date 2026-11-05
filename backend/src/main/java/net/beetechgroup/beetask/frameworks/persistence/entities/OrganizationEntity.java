@@ -21,6 +21,8 @@ public class OrganizationEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    @Column(name = "is_private", nullable = false)
+    private boolean isPrivate;
     @Column(name = "deleted_at")
     private java.time.LocalDateTime deletedAt;
     @OneToMany(mappedBy = "organization")
@@ -48,6 +50,14 @@ public class OrganizationEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(boolean isPrivate) {
+        this.isPrivate = isPrivate;
     }
 
     public java.time.LocalDateTime getDeletedAt() {

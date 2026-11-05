@@ -38,6 +38,11 @@ public class RequestJoinOrganizationUseCase {
         User user = userOptional.get();
         Organization organization = orgOptional.get();
 
+        if (organization.isPrivate()) {
+            LOGGER.warnf("User %s attempted to request join into private organization %d ('%s')", userEmail, organizationId, organization.getName());
+            throw new IllegalStateException("Esta organização é privada e não permite solicitações de entrada.");
+        }
+
         Optional<UserOrganization> existing = userOrganizationRepository.findByUserAndOrganization(user.getId(), organization.getId());
         if (existing.isPresent()) {
             if (existing.get().getStatus() == UserOrganizationStatus.ACTIVE) {
