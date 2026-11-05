@@ -7,6 +7,7 @@ Extensão oficial do **BeeTask** para o Visual Studio Code. Gerencie suas demand
 ## ✨ Recursos
 
 - **⏱️ Cronômetro em Tempo Real:** Acompanhe o tempo trabalhado na tarefa ativa direto na Barra de Status (rodapé do VS Code).
+- **🛑 Pausa Automática por Inatividade (10min):** Se você se ausentar do VS Code por mais de 10 minutos com uma tarefa rodando, a extensão pausa o cronômetro automaticamente e pergunta se você ainda está trabalhando nela ao retornar.
 - **📋 Painel de Tarefas na Barra Lateral:** Visualize rapidamente suas tarefas pendentes, em execução e concluídas na aba BeeTask.
 - **▶️ Play / ⏸️ Pause com 1 Clique:** Inicie e pause o cronômetro das suas tarefas direto do VS Code.
 - **➕ Criação Rápida de Tarefas:** Crie novas tarefas associadas a projetos e categorias sem sair do editor.
@@ -78,3 +79,5 @@ Acesse `Configurações` (`Ctrl+,`) e busque por `BeeTask`:
 - `beetask.serverUrl`: URL da API backend (Padrão: `https://api-task.beetech.dev`).
 - `beetask.webUrl`: URL do site web (Padrão: `https://task.beetech.dev`).
 - `beetask.refreshIntervalSeconds`: Intervalo de sincronização automática em segundos (Padrão: `30`).
+- `beetask.enableIdleDetection`: Ativar pausa automática da tarefa por inatividade (Padrão: `true`).
+- `beetask.idleTimeoutMinutes`: Tempo limite de inatividade em minutos (Padrão: `10`).

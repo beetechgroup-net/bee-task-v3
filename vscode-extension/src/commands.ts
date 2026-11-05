@@ -3,6 +3,7 @@ import { BeeTaskApiClient } from './api';
 import { AuthManager } from './authManager';
 import { StatusBarManager } from './statusBarManager';
 import { TaskTreeProvider, TaskTreeItem } from './taskTreeProvider';
+import { IdleDetector } from './idleDetector';
 import { Task } from './types';
 
 export function registerCommands(
@@ -10,7 +11,8 @@ export function registerCommands(
   api: BeeTaskApiClient,
   authManager: AuthManager,
   statusBar: StatusBarManager,
-  treeProvider: TaskTreeProvider
+  treeProvider: TaskTreeProvider,
+  idleDetector?: IdleDetector
 ): void {
   // 1. LOGIN
   context.subscriptions.push(
@@ -56,7 +58,7 @@ export function registerCommands(
           }
         );
 
-        await refreshAll(api, authManager, statusBar, treeProvider);
+        await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
 
         // Prompt org selection if multiple
         const orgs = authManager.getOrganizations();
@@ -109,7 +111,7 @@ export function registerCommands(
       if (selected) {
         await authManager.setActiveOrgId(selected.orgId);
         vscode.window.showInformationMessage(`Organização ativa alterada para: ${selected.label}`);
-        await refreshAll(api, authManager, statusBar, treeProvider);
+        await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
       }
     })
   );
@@ -117,7 +119,7 @@ export function registerCommands(
   // 4. REFRESH TASKS
   context.subscriptions.push(
     vscode.commands.registerCommand('beetask.refreshTasks', async () => {
-      await refreshAll(api, authManager, statusBar, treeProvider);
+      await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
       vscode.window.setStatusBarMessage('BeeTask: Tarefas atualizadas.', 2000);
     })
   );
@@ -155,7 +157,7 @@ export function registerCommands(
       try {
         await api.startTask(task.id);
         vscode.window.showInformationMessage(`▶️ Iniciada: #${task.id} ${task.title}`);
-        await refreshAll(api, authManager, statusBar, treeProvider);
+        await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
       } catch (err: any) {
         vscode.window.showErrorMessage(`Falha ao iniciar tarefa: ${err.message}`);
       }
@@ -182,7 +184,7 @@ export function registerCommands(
       try {
         await api.stopTask(task.id);
         vscode.window.showInformationMessage(`⏸️ Pausada: #${task.id} ${task.title}`);
-        await refreshAll(api, authManager, statusBar, treeProvider);
+        await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
       } catch (err: any) {
         vscode.window.showErrorMessage(`Falha ao pausar tarefa: ${err.message}`);
       }
@@ -215,7 +217,7 @@ export function registerCommands(
       try {
         await api.updateStatus(task.id, 'COMPLETED');
         vscode.window.showInformationMessage(`✔️ Tarefa #${task.id} concluída com sucesso!`);
-        await refreshAll(api, authManager, statusBar, treeProvider);
+        await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
       } catch (err: any) {
         vscode.window.showErrorMessage(`Falha ao concluir tarefa: ${err.message}`);
       }
@@ -279,7 +281,7 @@ export function registerCommands(
         });
 
         vscode.window.showInformationMessage(`Tarefa #${created.id} criada com sucesso!`);
-        await refreshAll(api, authManager, statusBar, treeProvider);
+        await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
 
         const startNow = await vscode.window.showInformationMessage(
           `Deseja iniciar o cronômetro para #${created.id} agora?`,
@@ -288,7 +290,7 @@ export function registerCommands(
         );
         if (startNow === 'Sim, Iniciar') {
           await api.startTask(created.id);
-          await refreshAll(api, authManager, statusBar, treeProvider);
+          await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
         }
       } catch (err: any) {
         vscode.window.showErrorMessage(`Falha ao criar tarefa: ${err.message}`);
@@ -361,7 +363,7 @@ export function registerCommands(
         });
 
         vscode.window.showInformationMessage(`✨ Tarefa #${created.id} criada via IA!`);
-        await refreshAll(api, authManager, statusBar, treeProvider);
+        await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
 
         const startNow = await vscode.window.showInformationMessage(
           `Deseja iniciar o cronômetro para #${created.id}?`,
@@ -370,7 +372,7 @@ export function registerCommands(
         );
         if (startNow === 'Sim, Iniciar') {
           await api.startTask(created.id);
-          await refreshAll(api, authManager, statusBar, treeProvider);
+          await refreshAll(api, authManager, statusBar, treeProvider, idleDetector);
         }
       } catch (err: any) {
         vscode.window.showErrorMessage(`Falha na criação com IA: ${err.message}`);
@@ -526,8 +528,10 @@ async function refreshAll(
   api: BeeTaskApiClient,
   authManager: AuthManager,
   statusBar: StatusBarManager,
-  treeProvider: TaskTreeProvider
+  treeProvider: TaskTreeProvider,
+  idleDetector?: IdleDetector
 ): Promise<void> {
+  idleDetector?.recordActivity();
   const isAuth = await authManager.isAuthenticated();
   if (!isAuth) {
     statusBar.setActiveTask(null);

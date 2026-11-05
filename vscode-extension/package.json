@@ -2,7 +2,7 @@
   "name": "beetask-vscode",
   "displayName": "BeeTask",
   "description": "Gerenciamento e rastreamento de tarefas com cronômetro integrado ao VS Code",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "beetech",
   "repository": {
     "type": "git",
@@ -153,6 +153,16 @@
           "type": "number",
           "default": 30,
           "description": "Intervalo de atualização automática das tarefas (em segundos)"
+        },
+        "beetask.enableIdleDetection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ativar pausa automática da tarefa por inatividade no VS Code"
+        },
+        "beetask.idleTimeoutMinutes": {
+          "type": "number",
+          "default": 10,
+          "description": "Tempo limite de inatividade em minutos para pausar a tarefa ativa (padrão: 10 minutos)"
         }
       }
     }

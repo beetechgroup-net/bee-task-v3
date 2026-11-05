@@ -3,6 +3,7 @@ import { AuthManager } from './authManager';
 import { BeeTaskApiClient } from './api';
 import { StatusBarManager } from './statusBarManager';
 import { TaskTreeProvider } from './taskTreeProvider';
+import { IdleDetector } from './idleDetector';
 import { registerCommands } from './commands';
 
 let pollTimer: NodeJS.Timeout | null = null;
@@ -12,17 +13,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const api = new BeeTaskApiClient(authManager);
   const statusBar = new StatusBarManager();
   const treeProvider = new TaskTreeProvider(api, authManager);
+  const idleDetector = new IdleDetector(api, authManager, statusBar, treeProvider);
 
-  // Register Tree View
+  // Register Tree View & Status Bar & Idle Detector
   const treeView = vscode.window.createTreeView('beetask.tasksView', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
   });
   context.subscriptions.push(treeView);
   context.subscriptions.push(statusBar);
+  context.subscriptions.push(idleDetector);
 
   // Register Commands
-  registerCommands(context, api, authManager, statusBar, treeProvider);
+  registerCommands(context, api, authManager, statusBar, treeProvider, idleDetector);
 
   // Initial Sync
   if (await authManager.isAuthenticated()) {
