@@ -3,7 +3,7 @@
   "displayName": "Bee Tech Plugin",
   "description": "Gerenciamento e rastreamento de tarefas com cronômetro integrado ao VS Code",
   "version": "1.2.0",
-  "publisher": "beetech",
+  "publisher": "BeeTech",
   "icon": "media/icon.png",
   "repository": {
     "type": "git",
