@@ -1,6 +1,6 @@
-# BeeTask para VS Code 🐝⏱️
+# Bee Tech Plugin para VS Code 🐝⏱️
 
-Extensão oficial do **BeeTask** para o Visual Studio Code. Gerencie suas demandas e rastreie o tempo trabalhado diretamente do seu editor de código, sem precisar alternar para o navegador.
+Extensão oficial do **BeeTask** (**Bee Tech Plugin**) para o Visual Studio Code. Gerencie suas demandas e rastreie o tempo trabalhado diretamente do seu editor de código, sem precisar alternar para o navegador.
 
 ---
 
