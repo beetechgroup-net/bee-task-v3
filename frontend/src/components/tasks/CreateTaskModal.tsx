@@ -124,6 +124,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       if (parsed.projectId !== undefined) setProjectId(parsed.projectId)
       if (parsed.categoryId !== undefined) setCategoryId(parsed.categoryId)
       if (parsed.assigneeUserId !== undefined) setAssigneeUserId(parsed.assigneeUserId)
+      if (parsed.externalUrl !== undefined) setExternalUrl(parsed.externalUrl || '')
       setAiQuickPrompt('')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Falha ao processar com IA.'
@@ -179,7 +180,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       setProjectId(initialDraft.projectId)
       setCategoryId(initialDraft.categoryId)
       setAssigneeUserId(initialDraft.assigneeUserId)
-      setExternalUrl('')
+      setExternalUrl(initialDraft.externalUrl || '')
       setLocalHistory([])
       setActiveTab('details')
     } else {
@@ -224,7 +225,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         if (memRes.status === 'fulfilled') {
           const memberList = memRes.value || []
           setMembers(memberList)
-          if (!initialTask && user?.email) {
+          if (!initialTask && !initialDraft?.assigneeUserId && user?.email) {
             const currentMember = memberList.find(
               (m) => m.userEmail?.toLowerCase() === user.email.toLowerCase()
             )
@@ -241,7 +242,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     }
 
     loadMetadata()
-  }, [isOpen, organizationId, initialStatus, initialTask, initialTab, user?.email])
+  }, [isOpen, organizationId, initialStatus, initialTask, initialDraft, initialTab, user?.email])
 
   // Total seconds calculated dynamically from localHistory
   const totalCalculatedSeconds = useMemo(() => {

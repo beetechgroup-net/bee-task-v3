@@ -360,6 +360,8 @@ export function registerCommands(
           organizationId: orgId,
           projectId: parsed.projectId,
           categoryId: parsed.categoryId,
+          assigneeUserId: parsed.assigneeUserId,
+          externalUrl: parsed.externalUrl,
         });
 
         vscode.window.showInformationMessage(`✨ Tarefa #${created.id} criada via IA!`);

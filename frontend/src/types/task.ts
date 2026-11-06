@@ -66,6 +66,7 @@ export interface ParsedAiTask {
   projectId?: number;
   categoryId?: number;
   assigneeUserId?: number;
+  externalUrl?: string;
   status?: TaskStatus;
 }
 

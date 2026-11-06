@@ -207,6 +207,7 @@ public class TaskController {
                 output.projectId(),
                 output.categoryId(),
                 output.assigneeUserId(),
+                output.externalUrl(),
                 output.status()
         );
     }

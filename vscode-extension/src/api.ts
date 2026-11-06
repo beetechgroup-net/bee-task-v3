@@ -100,6 +100,8 @@ export class BeeTaskApiClient {
     organizationId: number;
     projectId?: number;
     categoryId?: number;
+    assigneeUserId?: number;
+    externalUrl?: string;
   }): Promise<Task> {
     return await this.request<Task>('/tasks', {
       method: 'POST',

@@ -6,5 +6,6 @@ public record ParsedTaskOutput(
         Long projectId,
         Long categoryId,
         Long assigneeUserId,
+        String externalUrl,
         String status
 ) {}
