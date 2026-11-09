@@ -171,16 +171,8 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
     )
   }
 
-  const isWideBoard = visibleColumns.length > 4
-
   return (
-    <div
-      className={
-        isWideBoard
-          ? 'flex gap-4 overflow-x-auto pb-6 items-start scrollbar-thin'
-          : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start pb-6'
-      }
-    >
+    <div className="flex gap-4 overflow-x-auto pb-6 items-start w-full min-w-0 scrollbar-thin">
       {visibleColumns.map((col) => {
         const columnTasks = tasks.filter((t) => {
           if (col.id && t.taskStatus?.id) {
@@ -228,11 +220,9 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
             style={{
               borderColor: isOver ? col.color : `${col.color}35`,
             }}
-            className={`flex flex-col rounded-3xl border transition-all duration-200 h-[680px] lg:h-[calc(100vh-270px)] lg:min-h-[520px] overflow-hidden bg-surface/60 backdrop-blur-md shadow-xs ${
-              isWideBoard ? 'w-80 shrink-0' : 'w-full'
-            } ${isHidden ? 'opacity-70 ring-1 ring-amber-500/30' : ''} ${
-              isOver ? 'ring-2 ring-brand/30 bg-brand/5' : ''
-            }`}
+            className={`flex-1 min-w-[280px] flex flex-col rounded-3xl border transition-all duration-300 h-[680px] lg:h-[calc(100vh-270px)] lg:min-h-[520px] overflow-hidden bg-surface/60 backdrop-blur-md shadow-xs ${
+              isHidden ? 'opacity-70 ring-1 ring-amber-500/30' : ''
+            } ${isOver ? 'ring-2 ring-brand/30 bg-brand/5' : ''}`}
           >
             {/* Column Header */}
             <div className="shrink-0 flex items-center justify-between p-3.5 border-b border-border-soft bg-surface/40">
@@ -403,14 +393,17 @@ export const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({
         <button
           type="button"
           onClick={onOpenCreateStatus}
-          className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border-soft hover:border-brand/50 hover:bg-brand/5 text-muted hover:text-brand transition-all duration-200 h-[680px] lg:h-[calc(100vh-270px)] lg:min-h-[520px] w-72 shrink-0 p-6 group cursor-pointer"
+          title="Adicionar novo status"
+          className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border-soft hover:border-brand/50 hover:bg-brand/5 text-muted hover:text-brand transition-all duration-200 h-[680px] lg:h-[calc(100vh-270px)] lg:min-h-[520px] w-12 sm:w-14 shrink-0 p-2 group cursor-pointer"
         >
-          <div className="w-12 h-12 rounded-2xl bg-surface-raised border border-border-soft flex items-center justify-center text-muted group-hover:text-brand group-hover:border-brand/40 group-hover:scale-110 transition-all mb-3 shadow-xs">
-            <Plus className="w-6 h-6" />
+          <div className="w-8 h-8 rounded-xl bg-surface-raised border border-border-soft flex items-center justify-center text-muted group-hover:text-brand group-hover:border-brand/40 group-hover:scale-110 transition-all shrink-0 shadow-xs mb-3">
+            <Plus className="w-4 h-4" />
           </div>
-          <span className="font-semibold text-sm">Novo Status</span>
-          <span className="text-xs text-muted text-center mt-1">
-            Adicione uma nova coluna ao quadro da sua organização
+          <span
+            className="text-[11px] font-bold tracking-wider text-muted group-hover:text-brand transition-colors select-none"
+            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+          >
+            + Novo Status
           </span>
         </button>
       )}
