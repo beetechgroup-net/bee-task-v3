@@ -186,39 +186,39 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </p>
       )}
 
-      {/* Footer: User Avatar & Live Timer Controls */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/60 mt-2">
-        {/* Assignee / Creator */}
-        <div className="flex items-center gap-1.5">
+      {/* Footer: User in line 1, Time & Play Button in line 2 */}
+      <div className="pt-2.5 border-t border-border/60 mt-2.5 space-y-2">
+        {/* Line 1: Assignee / Creator */}
+        <div className="flex items-center gap-1.5 min-w-0">
           {task.user ? (
             <div
-              className="w-6 h-6 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center text-[10px] font-bold text-brand uppercase"
+              className="w-5 h-5 rounded-full bg-brand/20 border border-brand/30 flex items-center justify-center text-[10px] font-bold text-brand uppercase shrink-0"
               title={task.user.name || task.user.email}
             >
               {task.user.name ? task.user.name.charAt(0) : task.user.email.charAt(0)}
             </div>
           ) : (
             <div
-              className="w-6 h-6 rounded-full bg-surface-raised border border-border-soft flex items-center justify-center text-[10px] text-muted"
+              className="w-5 h-5 rounded-full bg-surface-raised border border-border-soft flex items-center justify-center text-[10px] text-muted shrink-0"
               title="Sem responsável"
             >
               <CircleDot className="w-3 h-3" />
             </div>
           )}
-          <span className="text-[11px] text-muted max-w-[90px] truncate">
+          <span className="text-[11px] text-muted truncate font-medium">
             {task.user?.name || task.user?.email?.split('@')[0] || 'Livre'}
           </span>
         </div>
 
-        {/* Timer button & display */}
-        <div className="flex items-center gap-2">
+        {/* Line 2: Timer badge & Play/Stop button */}
+        <div className="flex items-center justify-between gap-2">
           <div
             onClick={(e) => {
               e.stopPropagation()
               onOpenHistory?.(task)
             }}
             title="Clique para ver o histórico de tempo"
-            className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono transition-colors cursor-pointer hover:opacity-85 ${
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-mono transition-colors cursor-pointer hover:opacity-85 ${
               running
                 ? 'bg-teal-500/15 text-teal-700 dark:bg-brand/20 dark:text-teal-300 font-semibold'
                 : 'bg-surface-sunken text-muted'
@@ -235,16 +235,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               onToggleTimer(task)
             }}
             title={running ? 'Parar cronômetro' : 'Iniciar cronômetro'}
-            className={`p-1.5 rounded-lg transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 ${
               running
                 ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 ring-1 ring-rose-500/40'
                 : 'bg-teal-500/10 text-teal-700 hover:bg-teal-500/20 dark:bg-brand/15 dark:text-teal-300 dark:hover:bg-brand/25 ring-1 ring-teal-600/20 dark:ring-brand/30'
             }`}
           >
             {running ? (
-              <Square className="w-3.5 h-3.5 fill-rose-300" />
+              <>
+                <Square className="w-3.5 h-3.5 fill-rose-300" />
+                <span>Parar</span>
+              </>
             ) : (
-              <Play className="w-3.5 h-3.5 fill-teal-700 dark:fill-teal-300" />
+              <>
+                <Play className="w-3.5 h-3.5 fill-teal-700 dark:fill-teal-300" />
+                <span>Iniciar</span>
+              </>
             )}
           </button>
         </div>
