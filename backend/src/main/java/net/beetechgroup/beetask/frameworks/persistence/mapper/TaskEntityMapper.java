@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import net.beetechgroup.beetask.entities.task.Task;
+import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.frameworks.persistence.entities.TaskEntity;
 import net.beetechgroup.beetask.frameworks.persistence.entities.TaskHistoryItemEntity;
 
@@ -14,7 +15,8 @@ public class TaskEntityMapper {
         entity.setId(task.getId());
         entity.setTitle(task.getTitle());
         entity.setDescription(task.getDescription());
-        entity.setStatus(task.getStatus());
+        entity.setTaskStatus(TaskStatusEntityMapper.toEntity(task.getStatus()));
+        entity.setStatus(task.getStatus() != null ? task.getStatus().getName() : null);
         entity.setFinishedAt(task.getFinishedAt());
         entity.setExternalUrl(task.getExternalUrl());
         entity.setOrganization(OrganizationEntityMapper.toEntity(task.getOrganization()));
@@ -37,7 +39,13 @@ public class TaskEntityMapper {
         task.setId(entity.getId());
         task.setTitle(entity.getTitle());
         task.setDescription(entity.getDescription());
-        task.setStatus(entity.getStatus());
+        if (entity.getTaskStatus() != null) {
+            task.setStatus(TaskStatusEntityMapper.toDomain(entity.getTaskStatus()));
+        } else if (entity.getStatus() != null) {
+            TaskStatus fallback = new TaskStatus();
+            fallback.setName(entity.getStatus());
+            task.setStatus(fallback);
+        }
         task.setFinishedAt(entity.getFinishedAt());
         task.setExternalUrl(entity.getExternalUrl());
         task.setOrganization(OrganizationEntityMapper.toDomain(entity.getOrganization()));

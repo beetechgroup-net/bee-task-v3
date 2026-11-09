@@ -1,5 +1,5 @@
 import { apiFetch } from '../lib/api'
-import type { Task, TaskStatus, CreateTaskPayload, ListTasksFilter, ParsedAiTask } from '../types/task'
+import type { Task, CreateTaskPayload, ListTasksFilter, ParsedAiTask } from '../types/task'
 
 function buildQueryParams(filter?: ListTasksFilter): string {
   if (!filter) return ''
@@ -57,9 +57,14 @@ export const taskService = {
     })
   },
 
-  async updateStatus(id: number, status: TaskStatus): Promise<Task> {
+  async updateStatus(id: number, status: string, statusId?: number): Promise<Task> {
+    if (statusId) {
+      return apiFetch<Task>(`/tasks/${id}/status/${statusId}`, {
+        method: 'PUT',
+      })
+    }
     return apiFetch<Task>(`/tasks/${id}/status`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: status,
     })
   },

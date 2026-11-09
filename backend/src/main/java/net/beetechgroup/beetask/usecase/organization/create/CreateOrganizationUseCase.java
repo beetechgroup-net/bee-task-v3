@@ -5,7 +5,9 @@ import net.beetechgroup.beetask.entities.organization.Organization;
 import net.beetechgroup.beetask.entities.organization.UserOrganization;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationRole;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
+import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
+import net.beetechgroup.beetask.usecase.repository.TaskStatusRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 
@@ -17,13 +19,16 @@ public class CreateOrganizationUseCase {
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final UserOrganizationRepository userOrganizationRepository;
+    private final TaskStatusRepository taskStatusRepository;
 
     public CreateOrganizationUseCase(OrganizationRepository organizationRepository,
                                      UserRepository userRepository,
-                                     UserOrganizationRepository userOrganizationRepository) {
+                                     UserOrganizationRepository userOrganizationRepository,
+                                     TaskStatusRepository taskStatusRepository) {
         this.organizationRepository = organizationRepository;
         this.userRepository = userRepository;
         this.userOrganizationRepository = userOrganizationRepository;
+        this.taskStatusRepository = taskStatusRepository;
     }
 
     public CreateOrganizationOutput execute(CreateOrganizationInput input) {
@@ -59,6 +64,17 @@ public class CreateOrganizationUseCase {
         userOrganizationRepository.save(userOrganization);
         LOGGER.infof("Organization %d created successfully with owner user %d", organization.getId(), user.getId());
 
+        // Create 4 default task statuses
+        createDefaultTaskStatuses(organization);
+
         return CreateOrganizationMapper.toCreateOrganizationOutput(organization);
+    }
+
+    private void createDefaultTaskStatuses(Organization org) {
+        taskStatusRepository.saveTaskStatus(new TaskStatus(null, "A Fazer", "#71717a", 0, true, false, false, org));
+        taskStatusRepository.saveTaskStatus(new TaskStatus(null, "Em Andamento", "#14b8a6", 1, false, false, false, org));
+        taskStatusRepository.saveTaskStatus(new TaskStatus(null, "Concluído", "#10b981", 2, false, true, false, org));
+        taskStatusRepository.saveTaskStatus(new TaskStatus(null, "Cancelado", "#f43f5e", 3, false, false, true, org));
+        LOGGER.infof("Created 4 default task statuses for organization %d", org.getId());
     }
 }

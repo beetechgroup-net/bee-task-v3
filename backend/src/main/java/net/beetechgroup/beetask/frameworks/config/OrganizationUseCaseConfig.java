@@ -12,6 +12,7 @@ import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationA
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationMemberUseCase;
 import net.beetechgroup.beetask.usecase.organization.members.ListOrganizationMembersUseCase;
 import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
+import net.beetechgroup.beetask.usecase.repository.TaskStatusRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 
@@ -33,8 +34,9 @@ public class OrganizationUseCaseConfig {
     @Produces
     public CreateOrganizationUseCase createOrganizationUseCase(OrganizationRepository organizationRepository,
                                                              UserRepository userRepository,
-                                                             UserOrganizationRepository userOrganizationRepository) {
-        return new CreateOrganizationUseCase(organizationRepository, userRepository, userOrganizationRepository);
+                                                             UserOrganizationRepository userOrganizationRepository,
+                                                             TaskStatusRepository taskStatusRepository) {
+        return new CreateOrganizationUseCase(organizationRepository, userRepository, userOrganizationRepository, taskStatusRepository);
     }
 
     @Produces

@@ -6,6 +6,7 @@ import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationM
 import net.beetechgroup.beetask.usecase.repository.CategoryRepository;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.repository.TaskStatusRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
@@ -28,13 +29,15 @@ public class TaskUseCaseConfig {
     public CreateTaskUseCase createTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
                                                 CategoryRepository categoryRepository, UserRepository userRepository,
                                                 UserOrganizationRepository userOrganizationRepository,
-                                                net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository) {
-        return new CreateTaskUseCase(taskRepository, projectRepository, categoryRepository, userRepository, userOrganizationRepository, organizationRepository);
+                                                net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository,
+                                                TaskStatusRepository taskStatusRepository) {
+        return new CreateTaskUseCase(taskRepository, projectRepository, categoryRepository, userRepository, userOrganizationRepository, organizationRepository, taskStatusRepository);
     }
 
     @Produces
-    public StartTaskUseCase startTaskUseCase(TaskRepository taskRepository, UserRepository userRepository, AuthorizeOrganizationMemberUseCase authorizer) {
-        return new StartTaskUseCase(taskRepository, userRepository, authorizer);
+    public StartTaskUseCase startTaskUseCase(TaskRepository taskRepository, UserRepository userRepository,
+                                            AuthorizeOrganizationMemberUseCase authorizer, TaskStatusRepository taskStatusRepository) {
+        return new StartTaskUseCase(taskRepository, userRepository, authorizer, taskStatusRepository);
     }
 
     @Produces
@@ -53,16 +56,19 @@ public class TaskUseCaseConfig {
     }
 
     @Produces
-    public UpdateTaskStatusUseCase updateTaskStatusUseCase(TaskRepository taskRepository, AuthorizeOrganizationMemberUseCase authorizer) {
-        return new UpdateTaskStatusUseCase(taskRepository, authorizer);
+    public UpdateTaskStatusUseCase updateTaskStatusUseCase(TaskRepository taskRepository,
+                                                          TaskStatusRepository taskStatusRepository,
+                                                          AuthorizeOrganizationMemberUseCase authorizer) {
+        return new UpdateTaskStatusUseCase(taskRepository, taskStatusRepository, authorizer);
     }
 
     @Produces
     public UpdateTaskUseCase updateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
                                                 CategoryRepository categoryRepository, UserRepository userRepository,
                                                 UserOrganizationRepository userOrganizationRepository,
-                                                net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository) {
-        return new UpdateTaskUseCase(taskRepository, projectRepository, categoryRepository, userRepository, userOrganizationRepository, organizationRepository);
+                                                net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository,
+                                                TaskStatusRepository taskStatusRepository) {
+        return new UpdateTaskUseCase(taskRepository, projectRepository, categoryRepository, userRepository, userOrganizationRepository, organizationRepository, taskStatusRepository);
     }
 
     @Produces

@@ -1,4 +1,16 @@
-export type TaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
+export type LegacyTaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
+
+export interface TaskStatus {
+  id: number;
+  name: string;
+  color: string;
+  position: number;
+  isDefault?: boolean;
+  isCompleted?: boolean;
+  isCanceled?: boolean;
+  organizationId?: number;
+  taskCount?: number;
+}
 
 export interface TaskHistoryItem {
   id: number;
@@ -32,7 +44,8 @@ export interface Task {
   id: number;
   title: string;
   description?: string;
-  status: TaskStatus;
+  status: string;
+  taskStatus?: TaskStatus;
   project?: Project;
   category?: Category;
   user?: TaskUser;
@@ -51,7 +64,8 @@ export interface TaskHistoryItemInput {
 export interface CreateTaskPayload {
   title: string;
   description?: string;
-  status?: TaskStatus;
+  status?: string;
+  statusId?: number;
   organizationId: number;
   projectId?: number;
   categoryId?: number;
@@ -67,13 +81,13 @@ export interface ParsedAiTask {
   categoryId?: number;
   assigneeUserId?: number;
   externalUrl?: string;
-  status?: TaskStatus;
+  status?: string;
 }
 
 export interface ListTasksFilter {
   organizationId?: number;
   text?: string;
-  status?: TaskStatus[];
+  status?: string[];
   projectId?: number[];
   categoryId?: number[];
   userId?: number[];

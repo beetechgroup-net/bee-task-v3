@@ -423,7 +423,14 @@ public class GenerateReportUseCase {
             }
         }
         if (section.getFilterStatus() != null && !section.getFilterStatus().equalsIgnoreCase("ALL")) {
-            if (t.getStatus() == null || !t.getStatus().name().equalsIgnoreCase(section.getFilterStatus())) {
+            String statusName = t.getStatus() != null ? t.getStatus().getName() : "";
+            String filter = section.getFilterStatus();
+            boolean match = statusName.equalsIgnoreCase(filter)
+                    || ("NOT_STARTED".equalsIgnoreCase(filter) && "A Fazer".equalsIgnoreCase(statusName))
+                    || ("IN_PROGRESS".equalsIgnoreCase(filter) && "Em Andamento".equalsIgnoreCase(statusName))
+                    || ("COMPLETED".equalsIgnoreCase(filter) && "Concluído".equalsIgnoreCase(statusName))
+                    || ("CANCELED".equalsIgnoreCase(filter) && "Cancelado".equalsIgnoreCase(statusName));
+            if (!match) {
                 return false;
             }
         }
@@ -457,13 +464,8 @@ public class GenerateReportUseCase {
     }
 
     private String formatStatus(TaskStatus status) {
-        if (status == null) return "";
-        return switch (status) {
-            case COMPLETED -> "Concluído";
-            case IN_PROGRESS -> "Em Andamento";
-            case NOT_STARTED -> "A Fazer";
-            case CANCELED -> "Cancelado";
-        };
+        if (status == null || status.getName() == null) return "";
+        return status.getName();
     }
 
     private String capitalize(String text) {

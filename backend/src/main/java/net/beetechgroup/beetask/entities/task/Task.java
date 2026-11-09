@@ -77,13 +77,13 @@ public class Task {
     }
 
     public void setStatus(TaskStatus status) {
-        if (this.status == status) return;
+        if (Objects.equals(this.status, status)) return;
 
-        if (status == TaskStatus.COMPLETED || status == TaskStatus.CANCELED) {
+        if (status != null && (status.isCompleted() || status.isCanceled())) {
             if (isRunning()) {
                 this.stop();
             }
-            if (status == TaskStatus.COMPLETED) {
+            if (status.isCompleted()) {
                 this.finishedAt = LocalDateTime.now();
             } else {
                 this.finishedAt = null;
@@ -157,7 +157,6 @@ public class Task {
             throw new IllegalStateException("Tarefa já está em execução");
         }
 
-        this.status = TaskStatus.IN_PROGRESS;
         TaskHistoryItem item = new TaskHistoryItem();
         item.setStartAt(LocalDateTime.now());
         item.setUser(worker != null ? worker : this.user);

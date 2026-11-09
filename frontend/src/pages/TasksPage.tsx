@@ -9,23 +9,25 @@ import {
   RefreshCw,
   Folder,
   Users,
-  User,
-  CheckCircle2,
-  Clock,
   Sparkles,
   AlertCircle,
   CircleDot,
-  Ban,
   Eye,
   EyeOff,
   SlidersHorizontal,
+  Trash2,
+  Check,
+  X,
+  Loader2,
+  User as UserIcon,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTimer } from '../contexts/TimerContext'
 import { taskService } from '../services/taskService'
 import { projectService } from '../services/projectService'
+import { taskStatusService } from '../services/taskStatusService'
 import type { Task, TaskStatus, Project, ParsedAiTask } from '../types/task'
-import { TaskKanbanView, COLUMNS } from '../components/tasks/TaskKanbanView'
+import { TaskKanbanView, DEFAULT_COLUMNS } from '../components/tasks/TaskKanbanView'
 import { TaskListView } from '../components/tasks/TaskListView'
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
 import { CreateWithAiModal } from '../components/tasks/CreateWithAiModal'
@@ -35,6 +37,19 @@ import {
   syncPreferencesFromBackend,
   savePreferencesToBackend,
 } from '../lib/userPreferences'
+
+const COLOR_PRESETS = [
+  '#71717a',
+  '#0f766e',
+  '#10b981',
+  '#3b82f6',
+  '#6366f1',
+  '#8b5cf6',
+  '#ec4899',
+  '#f43f5e',
+  '#f59e0b',
+  '#64748b',
+]
 
 export const TasksPage: React.FC = () => {
   const { activeOrg, user } = useAuth()
@@ -47,18 +62,19 @@ export const TasksPage: React.FC = () => {
 
   const [tasks, setTasks] = useState<Task[]>([])
   const [projects, setProjects] = useState<Project[]>([])
+  const [taskStatuses, setTaskStatuses] = useState<TaskStatus[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
 
   // Kanban column visibility preferences
-  const [hiddenColumns, setHiddenColumns] = useState<TaskStatus[]>([])
+  const [hiddenColumns, setHiddenColumns] = useState<string[]>([])
   const [showAllColumns, setShowAllColumns] = useState(false)
   const [showColumnSettings, setShowColumnSettings] = useState(false)
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedStatus, setSelectedStatus] = useState<TaskStatus | 'ALL'>('ALL')
+  const [selectedStatus, setSelectedStatus] = useState<string | 'ALL'>('ALL')
   const [selectedProjectId, setSelectedProjectId] = useState<number | 'ALL'>('ALL')
 
   // Scope Toggle State: 'mine' (Individual) vs 'team' (Equipe)
@@ -86,12 +102,27 @@ export const TasksPage: React.FC = () => {
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [modalInitialStatus, setModalInitialStatus] = useState<TaskStatus>('NOT_STARTED')
+  const [modalInitialStatus, setModalInitialStatus] = useState<string>('A Fazer')
   const [modalInitialTab, setModalInitialTab] = useState<'details' | 'history'>('details')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [aiDraftTask, setAiDraftTask] = useState<ParsedAiTask | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+
+  // Status Quick Create / Edit Modal State
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [editingStatus, setEditingStatus] = useState<TaskStatus | null>(null)
+  const [statusName, setStatusName] = useState('')
+  const [statusColor, setStatusColor] = useState(COLOR_PRESETS[0])
+  const [statusIsDefault, setStatusIsDefault] = useState(false)
+  const [statusIsCompleted, setStatusIsCompleted] = useState(false)
+  const [statusIsCanceled, setStatusIsCanceled] = useState(false)
+  const [statusSubmitting, setStatusSubmitting] = useState(false)
+
+  // Status Delete Modal State
+  const [deletingStatus, setDeletingStatus] = useState<TaskStatus | null>(null)
+  const [moveToStatusId, setMoveToStatusId] = useState<number | undefined>(undefined)
+  const [deletingStatusLoading, setDeletingStatusLoading] = useState(false)
 
   // Load user preferences for hidden columns from backend
   useEffect(() => {
@@ -112,7 +143,7 @@ export const TasksPage: React.FC = () => {
 
   // Save hidden columns to backend
   const updateHiddenColumns = useCallback(
-    (newHidden: TaskStatus[]) => {
+    (newHidden: string[]) => {
       setHiddenColumns(newHidden)
       if (!user?.email) return
       const current = getLocalPreferences(user.email)
@@ -131,7 +162,7 @@ export const TasksPage: React.FC = () => {
   )
 
   const handleHideColumn = useCallback(
-    (status: TaskStatus) => {
+    (status: string) => {
       if (!hiddenColumns.includes(status)) {
         updateHiddenColumns([...hiddenColumns, status])
       }
@@ -140,7 +171,7 @@ export const TasksPage: React.FC = () => {
   )
 
   const handleUnhideColumn = useCallback(
-    (status: TaskStatus) => {
+    (status: string) => {
       updateHiddenColumns(hiddenColumns.filter((s) => s !== status))
     },
     [hiddenColumns, updateHiddenColumns]
@@ -152,18 +183,20 @@ export const TasksPage: React.FC = () => {
 
   const activeOrgId = activeOrg?.id
 
-  // Load tasks & projects for current organization
+  // Load tasks, projects & statuses for current organization
   const loadData = useCallback(async () => {
     if (!activeOrgId) return
     try {
       setRefreshing(true)
-      const [tasksRes, projsRes] = await Promise.all([
+      const [tasksRes, projsRes, statusesRes] = await Promise.all([
         taskService.listTasks({ organizationId: activeOrgId }),
         projectService.listProjects(activeOrgId).catch(() => []),
+        taskStatusService.listStatuses(activeOrgId).catch(() => []),
       ])
 
       setTasks(tasksRes || [])
       setProjects(projsRes || [])
+      setTaskStatuses(statusesRes || [])
       syncWithTasksRef.current(tasksRes || [])
     } catch (err) {
       console.error('Failed to load tasks', err)
@@ -192,12 +225,38 @@ export const TasksPage: React.FC = () => {
   // Scope tasks based on viewScope
   const scopeTasks = viewScope === 'mine' ? myTasks : tasks
 
+  // Effective columns for preferences & board
+  const effectiveColumns = useMemo(() => {
+    if (taskStatuses && taskStatuses.length > 0) {
+      return [...taskStatuses]
+        .sort((a, b) => a.position - b.position)
+        .map((s) => ({
+          id: s.id,
+          status: s.name,
+          label: s.name,
+          color: s.color || '#71717a',
+          rawStatus: s,
+        }))
+    }
+    return DEFAULT_COLUMNS
+  }, [taskStatuses])
+
   // Filter tasks client-side for ultra-responsive search
   const filteredTasks = useMemo(() => {
     return scopeTasks.filter((task) => {
       // Status filter
-      if (selectedStatus !== 'ALL' && task.status !== selectedStatus) {
-        return false
+      if (selectedStatus !== 'ALL') {
+        const tStatus = task.taskStatus?.name || task.status
+        const matchesStatus =
+          tStatus === selectedStatus ||
+          task.status === selectedStatus ||
+          (selectedStatus === 'A Fazer' && (task.status === 'NOT_STARTED' || task.taskStatus?.isDefault)) ||
+          (selectedStatus === 'Em Andamento' && task.status === 'IN_PROGRESS') ||
+          (selectedStatus === 'Concluído' && (task.status === 'COMPLETED' || task.taskStatus?.isCompleted)) ||
+          (selectedStatus === 'Cancelado' && (task.status === 'CANCELED' || task.taskStatus?.isCanceled))
+        if (!matchesStatus) {
+          return false
+        }
       }
       // Project filter
       if (selectedProjectId !== 'ALL' && task.project?.id !== selectedProjectId) {
@@ -241,14 +300,24 @@ export const TasksPage: React.FC = () => {
   }
 
   // Status change handler
-  const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
+  const handleStatusChange = async (task: Task, newStatus: string, newStatusId?: number) => {
     setActionError(null)
+    const matchedStatus = taskStatuses.find((s) => s.id === newStatusId || s.name === newStatus)
+
     try {
       // Optimistic update
       setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t))
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: newStatus,
+                taskStatus: matchedStatus || t.taskStatus,
+              }
+            : t
+        )
       )
-      const updated = await taskService.updateStatus(task.id, newStatus)
+      const updated = await taskService.updateStatus(task.id, newStatus, newStatusId)
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
     } catch (err: unknown) {
       console.error('Failed to update status', err)
@@ -261,7 +330,8 @@ export const TasksPage: React.FC = () => {
   const handleModalSubmit = async (taskData: {
     title: string
     description: string
-    status: TaskStatus
+    status: string
+    statusId?: number
     projectId?: number
     categoryId?: number
     assigneeUserId?: number
@@ -276,6 +346,7 @@ export const TasksPage: React.FC = () => {
         title: taskData.title,
         description: taskData.description,
         status: taskData.status,
+        statusId: taskData.statusId,
         projectId: taskData.projectId,
         categoryId: taskData.categoryId,
         assigneeUserId: taskData.assigneeUserId,
@@ -291,6 +362,7 @@ export const TasksPage: React.FC = () => {
         title: taskData.title,
         description: taskData.description,
         status: taskData.status,
+        statusId: taskData.statusId,
         projectId: taskData.projectId,
         categoryId: taskData.categoryId,
         assigneeUserId: taskData.assigneeUserId,
@@ -301,7 +373,7 @@ export const TasksPage: React.FC = () => {
     }
   }
 
-  const handleOpenCreateModal = (initialStatus: TaskStatus = 'NOT_STARTED') => {
+  const handleOpenCreateModal = (initialStatus: string = 'A Fazer') => {
     setEditingTask(null)
     setModalInitialStatus(initialStatus)
     setModalInitialTab('details')
@@ -343,11 +415,80 @@ export const TasksPage: React.FC = () => {
     [activeTask, stopTimer, editingTask]
   )
 
-  // Summary counts based on active scope
-  const notStartedCount = scopeTasks.filter((t) => t.status === 'NOT_STARTED').length
-  const inProgressCount = scopeTasks.filter((t) => t.status === 'IN_PROGRESS').length
-  const completedCount = scopeTasks.filter((t) => t.status === 'COMPLETED').length
-  const canceledCount = scopeTasks.filter((t) => t.status === 'CANCELED').length
+  // Status modal handlers
+  const handleOpenStatusModal = (st: TaskStatus | null) => {
+    if (st) {
+      setEditingStatus(st)
+      setStatusName(st.name)
+      setStatusColor(st.color || COLOR_PRESETS[0])
+      setStatusIsDefault(Boolean(st.isDefault))
+      setStatusIsCompleted(Boolean(st.isCompleted))
+      setStatusIsCanceled(Boolean(st.isCanceled))
+    } else {
+      setEditingStatus(null)
+      setStatusName('')
+      setStatusColor(COLOR_PRESETS[0])
+      setStatusIsDefault(false)
+      setStatusIsCompleted(false)
+      setStatusIsCanceled(false)
+    }
+    setIsStatusModalOpen(true)
+  }
+
+  const handleSaveStatus = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!activeOrgId || !statusName.trim()) return
+
+    setStatusSubmitting(true)
+    try {
+      if (editingStatus) {
+        await taskStatusService.updateStatus(activeOrgId, editingStatus.id, {
+          name: statusName.trim(),
+          color: statusColor,
+          isDefault: statusIsDefault,
+          isCompleted: statusIsCompleted,
+          isCanceled: statusIsCanceled,
+        })
+      } else {
+        await taskStatusService.createStatus(activeOrgId, {
+          name: statusName.trim(),
+          color: statusColor,
+          isDefault: statusIsDefault,
+          isCompleted: statusIsCompleted,
+          isCanceled: statusIsCanceled,
+        })
+      }
+      setIsStatusModalOpen(false)
+      const updatedStatuses = await taskStatusService.listStatuses(activeOrgId)
+      setTaskStatuses(updatedStatuses || [])
+    } catch (err: unknown) {
+      console.error(err)
+      setActionError(err instanceof Error ? err.message : 'Falha ao salvar status.')
+    } finally {
+      setStatusSubmitting(false)
+    }
+  }
+
+  const handleOpenDeleteStatusModal = (st: TaskStatus) => {
+    const others = taskStatuses.filter((s) => s.id !== st.id)
+    setMoveToStatusId(others.length > 0 ? others[0].id : undefined)
+    setDeletingStatus(st)
+  }
+
+  const handleConfirmDeleteStatus = async () => {
+    if (!activeOrgId || !deletingStatus) return
+    setDeletingStatusLoading(true)
+    try {
+      await taskStatusService.deleteStatus(activeOrgId, deletingStatus.id, moveToStatusId)
+      setDeletingStatus(null)
+      loadData()
+    } catch (err: unknown) {
+      console.error(err)
+      setActionError(err instanceof Error ? err.message : 'Falha ao excluir status.')
+    } finally {
+      setDeletingStatusLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -358,124 +499,122 @@ export const TasksPage: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-brand via-brand-strong to-accent bg-clip-text text-transparent">
               Quadro de Tarefas
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand/15 text-brand border border-brand/25 shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand/10 text-brand border border-brand/20">
               {activeOrg?.name || 'Workspace'}
             </span>
           </div>
-          <p className="text-xs text-muted">
-            Planeje, execute e rastreie o tempo investido em cada entrega da equipe.
+          <p className="text-xs sm:text-sm text-muted">
+            Monitore seu fluxo ágil, lance tempos de dedicação e entregue valor contínuo.
           </p>
         </div>
 
-        {/* View Switcher & New Task Button */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Refresh */}
+        {/* View Mode & Actions */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Refresh button */}
           <button
             type="button"
             onClick={loadData}
             disabled={refreshing}
-            title="Recarregar tarefas"
-            className="p-2.5 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md text-muted hover:text-foreground hover:bg-surface-raised transition-all shadow-panel disabled:opacity-50"
+            className="p-2.5 rounded-xl border border-border-soft bg-surface hover:bg-surface-raised text-muted hover:text-foreground transition-colors disabled:opacity-50"
+            title="Atualizar tarefas"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-brand' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
 
-          {/* Kanban / List Toggle */}
-          <div className="flex items-center p-1 rounded-xl border border-border-soft bg-surface/90 backdrop-blur-md shadow-panel">
+          {/* View toggle (Kanban vs List) */}
+          <div className="inline-flex p-1 rounded-xl bg-surface-sunken border border-border-soft">
             <button
               type="button"
               onClick={() => setViewMode('kanban')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`p-1.5 rounded-lg transition-all ${
                 viewMode === 'kanban'
-                  ? 'bg-brand text-white shadow-md shadow-brand/20'
+                  ? 'bg-brand text-white shadow-xs'
                   : 'text-muted hover:text-foreground'
               }`}
+              title="Visualização em Quadro (Kanban)"
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Kanban</span>
+              <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`p-1.5 rounded-lg transition-all ${
                 viewMode === 'list'
-                  ? 'bg-brand text-white shadow-md shadow-brand/20'
+                  ? 'bg-brand text-white shadow-xs'
                   : 'text-muted hover:text-foreground'
               }`}
+              title="Visualização em Lista"
             >
-              <ListIcon className="w-3.5 h-3.5" />
-              <span>Lista</span>
+              <ListIcon className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Kanban Columns Visibility Control */}
+          {/* Kanban Columns Settings (Only in Kanban Mode) */}
           {viewMode === 'kanban' && (
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowColumnSettings(!showColumnSettings)}
-                title="Gerenciar colunas do Kanban"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all shadow-panel ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-all ${
                   hiddenColumns.length > 0
-                    ? 'border-brand/40 bg-brand/10 text-brand'
-                    : 'border-border-soft bg-surface/90 text-muted hover:text-foreground hover:bg-surface-raised'
+                    ? 'border-amber-500/50 bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/30'
+                    : 'border-border-soft bg-surface text-muted hover:text-foreground hover:bg-surface-raised'
                 }`}
+                title="Personalizar visualização das colunas"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Colunas</span>
+                <span className="hidden sm:inline">Colunas</span>
                 {hiddenColumns.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-brand text-white font-bold">
-                    {hiddenColumns.length} oculta{hiddenColumns.length > 1 ? 's' : ''}
+                  <span className="w-4 h-4 rounded-full bg-amber-500 text-black text-[10px] font-bold flex items-center justify-center">
+                    {hiddenColumns.length}
                   </span>
                 )}
               </button>
 
+              {/* Column Settings Dropdown */}
               {showColumnSettings && (
                 <>
                   <div
                     className="fixed inset-0 z-40"
                     onClick={() => setShowColumnSettings(false)}
                   />
-                  <div className="absolute right-0 top-11 z-50 w-64 rounded-2xl border border-border bg-surface-raised p-3 shadow-2xl space-y-2.5">
-                    <div className="flex items-center justify-between pb-2 border-b border-border">
-                      <span className="text-xs font-bold text-foreground">Visibilidade de Colunas</span>
-                      {hiddenColumns.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={handleUnhideAllColumns}
-                          className="text-[11px] text-brand hover:underline font-medium"
-                        >
-                          Restaurar todas
-                        </button>
-                      )}
+                  <div className="absolute right-0 top-11 z-50 w-72 rounded-2xl border border-border bg-surface-raised p-3 shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between border-b border-border-soft pb-2">
+                      <div className="flex items-center gap-1.5">
+                        <SlidersHorizontal className="w-3.5 h-3.5 text-brand" />
+                        <h4 className="text-xs font-bold text-foreground">Colunas do Quadro</h4>
+                      </div>
+                      <span className="text-[10px] text-muted font-medium">
+                        {effectiveColumns.length - hiddenColumns.length} de {effectiveColumns.length} ativas
+                      </span>
                     </div>
 
-                    {/* Toggle show all columns temporarily */}
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-surface border border-border-soft">
-                      <div className="flex items-center gap-2">
-                        {showAllColumns ? (
-                          <Eye className="w-3.5 h-3.5 text-brand" />
-                        ) : (
-                          <EyeOff className="w-3.5 h-3.5 text-muted" />
-                        )}
-                        <span className="text-xs font-medium text-foreground">Mostrar ocultas</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={showAllColumns}
-                        onChange={(e) => setShowAllColumns(e.target.checked)}
-                        className="w-4 h-4 rounded text-brand border-border focus:ring-brand"
-                      />
+                    {/* Master toggle */}
+                    <div className="flex items-center justify-between text-xs py-1">
+                      <span className="text-muted text-[11px]">Exibir todas as colunas:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (showAllColumns) {
+                            setShowAllColumns(false)
+                          } else {
+                            handleUnhideAllColumns()
+                            setShowAllColumns(false)
+                          }
+                        }}
+                        className="text-xs font-semibold text-brand hover:underline"
+                      >
+                        {hiddenColumns.length === 0 ? 'Todas visíveis' : 'Reexibir todas'}
+                      </button>
                     </div>
 
                     {/* Individual columns list */}
-                    <div className="space-y-1">
-                      {COLUMNS.map((col) => {
+                    <div className="space-y-1 max-h-60 overflow-y-auto">
+                      {effectiveColumns.map((col) => {
                         const isHidden = hiddenColumns.includes(col.status)
                         return (
                           <button
-                            key={col.status}
+                            key={col.id ? `col-${col.id}` : col.status}
                             type="button"
                             onClick={() => {
                               if (isHidden) {
@@ -490,22 +629,21 @@ export const TasksPage: React.FC = () => {
                                 : 'bg-surface hover:bg-surface-sunken text-foreground'
                             }`}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
                               <span
-                                className={`w-2 h-2 rounded-full ${
-                                  isHidden ? 'bg-zinc-500' : 'bg-brand'
-                                }`}
+                                className="w-2.5 h-2.5 rounded-full shrink-0"
+                                style={{ backgroundColor: col.color || '#71717a' }}
                               />
-                              <span>{col.label}</span>
+                              <span className="truncate">{col.label}</span>
                             </div>
 
                             {isHidden ? (
-                              <span className="flex items-center gap-1 text-[11px] text-amber-500 font-medium">
+                              <span className="flex items-center gap-1 text-[11px] text-amber-500 font-medium shrink-0">
                                 <EyeOff className="w-3.5 h-3.5" />
                                 <span>Oculta</span>
                               </span>
                             ) : (
-                              <span className="flex items-center gap-1 text-[11px] text-brand font-medium">
+                              <span className="flex items-center gap-1 text-[11px] text-brand font-medium shrink-0">
                                 <Eye className="w-3.5 h-3.5" />
                                 <span>Visível</span>
                               </span>
@@ -513,6 +651,20 @@ export const TasksPage: React.FC = () => {
                           </button>
                         )
                       })}
+                    </div>
+
+                    <div className="pt-2 border-t border-border-soft flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowColumnSettings(false)
+                          handleOpenStatusModal(null)
+                        }}
+                        className="text-xs text-brand hover:underline font-semibold flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Novo Status</span>
+                      </button>
                     </div>
                   </div>
                 </>
@@ -536,7 +688,8 @@ export const TasksPage: React.FC = () => {
             type="button"
             onClick={() => {
               setAiDraftTask(null)
-              handleOpenCreateModal('NOT_STARTED')
+              const defaultCol = taskStatuses.find((s) => s.isDefault)?.name || 'A Fazer'
+              handleOpenCreateModal(defaultCol)
             }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand text-white font-semibold text-xs hover:bg-brand-hover shadow-md shadow-brand/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
           >
@@ -579,8 +732,8 @@ export const TasksPage: React.FC = () => {
                   : 'text-muted hover:text-foreground'
               }`}
             >
-              <User className="w-3.5 h-3.5" />
-              <span>Individual (Minhas Tarefas)</span>
+              <UserIcon className="w-3.5 h-3.5" />
+              <span>Minhas Tarefas</span>
               <span
                 className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                   viewScope === 'mine' ? 'bg-white/20 text-white' : 'bg-surface text-muted'
@@ -589,6 +742,7 @@ export const TasksPage: React.FC = () => {
                 {myTasks.length}
               </span>
             </button>
+
             <button
               type="button"
               onClick={() => handleScopeChange('team')}
@@ -646,7 +800,7 @@ export const TasksPage: React.FC = () => {
             )}
           </div>
 
-          {/* Status Statistics (Icon + Number) */}
+          {/* Status Statistics (Dynamic Pills) */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap py-1">
             {/* Total / All */}
             <button
@@ -663,65 +817,51 @@ export const TasksPage: React.FC = () => {
               <span className="font-mono text-xs">{scopeTasks.length}</span>
             </button>
 
-            {/* A Fazer (NOT_STARTED) */}
-            <button
-              type="button"
-              onClick={() => setSelectedStatus(selectedStatus === 'NOT_STARTED' ? 'ALL' : 'NOT_STARTED')}
-              title="A Fazer"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                selectedStatus === 'NOT_STARTED'
-                  ? 'bg-zinc-500/15 border-zinc-500/40 text-foreground ring-1 ring-zinc-500/30'
-                  : 'bg-surface-raised/60 border-border-soft text-muted hover:text-foreground hover:bg-surface-raised'
-              }`}
-            >
-              <CircleDot className="w-3.5 h-3.5 text-muted shrink-0" />
-              <span className="font-mono text-xs text-foreground">{notStartedCount}</span>
-            </button>
+            {/* Dynamic Status Pills */}
+            {effectiveColumns.map((col) => {
+              const count = scopeTasks.filter((t) => {
+                if (col.id && t.taskStatus?.id) return t.taskStatus.id === col.id
+                const tStatus = t.status || ''
+                if (tStatus === col.status || tStatus === col.label) return true
+                if ((col.status === 'A Fazer' || col.status === 'NOT_STARTED') && (tStatus === 'NOT_STARTED' || tStatus === 'A Fazer' || t.taskStatus?.isDefault)) return true
+                if ((col.status === 'Em Andamento' || col.status === 'IN_PROGRESS') && (tStatus === 'IN_PROGRESS' || tStatus === 'Em Andamento')) return true
+                if ((col.status === 'Concluído' || col.status === 'COMPLETED') && (tStatus === 'COMPLETED' || tStatus === 'Concluído' || t.taskStatus?.isCompleted)) return true
+                if ((col.status === 'Cancelado' || col.status === 'CANCELED') && (tStatus === 'CANCELED' || tStatus === 'Cancelado' || t.taskStatus?.isCanceled)) return true
+                return false
+              }).length
 
-            {/* Em Andamento (IN_PROGRESS) */}
-            <button
-              type="button"
-              onClick={() => setSelectedStatus(selectedStatus === 'IN_PROGRESS' ? 'ALL' : 'IN_PROGRESS')}
-              title="Em Andamento"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                selectedStatus === 'IN_PROGRESS'
-                  ? 'bg-teal-500/20 border-teal-500/50 text-teal-700 dark:text-teal-300 ring-1 ring-teal-500/30'
-                  : 'bg-surface-raised/60 border-border-soft text-teal-700 dark:text-teal-400 hover:bg-surface-raised'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400 shrink-0" />
-              <span className="font-mono text-xs">{inProgressCount}</span>
-            </button>
+              const isSelected = selectedStatus === col.status
 
-            {/* Concluído (COMPLETED) */}
-            <button
-              type="button"
-              onClick={() => setSelectedStatus(selectedStatus === 'COMPLETED' ? 'ALL' : 'COMPLETED')}
-              title="Concluído"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                selectedStatus === 'COMPLETED'
-                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30'
-                  : 'bg-surface-raised/60 border-border-soft text-emerald-700 dark:text-emerald-400 hover:bg-surface-raised'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" />
-              <span className="font-mono text-xs">{completedCount}</span>
-            </button>
-
-            {/* Cancelado (CANCELED) */}
-            <button
-              type="button"
-              onClick={() => setSelectedStatus(selectedStatus === 'CANCELED' ? 'ALL' : 'CANCELED')}
-              title="Cancelado"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                selectedStatus === 'CANCELED'
-                  ? 'bg-rose-500/20 border-rose-500/50 text-rose-700 dark:text-rose-300 ring-1 ring-rose-500/30'
-                  : 'bg-surface-raised/60 border-border-soft text-rose-700 dark:text-rose-400 hover:bg-surface-raised'
-              }`}
-            >
-              <Ban className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400 shrink-0" />
-              <span className="font-mono text-xs">{canceledCount}</span>
-            </button>
+              return (
+                <button
+                  key={col.id ? `pill-${col.id}` : `pill-${col.status}`}
+                  type="button"
+                  onClick={() => setSelectedStatus(isSelected ? 'ALL' : col.status)}
+                  title={col.label}
+                  style={
+                    isSelected
+                      ? {
+                          backgroundColor: `${col.color}25`,
+                          borderColor: col.color,
+                          color: col.color,
+                        }
+                      : undefined
+                  }
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                    isSelected
+                      ? 'shadow-xs ring-1'
+                      : 'bg-surface-raised/60 border-border-soft text-muted hover:text-foreground hover:bg-surface-raised'
+                  }`}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: col.color || '#71717a' }}
+                  />
+                  <span>{col.label}</span>
+                  <span className="font-mono text-xs">{count}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -750,13 +890,14 @@ export const TasksPage: React.FC = () => {
           <div className="w-44">
             <CustomSelect
               value={selectedStatus}
-              onChange={(val) => setSelectedStatus(val as TaskStatus | 'ALL')}
+              onChange={(val) => setSelectedStatus(val as string | 'ALL')}
               options={[
                 { value: 'ALL', label: 'Todos os Status' },
-                { value: 'NOT_STARTED', label: 'A Fazer', color: '#71717a' },
-                { value: 'IN_PROGRESS', label: 'Em Andamento', color: '#14b8a6' },
-                { value: 'COMPLETED', label: 'Concluído', color: '#10b981' },
-                { value: 'CANCELED', label: 'Cancelado', color: '#f43f5e' },
+                ...effectiveColumns.map((c) => ({
+                  value: c.status,
+                  label: c.label,
+                  color: c.color,
+                })),
               ]}
             />
           </div>
@@ -792,7 +933,7 @@ export const TasksPage: React.FC = () => {
           </p>
           <button
             type="button"
-            onClick={() => handleOpenCreateModal('NOT_STARTED')}
+            onClick={() => handleOpenCreateModal('A Fazer')}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-xs font-semibold hover:bg-brand-hover shadow-md shadow-brand/20 transition-all"
           >
             <Plus className="w-4 h-4" />
@@ -802,12 +943,16 @@ export const TasksPage: React.FC = () => {
       ) : viewMode === 'kanban' ? (
         <TaskKanbanView
           tasks={filteredTasks}
+          taskStatuses={taskStatuses}
           onToggleTimer={handleToggleTimer}
           onStatusChange={handleStatusChange}
           onEditTask={handleOpenEditModal}
           onOpenHistory={handleOpenHistoryModal}
           onDeleteTask={handleDeleteTask}
           onAddTaskToStatus={handleOpenCreateModal}
+          onOpenCreateStatus={() => handleOpenStatusModal(null)}
+          onEditStatus={(st) => handleOpenStatusModal(st)}
+          onDeleteStatus={(st) => handleOpenDeleteStatusModal(st)}
           activeTaskId={activeTask?.id}
           activeTaskSeconds={activeSeconds}
           hiddenColumns={hiddenColumns}
@@ -818,6 +963,7 @@ export const TasksPage: React.FC = () => {
       ) : (
         <TaskListView
           tasks={filteredTasks}
+          taskStatuses={taskStatuses}
           onToggleTimer={handleToggleTimer}
           onStatusChange={handleStatusChange}
           onEditTask={handleOpenEditModal}
@@ -844,6 +990,7 @@ export const TasksPage: React.FC = () => {
           initialTask={editingTask}
           initialTab={modalInitialTab}
           initialDraft={aiDraftTask}
+          taskStatuses={taskStatuses}
         />
       )}
 
@@ -856,10 +1003,185 @@ export const TasksPage: React.FC = () => {
           onSuccess={(parsed) => {
             setAiDraftTask(parsed)
             setEditingTask(null)
-            setModalInitialStatus(parsed.status || 'NOT_STARTED')
+            setModalInitialStatus(parsed.status || 'A Fazer')
             setIsModalOpen(true)
           }}
         />
+      )}
+
+      {/* Status Modal (Create / Edit from Kanban) */}
+      {isStatusModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border-soft pb-3">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <CircleDot className="w-4 h-4 text-brand" />
+                <span>{editingStatus ? 'Editar Status' : 'Novo Status do Quadro'}</span>
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsStatusModalOpen(false)}
+                className="w-7 h-7 rounded-lg text-muted hover:text-foreground hover:bg-surface-raised flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStatus} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">Nome do Status</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Em Teste, Homologação, Bloqueado"
+                  value={statusName}
+                  onChange={(e) => setStatusName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-border bg-surface-raised text-foreground text-xs focus:outline-hidden focus:border-brand"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">Cor da Coluna</label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {COLOR_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setStatusColor(preset)}
+                      className={`w-7 h-7 rounded-full border-2 transition-all flex items-center justify-center ${
+                        statusColor === preset ? 'border-foreground scale-110 shadow-xs' : 'border-transparent hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: preset }}
+                    >
+                      {statusColor === preset && <Check className="w-3.5 h-3.5 text-white drop-shadow-md" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Behavior Flags */}
+              <div className="space-y-2 pt-2 border-t border-border-soft">
+                <label className="block text-xs font-semibold text-foreground mb-1">Comportamento</label>
+
+                <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={statusIsDefault}
+                    onChange={(e) => setStatusIsDefault(e.target.checked)}
+                    className="w-4 h-4 rounded-md border-border text-brand focus:ring-brand"
+                  />
+                  <span>Status inicial padrão para novas tarefas</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={statusIsCompleted}
+                    onChange={(e) => {
+                      setStatusIsCompleted(e.target.checked)
+                      if (e.target.checked) setStatusIsCanceled(false)
+                    }}
+                    className="w-4 h-4 rounded-md border-border text-emerald-500 focus:ring-emerald-500"
+                  />
+                  <span>Indica que a tarefa foi concluída</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 text-xs text-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={statusIsCanceled}
+                    onChange={(e) => {
+                      setStatusIsCanceled(e.target.checked)
+                      if (e.target.checked) setStatusIsCompleted(false)
+                    }}
+                    className="w-4 h-4 rounded-md border-border text-rose-500 focus:ring-rose-500"
+                  />
+                  <span>Indica que a tarefa foi cancelada</span>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border-soft">
+                <button
+                  type="button"
+                  onClick={() => setIsStatusModalOpen(false)}
+                  className="px-3.5 py-2 rounded-xl border border-border-soft text-xs text-muted hover:text-foreground hover:bg-surface-raised"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={statusSubmitting || !statusName.trim()}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-accent to-brand text-accent-foreground font-semibold text-xs shadow-md shadow-accent/20 hover:opacity-95 disabled:opacity-50"
+                >
+                  {statusSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{editingStatus ? 'Salvar Alterações' : 'Criar Status'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Excluir Status com Reatribuição */}
+      {deletingStatus && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Excluir Status "{deletingStatus.name}"?</h3>
+                <p className="text-xs text-muted">Esta ação remove o status e a coluna correspondente no Kanban.</p>
+              </div>
+            </div>
+
+            {(() => {
+              const otherStatuses = taskStatuses.filter((s) => s.id !== deletingStatus.id)
+              return (
+                <div className="space-y-3 pt-2">
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-500">
+                    Se houver tarefas vinculadas a este status, selecione para qual coluna elas serão movidas:
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground mb-1.5">Mover tarefas para:</label>
+                    <select
+                      value={moveToStatusId}
+                      onChange={(e) => setMoveToStatusId(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-border bg-surface-raised text-foreground text-xs"
+                    >
+                      {otherStatuses.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )
+            })()}
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-border-soft">
+              <button
+                type="button"
+                onClick={() => setDeletingStatus(null)}
+                className="px-3.5 py-2 rounded-xl border border-border-soft text-xs text-muted hover:text-foreground"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deletingStatusLoading}
+                onClick={handleConfirmDeleteStatus}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 text-white font-semibold text-xs shadow-md shadow-rose-600/20 hover:bg-rose-700 disabled:opacity-50"
+              >
+                {deletingStatusLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Excluir Status</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -55,7 +55,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findAccessibleTasksFiltered(Long organizationId, String text, List<Long> projectIds,
-                                                  List<TaskStatus> statuses, List<Long> categoryIds, List<Long> userIds) {
+                                                  List<String> statuses, List<Long> categoryIds, List<Long> userIds) {
         StringBuilder query = new StringBuilder(
                 "select distinct t from TaskEntity t left join t.project p left join t.category c " +
                         "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1)"
@@ -77,7 +77,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
             idx++;
         }
         if (Objects.nonNull(statuses) && !statuses.isEmpty()) {
-            query.append(" and t.status in ?").append(idx);
+            query.append(" and (t.status in ?").append(idx).append(" or lower(t.taskStatus.name) in ?").append(idx).append(")");
             params.add(statuses);
             idx++;
         }
@@ -99,7 +99,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksByUserFiltered(String email, String text, List<Long> projectIds,
-                                              List<TaskStatus> statuses, List<Long> categoryIds) {
+                                              List<String> statuses, List<Long> categoryIds) {
         StringBuilder query = new StringBuilder("(user.email = ?1 or (user is null and createdBy.email = ?1))");
         List<Object> params = new ArrayList<>();
         params.add(email);
@@ -118,7 +118,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
             idx++;
         }
         if (Objects.nonNull(statuses) && !statuses.isEmpty()) {
-            query.append(" and status in ?").append(idx);
+            query.append(" and (status in ?").append(idx).append(" or lower(taskStatus.name) in ?").append(idx).append(")");
             params.add(statuses);
             idx++;
         }
@@ -167,8 +167,8 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksFinishedByUserInPeriod(String email, LocalDateTime start, LocalDateTime end) {
-        return find("user.email = ?1 and status = ?2 and finishedAt >= ?3 and finishedAt <= ?4",
-                email, TaskStatus.COMPLETED, start, end)
+        return find("user.email = ?1 and finishedAt is not null and finishedAt >= ?2 and finishedAt <= ?3",
+                email, start, end)
                 .list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
@@ -193,8 +193,7 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
         return find("select distinct t from TaskEntity t " +
                 "left join t.project p left join t.category c " +
                 "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) " +
-                "and t.status = net.beetechgroup.beetask.entities.task.TaskStatus.COMPLETED " +
-                "and t.finishedAt >= ?2 and t.finishedAt <= ?3",
+                "and t.finishedAt is not null and t.finishedAt >= ?2 and t.finishedAt <= ?3",
                 orgId, start, end).list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
@@ -225,8 +224,8 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
 
     @Override
     public List<Task> findTasksFinishedByUserIdInPeriod(Long userId, LocalDateTime start, LocalDateTime end) {
-        return find("user.id = ?1 and status = ?2 and finishedAt >= ?3 and finishedAt <= ?4",
-                userId, TaskStatus.COMPLETED, start, end)
+        return find("user.id = ?1 and finishedAt is not null and finishedAt >= ?2 and finishedAt <= ?3",
+                userId, start, end)
                 .list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
@@ -235,8 +234,8 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
         return find("select distinct t from TaskEntity t " +
                 "left join t.project p left join t.category c " +
                 "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) " +
-                "and t.user.id = ?2 and t.status = ?3 and t.finishedAt >= ?4 and t.finishedAt <= ?5",
-                orgId, userId, TaskStatus.COMPLETED, start, end)
+                "and t.user.id = ?2 and t.finishedAt is not null and t.finishedAt >= ?3 and t.finishedAt <= ?4",
+                orgId, userId, start, end)
                 .list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
@@ -279,8 +278,8 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
             LOGGER.warn("Finished task search by user emails skipped because the email list is empty");
             return List.of();
         }
-        return find("user.email in ?1 and status = ?2 and finishedAt >= ?3 and finishedAt <= ?4",
-                emails, TaskStatus.COMPLETED, start, end)
+        return find("user.email in ?1 and finishedAt is not null and finishedAt >= ?2 and finishedAt <= ?3",
+                emails, start, end)
                 .list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
@@ -293,14 +292,14 @@ public class TaskRepositoryImpl implements TaskRepository, PanacheRepository<Tas
         return find("select distinct t from TaskEntity t " +
                 "left join t.project p left join t.category c " +
                 "where (t.organization.id = ?1 or p.organization.id = ?1 or c.organization.id = ?1) " +
-                "and t.user.email in ?2 and t.status = ?3 and t.finishedAt >= ?4 and t.finishedAt <= ?5",
-                orgId, emails, TaskStatus.COMPLETED, start, end)
+                "and t.user.email in ?2 and t.finishedAt is not null and t.finishedAt >= ?3 and t.finishedAt <= ?4",
+                orgId, emails, start, end)
                 .list().stream().map(TaskEntityMapper::toDomain).toList();
     }
 
     @Override
-    public long countByStatus(TaskStatus status) {
-        return count("status", status);
+    public long countCompletedTasks() {
+        return count("finishedAt is not null or (taskStatus is not null and taskStatus.isCompleted = true)");
     }
 
     @Override

@@ -21,6 +21,7 @@ import {
   LogOut,
   FileText,
   Lock,
+  CircleDot,
 } from 'lucide-react'
 import { Chip, ChipLabel } from '@heroui/react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -95,6 +96,7 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
       links: [
         { to: '/projects', label: 'Projetos', icon: <FolderKanban className="w-4 h-4" /> },
         { to: '/categories', label: 'Categorias', icon: <Tags className="w-4 h-4" /> },
+        { to: '/statuses', label: 'Status', icon: <CircleDot className="w-4 h-4" /> },
       ],
     },
     {

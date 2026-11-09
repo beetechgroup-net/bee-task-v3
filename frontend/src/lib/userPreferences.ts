@@ -1,5 +1,4 @@
 import { authService } from '../services/authService'
-import type { TaskStatus } from '../types/task'
 
 export type DashboardWidgetId =
   | 'kpis'
@@ -110,7 +109,7 @@ export interface UserPreferences {
     targetHours: number
   }
   kanban?: {
-    hiddenColumns?: TaskStatus[]
+    hiddenColumns?: string[]
   }
 }
 

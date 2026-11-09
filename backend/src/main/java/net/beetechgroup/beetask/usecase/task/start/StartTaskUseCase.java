@@ -2,8 +2,10 @@ package net.beetechgroup.beetask.usecase.task.start;
 
 import java.util.Objects;
 import net.beetechgroup.beetask.entities.task.Task;
+import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.organization.auth.AuthorizeOrganizationMemberUseCase;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.repository.TaskStatusRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskMapper;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
@@ -15,11 +17,14 @@ public class StartTaskUseCase {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final AuthorizeOrganizationMemberUseCase authorizer;
+    private final TaskStatusRepository taskStatusRepository;
 
-    public StartTaskUseCase(TaskRepository taskRepository, UserRepository userRepository, AuthorizeOrganizationMemberUseCase authorizer) {
+    public StartTaskUseCase(TaskRepository taskRepository, UserRepository userRepository,
+                            AuthorizeOrganizationMemberUseCase authorizer, TaskStatusRepository taskStatusRepository) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.authorizer = authorizer;
+        this.taskStatusRepository = taskStatusRepository;
     }
 
     public CreateTaskOutput execute(StartTaskInput input) {
@@ -57,10 +62,15 @@ public class StartTaskUseCase {
             }
         }
 
+        // If task is not started or in default status, move to "Em Andamento"
+        if (orgId != null && (task.getStatus() == null || task.getStatus().isDefault() || "A Fazer".equalsIgnoreCase(task.getStatus().getName()))) {
+            taskStatusRepository.findByNameAndOrganizationId("Em Andamento", orgId)
+                    .ifPresent(task::setStatus);
+        }
+
         task.start(currentUser);
         CreateTaskOutput output = CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
         LOGGER.infof("Task %d started successfully", input.id());
         return output;
     }
 }
-

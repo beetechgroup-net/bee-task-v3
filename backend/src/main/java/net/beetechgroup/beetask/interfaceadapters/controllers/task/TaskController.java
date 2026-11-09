@@ -24,7 +24,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
-import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskUseCase;
@@ -145,15 +144,41 @@ public class TaskController {
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 
+    @PUT
+    @Path("/{id}/status")
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Operation(summary = "Update task status (PUT)", description = "Updates the status of a task")
+    @APIResponse(responseCode = "200", description = "Task status updated successfully")
+    public CreateTaskResponse updateTaskStatusPut(@PathParam("id") Long id, String rawStatus) {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Status update (PUT) requested for task %d to %s by %s", id, rawStatus, email);
+        CreateTaskOutput output = updateTaskStatusUseCase.execute(id, rawStatus, email);
+        LOGGER.infof("Task %d status updated successfully", id);
+        return TaskControllerMapper.toCreateTaskResponse(output);
+    }
+
     @PATCH
     @Path("/{id}/status")
-    @Operation(summary = "Update task status", description = "Updates the status of a task")
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Operation(summary = "Update task status (PATCH)", description = "Updates the status of a task")
     @APIResponse(responseCode = "200", description = "Task status updated successfully")
-    public CreateTaskResponse updateTaskStatus(@PathParam("id") Long id, TaskStatus status) {
+    public CreateTaskResponse updateTaskStatusPatch(@PathParam("id") Long id, String rawStatus) {
         String email = securityIdentity.getPrincipal().getName();
-        LOGGER.infof("Status update requested for task %d to %s by %s", id, status, email);
-        CreateTaskOutput output = updateTaskStatusUseCase.execute(id, status, email);
-        LOGGER.infof("Task %d status updated successfully to %s", id, status);
+        LOGGER.infof("Status update (PATCH) requested for task %d to %s by %s", id, rawStatus, email);
+        CreateTaskOutput output = updateTaskStatusUseCase.execute(id, rawStatus, email);
+        LOGGER.infof("Task %d status updated successfully", id);
+        return TaskControllerMapper.toCreateTaskResponse(output);
+    }
+
+    @PUT
+    @Path("/{id}/status/{statusId}")
+    @Operation(summary = "Update task status by ID", description = "Updates the status of a task by status ID")
+    @APIResponse(responseCode = "200", description = "Task status updated successfully")
+    public CreateTaskResponse updateTaskStatusById(@PathParam("id") Long id, @PathParam("statusId") Long statusId) {
+        String email = securityIdentity.getPrincipal().getName();
+        LOGGER.infof("Status update by ID requested for task %d to status %d by %s", id, statusId, email);
+        CreateTaskOutput output = updateTaskStatusUseCase.execute(id, statusId, null, email);
+        LOGGER.infof("Task %d status updated successfully to status %d", id, statusId);
         return TaskControllerMapper.toCreateTaskResponse(output);
     }
 

@@ -8,11 +8,13 @@ import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
-import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
-import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
+import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.repository.CategoryRepository;
+import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.repository.TaskStatusRepository;
+import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import org.jboss.logging.Logger;
 
@@ -24,17 +26,20 @@ public class CreateTaskUseCase {
     private final UserRepository userRepository;
     private final UserOrganizationRepository userOrganizationRepository;
     private final OrganizationRepository organizationRepository;
+    private final TaskStatusRepository taskStatusRepository;
 
     public CreateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
                               CategoryRepository categoryRepository, UserRepository userRepository,
                               UserOrganizationRepository userOrganizationRepository,
-                              OrganizationRepository organizationRepository) {
+                              OrganizationRepository organizationRepository,
+                              TaskStatusRepository taskStatusRepository) {
         this.taskRepository = taskRepository;
         this.projectRepository = projectRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.userOrganizationRepository = userOrganizationRepository;
         this.organizationRepository = organizationRepository;
+        this.taskStatusRepository = taskStatusRepository;
     }
 
     public CreateTaskOutput execute(CreateTaskInput input) {
@@ -42,7 +47,6 @@ public class CreateTaskUseCase {
         Task task = new Task();
         task.setTitle(input.title());
         task.setDescription(input.description());
-        task.setStatus(input.status());
         task.setExternalUrl(input.externalUrl());
 
         if (Objects.nonNull(input.projectId())) {
@@ -72,6 +76,28 @@ public class CreateTaskUseCase {
             task.setOrganization(task.getCategory().getOrganization());
         }
 
+        // Resolve task status
+        TaskStatus taskStatus = null;
+        if (input.statusId() != null) {
+            taskStatus = taskStatusRepository.findTaskStatusById(input.statusId()).orElse(null);
+        }
+        if (taskStatus == null && input.status() != null && !input.status().isBlank() && task.getOrganization() != null) {
+            String name = input.status().trim();
+            if ("NOT_STARTED".equalsIgnoreCase(name)) name = "A Fazer";
+            else if ("IN_PROGRESS".equalsIgnoreCase(name)) name = "Em Andamento";
+            else if ("COMPLETED".equalsIgnoreCase(name)) name = "Concluído";
+            else if ("CANCELED".equalsIgnoreCase(name)) name = "Cancelado";
+            taskStatus = taskStatusRepository.findByNameAndOrganizationId(name, task.getOrganization().getId()).orElse(null);
+        }
+        if (taskStatus == null && task.getOrganization() != null) {
+            taskStatus = taskStatusRepository.findDefaultByOrganizationId(task.getOrganization().getId())
+                    .orElseGet(() -> {
+                        List<TaskStatus> all = taskStatusRepository.findByOrganizationId(task.getOrganization().getId());
+                        return all.isEmpty() ? null : all.get(0);
+                    });
+        }
+        task.setStatus(taskStatus);
+
         task.setUser(resolveAssignee(input.organizationId(), input.assigneeUserId()));
         User creator = userRepository.findByEmail(input.userEmail()).orElse(null);
         task.setCreatedBy(creator);
@@ -87,7 +113,8 @@ public class CreateTaskUseCase {
         }
 
         CreateTaskOutput output = CreateTaskMapper.toCreateTaskOutput(taskRepository.saveTask(task));
-        LOGGER.infof("Task %d created for user %s", output.id(), input.userEmail());
+        LOGGER.infof("Task %d created for user %s with status %s", output.id(), input.userEmail(),
+                task.getStatus() != null ? task.getStatus().getName() : "none");
         return output;
     }
 

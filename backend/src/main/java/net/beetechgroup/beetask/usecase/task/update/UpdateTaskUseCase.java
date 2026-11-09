@@ -8,9 +8,11 @@ import net.beetechgroup.beetask.entities.User;
 import net.beetechgroup.beetask.entities.organization.UserOrganizationStatus;
 import net.beetechgroup.beetask.entities.task.Task;
 import net.beetechgroup.beetask.entities.task.TaskHistoryItem;
+import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.repository.CategoryRepository;
 import net.beetechgroup.beetask.usecase.repository.ProjectRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
+import net.beetechgroup.beetask.usecase.repository.TaskStatusRepository;
 import net.beetechgroup.beetask.usecase.repository.UserOrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskMapper;
@@ -25,17 +27,20 @@ public class UpdateTaskUseCase {
     private final UserRepository userRepository;
     private final UserOrganizationRepository userOrganizationRepository;
     private final net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository;
+    private final TaskStatusRepository taskStatusRepository;
 
     public UpdateTaskUseCase(TaskRepository taskRepository, ProjectRepository projectRepository,
                               CategoryRepository categoryRepository, UserRepository userRepository,
                               UserOrganizationRepository userOrganizationRepository,
-                              net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository) {
+                              net.beetechgroup.beetask.usecase.repository.OrganizationRepository organizationRepository,
+                              TaskStatusRepository taskStatusRepository) {
         this.taskRepository = taskRepository;
         this.projectRepository = projectRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.userOrganizationRepository = userOrganizationRepository;
         this.organizationRepository = organizationRepository;
+        this.taskStatusRepository = taskStatusRepository;
     }
 
     public CreateTaskOutput execute(UpdateTaskInput input) {
@@ -58,8 +63,27 @@ public class UpdateTaskUseCase {
 
         task.setTitle(input.title());
         task.setDescription(input.description());
-        task.setStatus(input.status());
         task.setExternalUrl(input.externalUrl());
+
+        if (input.statusId() != null || (input.status() != null && !input.status().isBlank())) {
+            TaskStatus taskStatus = null;
+            if (input.statusId() != null) {
+                taskStatus = taskStatusRepository.findTaskStatusById(input.statusId()).orElse(null);
+            }
+            Long orgId = input.organizationId() != null ? input.organizationId() :
+                    (task.getOrganization() != null ? task.getOrganization().getId() : null);
+            if (taskStatus == null && input.status() != null && !input.status().isBlank() && orgId != null) {
+                String name = input.status().trim();
+                if ("NOT_STARTED".equalsIgnoreCase(name)) name = "A Fazer";
+                else if ("IN_PROGRESS".equalsIgnoreCase(name)) name = "Em Andamento";
+                else if ("COMPLETED".equalsIgnoreCase(name)) name = "Concluído";
+                else if ("CANCELED".equalsIgnoreCase(name)) name = "Cancelado";
+                taskStatus = taskStatusRepository.findByNameAndOrganizationId(name, orgId).orElse(null);
+            }
+            if (taskStatus != null) {
+                task.setStatus(taskStatus);
+            }
+        }
 
         if (Objects.nonNull(input.organizationId())) {
             organizationRepository.findOrganizationById(input.organizationId()).ifPresent(task::setOrganization);

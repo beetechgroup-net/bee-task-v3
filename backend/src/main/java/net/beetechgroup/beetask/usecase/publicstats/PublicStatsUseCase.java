@@ -1,6 +1,5 @@
 package net.beetechgroup.beetask.usecase.publicstats;
 
-import net.beetechgroup.beetask.entities.task.TaskStatus;
 import net.beetechgroup.beetask.usecase.repository.OrganizationRepository;
 import net.beetechgroup.beetask.usecase.repository.TaskRepository;
 import net.beetechgroup.beetask.usecase.repository.UserRepository;
@@ -19,7 +18,7 @@ public class PublicStatsUseCase {
     public PublicStatsOutput execute() {
         long totalUsers = userRepository.countAll();
         long totalOrganizations = organizationRepository.countAll();
-        long totalCompletedTasks = taskRepository.countByStatus(TaskStatus.COMPLETED);
+        long totalCompletedTasks = taskRepository.countCompletedTasks();
         double totalTrackedHours = taskRepository.sumAllCompletedTrackedMinutes() / 60.0;
 
         return new PublicStatsOutput(totalUsers, totalOrganizations, totalCompletedTasks, totalTrackedHours);

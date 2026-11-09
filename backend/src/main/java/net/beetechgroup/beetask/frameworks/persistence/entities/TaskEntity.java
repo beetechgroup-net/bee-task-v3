@@ -16,7 +16,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
-import net.beetechgroup.beetask.entities.task.TaskStatus;
+import jakarta.persistence.FetchType;
 
 @Entity
 @Table(name = "tasks")
@@ -28,8 +28,11 @@ public class TaskEntity {
     private Long id;
     private String title;
     private String description;
-    @Enumerated(EnumType.STRING)
-    private TaskStatus status;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id")
+    private TaskStatusEntity taskStatus;
+    @Column(name = "status", length = 120)
+    private String status;
     @Column(name = "finished_at")
     private java.time.LocalDateTime finishedAt;
     @Column(name = "external_url", length = 1000)
@@ -103,11 +106,19 @@ public class TaskEntity {
         this.description = description;
     }
 
-    public TaskStatus getStatus() {
+    public TaskStatusEntity getTaskStatus() {
+        return taskStatus;
+    }
+
+    public void setTaskStatus(TaskStatusEntity taskStatus) {
+        this.taskStatus = taskStatus;
+    }
+
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(TaskStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 

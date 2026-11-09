@@ -23,6 +23,7 @@ import { projectService } from '../../services/projectService'
 import { categoryService } from '../../services/categoryService'
 import { organizationService } from '../../services/organizationService'
 import { taskService } from '../../services/taskService'
+import { taskStatusService } from '../../services/taskStatusService'
 import { CustomSelect } from '../ui/Select'
 import { useAuth } from '../../contexts/AuthContext'
 import { canDeleteTask } from '../../lib/taskPermissions'
@@ -42,7 +43,8 @@ interface CreateTaskModalProps {
   onSubmit: (taskData: {
     title: string
     description: string
-    status: TaskStatus
+    status: string
+    statusId?: number
     projectId?: number
     categoryId?: number
     assigneeUserId?: number
@@ -51,10 +53,11 @@ interface CreateTaskModalProps {
   }) => Promise<void>
   onDelete?: (task: Task) => void
   organizationId: number
-  initialStatus?: TaskStatus
+  initialStatus?: string
   initialTask?: Task | null
   initialTab?: 'details' | 'history'
   initialDraft?: Partial<ParsedAiTask> | null
+  taskStatuses?: TaskStatus[]
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
@@ -63,10 +66,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   onSubmit,
   onDelete,
   organizationId,
-  initialStatus = 'NOT_STARTED',
+  initialStatus = 'A Fazer',
   initialTask = null,
   initialTab = 'details',
   initialDraft = null,
+  taskStatuses: propTaskStatuses,
 }) => {
   const { user, activeOrg } = useAuth()
   const [activeTab, setActiveTab] = useState<'details' | 'history'>('details')
@@ -74,7 +78,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   // Task details
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [status, setStatus] = useState<TaskStatus>(initialStatus)
+  const [status, setStatus] = useState<string>(initialStatus)
   const [projectId, setProjectId] = useState<number | undefined>(undefined)
   const [categoryId, setCategoryId] = useState<number | undefined>(undefined)
   const [assigneeUserId, setAssigneeUserId] = useState<number | undefined>(undefined)
@@ -95,6 +99,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
   const [projects, setProjects] = useState<Project[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [taskStatuses, setTaskStatuses] = useState<TaskStatus[]>(propTaskStatuses || [])
   const [members, setMembers] = useState<OrganizationMember[]>([])
 
   const [loading, setLoading] = useState(false)
@@ -214,14 +219,18 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     const loadMetadata = async () => {
       setLoading(true)
       try {
-        const [projRes, catRes, memRes] = await Promise.allSettled([
+        const [projRes, catRes, memRes, statRes] = await Promise.allSettled([
           projectService.listProjects(organizationId),
           categoryService.listCategories(organizationId),
           organizationService.listMembers(organizationId),
+          propTaskStatuses && propTaskStatuses.length > 0
+            ? Promise.resolve(propTaskStatuses)
+            : taskStatusService.listStatuses(organizationId),
         ])
 
         if (projRes.status === 'fulfilled') setProjects(projRes.value || [])
         if (catRes.status === 'fulfilled') setCategories(catRes.value || [])
+        if (statRes.status === 'fulfilled') setTaskStatuses(statRes.value || [])
         if (memRes.status === 'fulfilled') {
           const memberList = memRes.value || []
           setMembers(memberList)
@@ -427,10 +436,13 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         effectiveAssigneeUserId = undefined
       }
 
+      const matchedStatus = taskStatuses.find((s) => s.name === status)
+
       await onSubmit({
         title: title.trim(),
         description: description.trim(),
         status,
+        statusId: matchedStatus?.id,
         projectId,
         categoryId,
         assigneeUserId: effectiveAssigneeUserId,
@@ -769,13 +781,23 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                   </label>
                   <CustomSelect
                     value={status}
-                    onChange={(val) => setStatus(val as TaskStatus)}
-                    options={[
-                      { value: 'NOT_STARTED', label: 'A Fazer', color: '#71717a' },
-                      { value: 'IN_PROGRESS', label: 'Em Andamento', color: '#14b8a6' },
-                      { value: 'COMPLETED', label: 'Concluído', color: '#10b981' },
-                      { value: 'CANCELED', label: 'Cancelado', color: '#f43f5e' },
-                    ]}
+                    onChange={(val) => setStatus(val)}
+                    options={
+                      taskStatuses.length > 0
+                        ? [...taskStatuses]
+                            .sort((a, b) => a.position - b.position)
+                            .map((s) => ({
+                              value: s.name,
+                              label: s.name,
+                              color: s.color || '#71717a',
+                            }))
+                        : [
+                            { value: 'A Fazer', label: 'A Fazer', color: '#71717a' },
+                            { value: 'Em Andamento', label: 'Em Andamento', color: '#14b8a6' },
+                            { value: 'Concluído', label: 'Concluído', color: '#10b981' },
+                            { value: 'Cancelado', label: 'Cancelado', color: '#f43f5e' },
+                          ]
+                    }
                   />
                 </div>
               </div>

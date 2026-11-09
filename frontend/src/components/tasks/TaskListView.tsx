@@ -8,8 +8,9 @@ import { canDeleteTask } from '../../lib/taskPermissions'
 
 interface TaskListViewProps {
   tasks: Task[]
+  taskStatuses?: TaskStatus[]
   onToggleTimer: (task: Task) => void
-  onStatusChange: (task: Task, newStatus: TaskStatus) => void
+  onStatusChange: (task: Task, newStatus: string, newStatusId?: number) => void
   onEditTask: (task: Task) => void
   onOpenHistory?: (task: Task) => void
   onDeleteTask?: (task: Task) => void
@@ -20,6 +21,7 @@ interface TaskListViewProps {
 
 export const TaskListView: React.FC<TaskListViewProps> = ({
   tasks,
+  taskStatuses = [],
   onToggleTimer,
   onStatusChange,
   onEditTask,
@@ -29,6 +31,24 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
   activeTaskSeconds,
 }) => {
   const { user, activeOrg } = useAuth()
+
+  const statusOptions = React.useMemo(() => {
+    if (taskStatuses && taskStatuses.length > 0) {
+      return [...taskStatuses]
+        .sort((a, b) => a.position - b.position)
+        .map((s) => ({
+          value: s.name,
+          label: s.name,
+          color: s.color || '#71717a',
+        }))
+    }
+    return [
+      { value: 'A Fazer', label: 'A Fazer', color: '#71717a' },
+      { value: 'Em Andamento', label: 'Em Andamento', color: '#14b8a6' },
+      { value: 'Concluído', label: 'Concluído', color: '#10b981' },
+      { value: 'Cancelado', label: 'Cancelado', color: '#f43f5e' },
+    ]
+  }, [taskStatuses])
   const [activeMenuId, setActiveMenuId] = React.useState<number | null>(null)
 
   return (
@@ -151,14 +171,12 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                     <div className="w-36">
                       <CustomSelect
                         size="sm"
-                        value={task.status}
-                        onChange={(newStatus) => onStatusChange(task, newStatus as TaskStatus)}
-                        options={[
-                          { value: 'NOT_STARTED', label: 'A Fazer', color: '#71717a' },
-                          { value: 'IN_PROGRESS', label: 'Em Andamento', color: '#14b8a6' },
-                          { value: 'COMPLETED', label: 'Concluído', color: '#10b981' },
-                          { value: 'CANCELED', label: 'Cancelado', color: '#f43f5e' },
-                        ]}
+                        value={task.taskStatus?.name || task.status}
+                        onChange={(newStatus) => {
+                          const matched = taskStatuses.find((s) => s.name === newStatus)
+                          onStatusChange(task, newStatus, matched?.id)
+                        }}
+                        options={statusOptions}
                       />
                     </div>
                   </td>

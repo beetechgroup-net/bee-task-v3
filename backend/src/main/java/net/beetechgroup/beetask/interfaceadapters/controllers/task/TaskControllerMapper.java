@@ -1,5 +1,7 @@
 package net.beetechgroup.beetask.interfaceadapters.controllers.task;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskInput;
 import net.beetechgroup.beetask.usecase.task.create.CreateTaskOutput;
@@ -12,20 +14,42 @@ import net.beetechgroup.beetask.usecase.task.update.UpdateTaskInput;
 
 public class TaskControllerMapper {
 
+    private static List<String> normalizeStatuses(List<String> rawStatuses) {
+        if (rawStatuses == null || rawStatuses.isEmpty()) {
+            return rawStatuses;
+        }
+        List<String> normalized = new ArrayList<>();
+        for (String s : rawStatuses) {
+            if (s == null) continue;
+            normalized.add(s);
+            String trimmed = s.trim();
+            if ("NOT_STARTED".equalsIgnoreCase(trimmed) && !normalized.contains("A Fazer")) {
+                normalized.add("A Fazer");
+            } else if ("IN_PROGRESS".equalsIgnoreCase(trimmed) && !normalized.contains("Em Andamento")) {
+                normalized.add("Em Andamento");
+            } else if ("COMPLETED".equalsIgnoreCase(trimmed) && !normalized.contains("Concluído")) {
+                normalized.add("Concluído");
+            } else if ("CANCELED".equalsIgnoreCase(trimmed) && !normalized.contains("Cancelado")) {
+                normalized.add("Cancelado");
+            }
+        }
+        return normalized;
+    }
+
     public static ListTasksInput toListTasksInput(ListTasksRequest request, String email) {
         return new ListTasksInput(
                 email,
                 request.organizationId,
                 request.text,
                 request.projectIds,
-                request.statuses,
+                normalizeStatuses(request.statuses),
                 request.categoryIds,
                 request.userIds
         );
     }
 
     public static ListMyTasksInput toListMyTasksInput(ListMyTasksRequest request, String email) {
-        return new ListMyTasksInput(email, request.text, request.projectIds, request.statuses, request.categoryIds);
+        return new ListMyTasksInput(email, request.text, request.projectIds, normalizeStatuses(request.statuses), request.categoryIds);
     }
 
     public static CreateTaskInput toCreateTaskInput(CreateTaskRequest request, String userEmail) {
@@ -33,6 +57,7 @@ public class TaskControllerMapper {
                 request.title(),
                 request.description(),
                 request.status(),
+                request.statusId(),
                 request.organizationId(),
                 request.projectId(),
                 request.categoryId(),
@@ -50,7 +75,15 @@ public class TaskControllerMapper {
                 output.id(),
                 output.title(),
                 output.description(),
-                output.status(),
+                output.status() != null ? output.status().getName() : null,
+                output.status() != null ? new CreateTaskResponse.TaskStatusResponse(
+                        output.status().getId(),
+                        output.status().getName(),
+                        output.status().getColor(),
+                        output.status().getPosition(),
+                        output.status().isDefault(),
+                        output.status().isCompleted(),
+                        output.status().isCanceled()) : null,
                 Objects.nonNull(output.project())
                         ? new CreateTaskResponse.ProjectResponse(output.project().id(), output.project().name())
                         : null,
@@ -96,6 +129,7 @@ public class TaskControllerMapper {
                 request.title(),
                 request.description(),
                 request.status(),
+                request.statusId(),
                 request.organizationId(),
                 request.projectId(),
                 request.categoryId(),

@@ -333,7 +333,8 @@ export const DashboardPage: React.FC = () => {
   const handleModalSubmit = async (taskData: {
     title: string
     description: string
-    status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED'
+    status: string
+    statusId?: number
     projectId?: number
     categoryId?: number
     assigneeUserId?: number
@@ -345,6 +346,7 @@ export const DashboardPage: React.FC = () => {
       title: taskData.title,
       description: taskData.description,
       status: taskData.status,
+      statusId: taskData.statusId,
       projectId: taskData.projectId,
       categoryId: taskData.categoryId,
       assigneeUserId: taskData.assigneeUserId,

@@ -12,6 +12,7 @@ import { OrganizationsPage } from './pages/OrganizationsPage'
 import { TasksPage } from './pages/TasksPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { CategoriesPage } from './pages/CategoriesPage'
+import { StatusesPage } from './pages/StatusesPage'
 import { MembersPage } from './pages/MembersPage'
 import { OrganizationSettingsPage } from './pages/OrganizationSettingsPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
@@ -45,6 +46,7 @@ export function App() {
               <Route path="/kanban" element={<TasksPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
+              <Route path="/statuses" element={<StatusesPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/members" element={<MembersPage />} />
               <Route path="/organization/settings" element={<OrganizationSettingsPage />} />
