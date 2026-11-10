@@ -67,58 +67,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       response.issuedAt = new Date().toISOString()
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response))
       setUser(response)
+      return response
     } catch {
       logout()
+      return null
     }
   }, [logout])
 
-  const checkTokenExpiration = useCallback(
-    (userData: LoginResponse) => {
-      const issuedAt = new Date(userData.issuedAt).getTime()
-      const expiresAt = issuedAt + userData.expiresIn * 1000
-      const now = Date.now()
-
-      if (now >= expiresAt) {
-        logout()
-        return false
-      }
-
-      // Se expirar em menos de 5 min, renova
-      if (expiresAt - now < 300000) {
-        renewToken(userData.refreshToken)
-      }
-
-      return true
-    },
-    [logout, renewToken]
-  )
-
   useEffect(() => {
-    const storedUser = localStorage.getItem(STORAGE_KEYS.USER)
-    if (storedUser) {
-      try {
-        const userData: LoginResponse = JSON.parse(storedUser)
-        if (checkTokenExpiration(userData)) {
-          setUser(userData)
-          setupActiveOrg(userData.organizations)
+    const initAuth = async () => {
+      const storedUser = localStorage.getItem(STORAGE_KEYS.USER)
+      if (storedUser) {
+        try {
+          const userData: LoginResponse = JSON.parse(storedUser)
+          const issuedAt = new Date(userData.issuedAt).getTime()
+          const expiresAt = issuedAt + userData.expiresIn * 1000
+          const now = Date.now()
+
+          if (now >= expiresAt) {
+            if (userData.refreshToken) {
+              const renewed = await renewToken(userData.refreshToken)
+              if (renewed) {
+                setupActiveOrg(renewed.organizations)
+              }
+            } else {
+              logout()
+            }
+          } else {
+            setUser(userData)
+            setupActiveOrg(userData.organizations)
+
+            // Se expirar em menos de 24 horas, renova proativamente
+            if (expiresAt - now < 86400000 && userData.refreshToken) {
+              renewToken(userData.refreshToken)
+            }
+          }
+        } catch {
+          localStorage.removeItem(STORAGE_KEYS.USER)
         }
-      } catch {
-        localStorage.removeItem(STORAGE_KEYS.USER)
       }
+      setIsLoading(false)
     }
-    setIsLoading(false)
-  }, [checkTokenExpiration, setupActiveOrg])
+
+    initAuth()
+  }, [logout, renewToken, setupActiveOrg])
 
   // Verificação periódica a cada 60 segundos
   useEffect(() => {
     if (!user) return
 
     const interval = setInterval(() => {
-      checkTokenExpiration(user)
+      const issuedAt = new Date(user.issuedAt).getTime()
+      const expiresAt = issuedAt + user.expiresIn * 1000
+      const now = Date.now()
+
+      if (now >= expiresAt) {
+        if (user.refreshToken) {
+          renewToken(user.refreshToken)
+        } else {
+          logout()
+        }
+      } else if (expiresAt - now < 86400000 && user.refreshToken) {
+        // Se expirar em menos de 24 horas, renova proativamente
+        renewToken(user.refreshToken)
+      }
     }, 60000)
 
     return () => clearInterval(interval)
-  }, [user, checkTokenExpiration])
+  }, [user, logout, renewToken])
 
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password)
