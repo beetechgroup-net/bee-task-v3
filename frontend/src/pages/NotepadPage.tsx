@@ -75,12 +75,9 @@ export const NotepadPage: React.FC = () => {
         if (!mounted) return
         const content = note?.content || ''
         setInitialContent(content)
+        initialContentRef.current = content
         if (note?.updatedAt) {
           setLastSavedAt(new Date(note.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
-        }
-        if (editorRef.current) {
-          editorRef.current.innerHTML = content
-          updateStats()
         }
       } catch (err) {
         console.error('Erro ao carregar bloco de notas:', err)
@@ -92,7 +89,18 @@ export const NotepadPage: React.FC = () => {
     return () => {
       mounted = false
     }
-  }, [updateStats])
+  }, [])
+
+  // Sync loaded content into the editor DOM
+  useEffect(() => {
+    if (editorRef.current && !loading) {
+      editorRef.current.innerHTML = initialContent
+      const text = editorRef.current.innerText || ''
+      const isEmpty = text.trim() === '' && !editorRef.current.querySelector('img, hr')
+      editorRef.current.setAttribute('data-empty', isEmpty ? 'true' : 'false')
+      updateStats()
+    }
+  }, [loading, initialContent, updateStats])
 
   // Handle editor input
   const handleInput = () => {
@@ -149,6 +157,7 @@ export const NotepadPage: React.FC = () => {
       setSaving(true)
       const saved = await noteService.saveNote(content)
       setInitialContent(content)
+      initialContentRef.current = content
       setIsDirty(false)
       const timeStr = saved.updatedAt
         ? new Date(saved.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -625,21 +634,20 @@ export const NotepadPage: React.FC = () => {
 
         {/* Editor Area */}
         <div className="flex-1 p-5 sm:p-7 relative overflow-y-auto cursor-text">
-          {loading ? (
-            <div className="h-64 flex flex-col items-center justify-center gap-3 text-muted">
+          {loading && (
+            <div className="absolute inset-0 bg-surface/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center gap-3 text-muted">
               <Loader2 className="w-6 h-6 animate-spin text-brand" />
               <p className="text-xs font-semibold">Carregando suas anotações...</p>
             </div>
-          ) : (
-            <div
-              ref={editorRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleInput}
-              data-placeholder="Escreva suas anotações aqui... Você pode usar a barra de ferramentas para formatar com títulos, negrito, listas e códigos."
-              className="notepad-editor min-h-[460px] text-base focus:outline-none"
-            />
           )}
+          <div
+            ref={editorRef}
+            contentEditable={!loading}
+            suppressContentEditableWarning
+            onInput={handleInput}
+            data-placeholder="Escreva suas anotações aqui... Você pode usar a barra de ferramentas para formatar com títulos, negrito, listas e códigos."
+            className="notepad-editor min-h-[460px] text-base focus:outline-none"
+          />
         </div>
 
         {/* Footer Statistics Bar */}
