@@ -22,6 +22,7 @@ import {
   FileText,
   Lock,
   CircleDot,
+  StickyNote,
 } from 'lucide-react'
 import { Chip, ChipLabel } from '@heroui/react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -89,6 +90,7 @@ export const Sidebar = ({ isMobileOpen, onCloseMobile }: SidebarProps) => {
         { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
         { to: '/dashboard-v2', label: 'BI', icon: <BarChart3 className="w-4 h-4" /> },
         { to: '/tasks', label: 'Tarefas', icon: <ListTodo className="w-4 h-4" /> },
+        { to: '/notepad', label: 'Notas', icon: <StickyNote className="w-4 h-4" /> },
       ],
     },
     {

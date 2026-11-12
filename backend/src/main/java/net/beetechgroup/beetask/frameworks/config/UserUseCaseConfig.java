@@ -106,4 +106,20 @@ public class UserUseCaseConfig {
     ) {
         return new net.beetechgroup.beetask.usecase.user.signature.DeleteUserSignatureUseCase(userRepository, userSignatureRepository, storageRepository);
     }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.note.GetUserNoteUseCase getUserNoteUseCase(
+            UserRepository userRepository,
+            net.beetechgroup.beetask.usecase.repository.UserNoteRepository userNoteRepository
+    ) {
+        return new net.beetechgroup.beetask.usecase.user.note.GetUserNoteUseCase(userRepository, userNoteRepository);
+    }
+
+    @Produces
+    public net.beetechgroup.beetask.usecase.user.note.SaveUserNoteUseCase saveUserNoteUseCase(
+            UserRepository userRepository,
+            net.beetechgroup.beetask.usecase.repository.UserNoteRepository userNoteRepository
+    ) {
+        return new net.beetechgroup.beetask.usecase.user.note.SaveUserNoteUseCase(userRepository, userNoteRepository);
+    }
 }

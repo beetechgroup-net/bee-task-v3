@@ -18,6 +18,7 @@ import { OrganizationSettingsPage } from './pages/OrganizationSettingsPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ReportsPage } from './pages/ReportsPage'
+import { NotepadPage } from './pages/NotepadPage'
 
 export function App() {
   return (
@@ -51,6 +52,7 @@ export function App() {
               <Route path="/members" element={<MembersPage />} />
               <Route path="/organization/settings" element={<OrganizationSettingsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/notepad" element={<NotepadPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
 
