@@ -1,5 +1,6 @@
 package net.beetechgroup.beetask.interfaceadapters.controllers.user;
 
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -17,6 +18,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "User management operations")
+@Authenticated
 public class UserController {
     private static final Logger LOGGER = Logger.getLogger(UserController.class);
 
@@ -24,9 +26,9 @@ public class UserController {
     ListAllUsersUseCase listAllUsersUseCase;
 
     @GET
-    @Operation(summary = "List all users", description = "Lists all users with name and email, without pagination or authentication required")
+    @Operation(summary = "List all users", description = "Lists all users with name and email")
     public List<UserResponse> listUsers() {
-        LOGGER.info("Public list of all users requested");
+        LOGGER.info("Authenticated list of all users requested");
         return listAllUsersUseCase.execute().stream()
                 .map(u -> new UserResponse(u.getName(), u.getEmail()))
                 .toList();
