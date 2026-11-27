@@ -46,7 +46,7 @@ import {
 } from '../lib/periodUtils'
 import {
   getUserWorkGoal,
-  calculateUserPeriodWorkedSeconds,
+  calculateWorkGoalProgress,
   type WorkGoal,
 } from '../lib/userGoals'
 
@@ -262,41 +262,24 @@ export const DashboardPage: React.FC = () => {
     activeSeconds,
   ])
 
-  // Work Goal Progress in Current Period
+  // Work Goal Progress dynamically calculated for the active dashboard period
   const goalProgress = useMemo(() => {
-    const targetSeconds = (workGoal?.targetHours || 8) * 3600
-    const workedSeconds = calculateUserPeriodWorkedSeconds(
-      tasks,
-      workGoal?.period || 'DAILY',
+    const progress = calculateWorkGoalProgress(
+      myTasks,
+      workGoal,
+      activeDateRange.startDate,
+      activeDateRange.endDate,
+      periodPreset === 'all',
       currentActiveTask?.id,
       activeSeconds
     )
-    const percent = Math.min(100, Math.round((workedSeconds / targetSeconds) * 100))
-    const remainingSeconds = Math.max(0, targetSeconds - workedSeconds)
-
-    const periodLabels: Record<string, string> = {
-      DAILY: 'Meta Diária',
-      WEEKLY: 'Meta Semanal',
-      MONTHLY: 'Meta Mensal',
-    }
-
-    const periodSubtitles: Record<string, string> = {
-      DAILY: 'Progresso de hoje',
-      WEEKLY: 'Progresso desta semana',
-      MONTHLY: 'Progresso deste mês',
-    }
 
     return {
-      title: periodLabels[workGoal?.period || 'DAILY'],
-      subtitle: periodSubtitles[workGoal?.period || 'DAILY'],
-      targetSeconds,
-      workedSeconds,
-      percent,
-      remainingSeconds,
-      targetHours: workGoal?.targetHours || 8,
-      isCompleted: workedSeconds >= targetSeconds,
+      title: 'Meta do Período',
+      subtitle: activeDateRange.label,
+      ...progress,
     }
-  }, [tasks, workGoal, currentActiveTask?.id, activeSeconds])
+  }, [myTasks, workGoal, periodPreset, activeDateRange, currentActiveTask?.id, activeSeconds])
 
   // Recent tasks based on active scope & period activity
   const recentTasks = useMemo(() => {
@@ -832,14 +815,14 @@ export const DashboardPage: React.FC = () => {
                   <Target className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 flex-wrap">
                     {goalProgress.title}
                     <span className="text-[10px] text-muted font-normal">
                       ({goalProgress.subtitle})
                     </span>
                   </h4>
                   <p className="text-[11px] text-muted font-medium">
-                    Planejado: {goalProgress.targetHours}h {workGoal.period === 'DAILY' ? '/ dia' : workGoal.period === 'WEEKLY' ? '/ semana' : '/ mês'}
+                    Planejado: {goalProgress.targetLabel} ({goalProgress.workdaysLabel} • base {goalProgress.baseLabel})
                   </p>
                 </div>
               </div>
@@ -861,7 +844,7 @@ export const DashboardPage: React.FC = () => {
                   {formatSecondsToTimer(goalProgress.workedSeconds)}
                 </span>
                 <span className="text-xs text-muted font-medium">
-                  / {goalProgress.targetHours}h
+                  / {goalProgress.targetLabel}
                 </span>
               </div>
               <span
@@ -890,8 +873,10 @@ export const DashboardPage: React.FC = () => {
 
               <div className="flex items-center justify-between text-[10px] text-muted font-medium">
                 <span>
-                  {goalProgress.isCompleted
-                    ? '🎉 Meta da jornada concluída!'
+                  {goalProgress.targetSeconds === 0 && goalProgress.workedSeconds === 0
+                    ? 'Nenhum dia útil no período selecionado'
+                    : goalProgress.isCompleted
+                    ? '🎉 Meta do período concluída!'
                     : `Faltam ${formatSecondsToHuman(goalProgress.remainingSeconds)}`}
                 </span>
                 <span>{goalProgress.percent}% da meta</span>

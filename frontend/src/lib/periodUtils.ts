@@ -155,17 +155,24 @@ export function calculateTaskSecondsInRange(
   activeTaskId?: number,
   activeSeconds?: number
 ): number {
+  const rangeStartMs = rangeStart.getTime()
+  const rangeEndMs = rangeEnd.getTime()
+  const nowMs = Date.now()
+
   if (!task.history || task.history.length === 0) {
-    if (activeTaskId === task.id && activeSeconds && activeSeconds > 0) {
+    if (
+      activeTaskId === task.id &&
+      activeSeconds &&
+      activeSeconds > 0 &&
+      nowMs >= rangeStartMs &&
+      nowMs <= rangeEndMs
+    ) {
       return activeSeconds
     }
     return 0
   }
 
   let totalSec = 0
-  const rangeStartMs = rangeStart.getTime()
-  const rangeEndMs = rangeEnd.getTime()
-  const nowMs = Date.now()
 
   for (const item of task.history) {
     if (!item.startAt) continue

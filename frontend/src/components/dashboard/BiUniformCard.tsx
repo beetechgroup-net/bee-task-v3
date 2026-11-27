@@ -27,7 +27,7 @@ import {
   formatSecondsToTimer,
 } from '../../lib/timeUtils'
 import {
-  calculateUserPeriodWorkedSeconds,
+  calculateWorkGoalProgress,
   type WorkGoal,
 } from '../../lib/userGoals'
 import {
@@ -426,14 +426,15 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
       }
 
       case 'WORK_GOAL': {
-        const targetSeconds = (workGoal?.targetHours || 8) * 3600
-        const workedSeconds = calculateUserPeriodWorkedSeconds(
-          tasks,
-          workGoal?.period || 'DAILY',
+        const { workedSeconds, targetLabel, percent } = calculateWorkGoalProgress(
+          filteredTasks,
+          workGoal,
+          currentRange.startDate,
+          currentRange.endDate,
+          effectivePreset === 'all',
           activeTask?.id,
           activeSeconds
         )
-        const percent = Math.min(100, Math.round((workedSeconds / targetSeconds) * 100))
 
         return (
           <div className="space-y-1.5 my-auto">
@@ -442,7 +443,7 @@ export const BiUniformCard: React.FC<BiUniformCardProps> = ({
                 {formatSecondsToTimer(workedSeconds)}
               </span>
               <span className="text-[10px] font-bold text-muted">
-                / {workGoal.targetHours}h ({percent}%)
+                / {targetLabel} ({percent}%)
               </span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-surface-sunken overflow-hidden p-0.5 border border-border-soft">
